@@ -1,0 +1,144 @@
+<div align="center">
+  <img src="./docs/logo.svg" alt="duvis" width="180" height="auto" />
+  <h1>Duvis</h1>
+  <p align="center">
+    <span><b>D</b>isk <b>U</b>sage <b>Vis</b>ualizer for both AI and humans</span>
+  </p>
+</div>
+
+<hr />
+
+<p align="center">
+  <a href="https://crates.io/crates/duvis"><img src="https://img.shields.io/crates/v/duvis.svg?maxAge=1000" alt="crates.io"></a>
+  <a href="https://crates.io/crates/duvis"><img src="https://img.shields.io/crates/d/duvis.svg" alt="downloads"></a>
+  <a href="https://github.com/yamadashy/duvis/actions/workflows/ci.yml"><img src="https://github.com/yamadashy/duvis/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
+  <a href="https://codecov.io/gh/yamadashy/duvis"><img src="https://codecov.io/gh/yamadashy/duvis/graph/badge.svg?token=ASDJTR0FM7" alt="Codecov"></a>
+  <a href="https://docs.rs/duvis"><img src="https://docs.rs/duvis/badge.svg" alt="docs.rs"></a>
+  <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
+</p>
+
+📊 `duvis` is a fast, read-only disk usage visualizer written in Rust. It produces structured JSON output that AI agents can act on, and an interactive browser treemap (with sunburst and list views) that humans can explore. On Unix, sizes are the bytes a file actually occupies on disk (`st_blocks × 512`, same as `du`'s default) — so sparse VM images like OrbStack's `data.img.raw` show their real footprint, not the multi-terabyte logical size. Windows falls back to apparent size for now.
+
+## 🌟 Features
+
+- **AI-friendly**: Hierarchical JSON with size, category, and freshness — so agents can suggest what to clean up.
+- **Human-friendly**: Built-in browser UI (React + d3) with treemap, sunburst, and list views — color-coded by category, drill in by clicking.
+- **Fast**: Parallel directory scanning powered by [rayon](https://github.com/rayon-rs/rayon).
+- **Safe**: Strictly read-only. Permission errors are silently skipped.
+- **Cross-platform**: macOS, Linux, Windows.
+
+## Install
+
+```sh
+cargo install duvis
+```
+
+Or build from source:
+
+```sh
+git clone https://github.com/yamadashy/duvis.git
+cd duvis
+cargo install --path .
+```
+
+## Usage
+
+```sh
+# Tree view of the current directory
+duvis
+
+# Limit depth and show top N entries
+duvis ~/projects --depth 2 --top 10
+
+# Category-aware summary (cache / build / log / media / vcs / ide / other)
+duvis ~/projects -f analyze
+
+# Structured JSON output (for AI agents and scripts)
+duvis ~/projects -f json
+
+# Open browser UI with an interactive treemap
+duvis ~/projects -f ui
+```
+
+### Options
+
+| Flag | Description |
+| --- | --- |
+| `-f, --format <FORMAT>` | Output format: `tree` (default), `json`, `analyze`, `ui` |
+| `-d, --depth <N>` | Maximum depth to display |
+| `-n, --top <N>` | Show only the top N entries by size |
+| `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
+| `--sort <size\|name>` | Sort order (default: `size`) |
+| `--reverse` | Reverse sort order |
+
+## Output examples
+
+### Tree
+
+```
+project (438.9 MB)
+├── target/  [build] 438.8 MB
+├── .git/    [vcs]    54.7 KB
+├── src/              24.5 KB
+└── Cargo.toml        418 B
+```
+
+### Analyze
+
+```
+Total: 438.9 MB
+
+Category Summary:
+  build      438.9 MB  100%  1 items  (rebuildable)
+
+Potentially reclaimable: 438.9 MB (cache + build + log)
+```
+
+### JSON
+
+```json
+{
+  "name": "project",
+  "size": 460195536,
+  "size_human": "438.9 MB",
+  "is_dir": true,
+  "category": "build",
+  "modified_days_ago": 0,
+  "children": [
+    { "name": "target", "size": 460091645, "category": "build", ... }
+  ]
+}
+```
+
+## Categories
+
+`duvis` classifies entries into seven categories so you can quickly spot what is safe to delete:
+
+- `cache` — package and tool caches (`node_modules/`, `.cache/`, `__pycache__/`, `.cargo/`, ...)
+- `build` — build artifacts (`target/`, `dist/`, `build/`, `.next/`, ...)
+- `log` — log files (`*.log`, `logs/`, ...)
+- `media` — images, video, audio
+- `vcs` — version control metadata (`.git/`, ...)
+- `ide` — IDE/editor metadata (`.idea/`, `.vscode/`, ...)
+- `other` — everything else
+
+Categories are assigned by directory or file name. Once a directory is classified
+as anything other than `other`, **everything inside it inherits that category** —
+because that directory is the natural delete unit (`rm -rf node_modules` removes
+the whole subtree as one). The outermost named ancestor wins, so a project root
+that happens to contain a giant `node_modules` is *not* itself classified as
+`cache`.
+
+## Why port 7515?
+
+In the spirit of [Vite's `5173`](https://vite.dev/) (`SITE`/`VITE` written
+with Roman numerals + leet — `V`=5, `I`=1, `T`=7, `E`=3), `duvis` defaults to
+**`7515`**: drop `D` (it's basically a closed `O`), tilt `U` on its side and
+it's a `7`, `V`=5 (Roman), `I`=1, `S`=5 (leet). Not assigned to anything in
+the IANA registry, far enough from the `8080`/`3000`/`5173` clash zones,
+and if it's still busy on your machine `duvis` quietly falls back to a free
+OS-assigned port.
+
+## License
+
+[MIT](./LICENSE) © Kazuki Yamada

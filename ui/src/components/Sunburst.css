@@ -1,0 +1,53 @@
+.sunburst-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.sb-arc {
+  cursor: pointer;
+  transition:
+    opacity 0.15s var(--ease),
+    filter 0.12s var(--ease);
+}
+.sb-arc:hover {
+  filter: brightness(1.18) saturate(1.05);
+}
+.sb-arc[data-dim="true"] {
+  opacity: 0.18;
+}
+.sb-arc[data-selected="true"] {
+  stroke: var(--fg);
+  stroke-width: 1.5;
+}
+.sb-center-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  fill: var(--fg);
+  text-anchor: middle;
+}
+.sb-center-size {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: var(--fg-mute);
+  text-anchor: middle;
+}
+.sb-center-hint {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--fg-faint);
+  text-anchor: middle;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sb-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  fill: var(--fg);
+  text-anchor: middle;
+  pointer-events: none;
+  font-weight: 500;
+}
+.sb-label.dark {
+  fill: rgba(0, 0, 0, 0.85);
+}

@@ -1,0 +1,93 @@
+/* Stack of summary cards meant to live in the right sidebar. */
+.stats {
+  display: flex;
+  flex-direction: column;
+  border-bottom: 1px solid var(--line);
+}
+.stat {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.stat:last-child {
+  border-bottom: 0;
+}
+.stat-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.stat-value {
+  font-family: var(--font-mono);
+  font-size: 18px;
+  font-weight: 500;
+  color: var(--fg);
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+.stat-sub {
+  font-size: 11px;
+  color: var(--fg-mute);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.stat-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  padding: 1px 5px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  border-radius: 3px;
+}
+[data-accent="mono"] .stat-pill {
+  background: var(--bg-3);
+  color: var(--fg);
+}
+.stat-bar {
+  display: flex;
+  height: 4px;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 6px;
+  background: var(--bg-3);
+}
+.stat-bar > span {
+  height: 100%;
+  transition: width 0.3s var(--ease);
+}
+
+/* Inline "?" affordance next to a stat label. Renders as a hollow circle
+ * that hints at a native browser tooltip on hover. */
+.stat-help {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 13px;
+  height: 13px;
+  border: 1px solid var(--line-2);
+  border-radius: 50%;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  line-height: 1;
+  color: var(--fg-dim);
+  cursor: help;
+  background: transparent;
+  padding: 0;
+  text-transform: none;
+  letter-spacing: 0;
+}
+.stat-help:hover {
+  color: var(--fg);
+  border-color: var(--fg-mute);
+}

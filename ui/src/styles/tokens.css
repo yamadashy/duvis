@@ -1,0 +1,97 @@
+/* ----------------------------------------------------------------
+   Design tokens for duvis UI.
+   Exposed as CSS custom properties so components stay style-light.
+   ---------------------------------------------------------------- */
+
+:root {
+  /* type */
+  --font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
+    sans-serif;
+  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Mono",
+    "Roboto Mono", Menlo, Consolas, monospace;
+
+  /* shape */
+  --r-1: 4px;
+  --r-2: 6px;
+  --r-3: 10px;
+  --r-4: 14px;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+
+  /* accent — overridden per [data-accent] */
+  --accent: #7c5cff;
+  --accent-fg: #fff;
+  --accent-soft: color-mix(in oklab, var(--accent) 18%, transparent);
+  --accent-line: color-mix(in oklab, var(--accent) 40%, transparent);
+}
+
+/* dark (default) */
+:root,
+[data-theme="dark"] {
+  --bg: #0a0b0f;
+  --bg-1: #0f1117;
+  --bg-2: #14171f;
+  --bg-3: #1a1d27;
+  --bg-hover: #1f232e;
+  --line: #20242f;
+  --line-2: #2a2f3c;
+  --line-strong: #353a48;
+  --fg: #e7e9ee;
+  --fg-mute: #9aa0ad;
+  --fg-dim: #6b7280;
+  --fg-faint: #4a5060;
+
+  /* category palette — semantic warm/cool */
+  --cat-cache: #f59e0b;
+  --cat-build: #ef4444;
+  --cat-log: #f97316;
+  --cat-media: #8b5cf6;
+  --cat-vcs: #10b981;
+  --cat-ide: #3b82f6;
+  --cat-other: #6b7280;
+}
+
+[data-theme="light"] {
+  --bg: #fafafa;
+  --bg-1: #ffffff;
+  --bg-2: #f4f4f5;
+  --bg-3: #ececef;
+  --bg-hover: #ececef;
+  --line: #e5e5e8;
+  --line-2: #d4d4d8;
+  --line-strong: #a1a1aa;
+  --fg: #0a0b0f;
+  --fg-mute: #52525b;
+  --fg-dim: #71717a;
+  --fg-faint: #a1a1aa;
+
+  --cat-cache: #d97706;
+  --cat-build: #dc2626;
+  --cat-log: #ea580c;
+  --cat-media: #7c3aed;
+  --cat-vcs: #059669;
+  --cat-ide: #2563eb;
+  --cat-other: #71717a;
+}
+
+[data-accent="indigo"] {
+  --accent: #7c5cff;
+}
+[data-accent="red"] {
+  --accent: #ff5c39;
+}
+[data-accent="green"] {
+  --accent: #22c55e;
+}
+[data-accent="cyan"] {
+  --accent: #38bdf8;
+}
+[data-accent="mono"] {
+  --accent: #e7e9ee;
+  --accent-fg: #0a0b0f;
+}
+[data-theme="light"][data-accent="mono"] {
+  --accent: #0a0b0f;
+  --accent-fg: #fafafa;
+}

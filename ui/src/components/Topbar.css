@@ -1,0 +1,98 @@
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--line);
+  background: var(--bg-1);
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 8px;
+}
+.brand-mark {
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: linear-gradient(135deg, var(--accent), color-mix(in oklab, var(--accent) 60%, #000));
+  display: grid;
+  place-items: center;
+}
+.brand-mark svg {
+  display: block;
+}
+.brand-name {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--fg);
+}
+
+.topbar-meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-left: 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg-dim);
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.topbar-meta .tm-path {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--fg-mute);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.topbar-meta .tm-path svg {
+  width: 12px;
+  height: 12px;
+  color: var(--fg-faint);
+  flex-shrink: 0;
+}
+.topbar-meta .tm-sep {
+  width: 1px;
+  height: 12px;
+  background: var(--line);
+}
+.topbar-meta .tm-stat {
+  color: var(--fg-mute);
+  font-variant-numeric: tabular-nums;
+}
+.topbar-meta .tm-stat-key {
+  color: var(--fg-dim);
+  margin-right: 4px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+}
+.icon-btn {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--r-2);
+  color: var(--fg-mute);
+  display: grid;
+  place-items: center;
+  transition: all 0.12s var(--ease);
+}
+.icon-btn:hover {
+  background: var(--bg-2);
+  color: var(--fg);
+}
+.icon-btn svg {
+  width: 15px;
+  height: 15px;
+  display: block;
+}

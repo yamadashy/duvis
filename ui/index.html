@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=1280" />
+    <title>duvis — disk usage</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <!-- Scan data injected by the duvis Rust server. Untouched in dev mode. -->
+    <script id="duvis-data" type="application/json">__DUVIS_DATA__</script>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

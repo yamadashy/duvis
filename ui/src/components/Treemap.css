@@ -1,0 +1,99 @@
+.treemap-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
+.treemap-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  cursor: default;
+}
+.tm-node {
+  cursor: pointer;
+  transition: opacity 0.15s var(--ease);
+}
+.tm-node-rect {
+  stroke: var(--bg);
+  stroke-width: 1.5;
+  transition: filter 0.12s var(--ease);
+  shape-rendering: crispEdges;
+}
+[data-theme="light"] .tm-node-rect {
+  stroke: var(--bg-1);
+}
+.tm-node:hover .tm-node-rect {
+  filter: brightness(1.18) saturate(1.05);
+}
+[data-theme="light"] .tm-node:hover .tm-node-rect {
+  filter: brightness(0.92) saturate(1.05);
+}
+.tm-node[data-dim="true"] {
+  opacity: 0.18;
+}
+.tm-node[data-selected="true"] .tm-node-rect {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.tm-label {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  fill: rgba(0, 0, 0, 0.85);
+  pointer-events: none;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+.tm-label-name {
+  font-weight: 600;
+}
+.tm-label-size {
+  opacity: 0.7;
+  font-size: 10px;
+}
+.tm-label.light {
+  fill: rgba(255, 255, 255, 0.92);
+}
+.tm-label.light.tm-label-size {
+  opacity: 0.8;
+}
+
+.tm-parent-label {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  pointer-events: none;
+  user-select: none;
+}
+.tm-parent-rect {
+  fill: transparent;
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  pointer-events: none;
+}
+[data-theme="light"] .tm-parent-rect {
+  stroke: rgba(0, 0, 0, 0.08);
+}
+
+/* "X / Y cells · N hidden" badge in the corner. Cursor: help because we use
+ * a native title tooltip to explain the threshold. */
+.treemap-hidden-note {
+  position: absolute;
+  bottom: 6px;
+  right: 6px;
+  padding: 3px 7px;
+  font-size: 10px;
+  color: var(--fg-mute);
+  background: var(--bg-1);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  pointer-events: auto;
+  cursor: help;
+  user-select: none;
+}
+.treemap-hidden-suffix {
+  color: var(--fg-dim);
+}

@@ -1,0 +1,18 @@
+---
+source: tests/cli.rs
+expression: stdout
+---
+<FIXTURE> ( <SIZE>)
+├── .git/  [vcs] <SIZE>
+│   ├── HEAD  [vcs] <SIZE>
+│   └── objects/  [vcs] <SIZE>
+├── node_modules/  [cache] <SIZE>
+│   └── foo/  [cache] <SIZE>
+│       └── index.js  [cache] <SIZE>
+├── readme.md <SIZE>
+├── server.log  [log] <SIZE>
+├── src/ <SIZE>
+│   └── main.rs <SIZE>
+└── target/  [build] <SIZE>
+    └── debug/  [build] <SIZE>
+        └── app  [build] <SIZE>
