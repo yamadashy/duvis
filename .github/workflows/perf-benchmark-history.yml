@@ -1,0 +1,134 @@
+name: Performance Benchmark History
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - '**/*.md'
+      - 'LICENSE'
+      - 'docs/**'
+      - 'ui/**'
+
+concurrency:
+  group: perf-benchmark-history
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: Benchmark (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            runs: 20
+          - os: macos-latest
+            runs: 30
+          - os: windows-latest
+            runs: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build duvis (release)
+        run: cargo build --release --verbose
+
+      - name: Run benchmark
+        shell: bash
+        env:
+          BENCH_RUNS: ${{ matrix.runs }}
+        run: node .github/scripts/perf-benchmark-history/bench-run.mjs "$GITHUB_WORKSPACE"
+
+      - name: Upload benchmark result
+        uses: actions/upload-artifact@v4
+        with:
+          name: bench-history-${{ matrix.os }}
+          path: ${{ runner.temp }}/bench-result.json
+          retention-days: 1
+
+  store:
+    name: Store Results
+    needs: benchmark
+    runs-on: ubuntu-latest
+    if: ${{ always() && !cancelled() }}
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Ensure gh-pages branch exists
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          if ! git ls-remote --heads origin gh-pages | grep -q gh-pages; then
+            CURRENT_BRANCH=$(git branch --show-current)
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git switch --orphan gh-pages
+            git commit --allow-empty -m "Initial gh-pages branch for benchmark data"
+            git remote set-url origin "https://x-access-token:${GH_TOKEN}@github.com/${{ github.repository }}.git"
+            git push origin gh-pages
+            git switch "$CURRENT_BRANCH"
+          fi
+
+      - uses: actions/download-artifact@v4
+        with:
+          path: results
+          pattern: bench-history-*
+
+      - name: Combine results
+        shell: bash
+        run: |
+          node -e '
+            const fs = require("fs");
+            const path = require("path");
+            const combined = [];
+            const resultsDir = "results";
+            if (fs.existsSync(resultsDir)) {
+              for (const dir of fs.readdirSync(resultsDir).sort()) {
+                const file = path.join(resultsDir, dir, "bench-result.json");
+                if (fs.existsSync(file)) {
+                  combined.push(...JSON.parse(fs.readFileSync(file, "utf8")));
+                }
+              }
+            }
+            if (combined.length === 0) {
+              console.error("No benchmark results found");
+              process.exit(1);
+            }
+            fs.writeFileSync("combined-bench-result.json", JSON.stringify(combined, null, 2));
+            console.log(JSON.stringify(combined, null, 2));
+          '
+
+      - name: Store benchmark result
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          name: duvis Performance
+          benchmark-data-dir-path: dev/bench
+          tool: customSmallerIsBetter
+          output-file-path: combined-bench-result.json
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          auto-push: true
+          # Alert when median exceeds 130% of the previous best.
+          alert-threshold: '130%'
+          comment-on-alert: true
+          summary-always: true
+          fail-on-alert: false
