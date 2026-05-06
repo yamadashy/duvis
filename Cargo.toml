@@ -13,9 +13,9 @@ keywords = ["disk-usage", "cli", "treemap", "visualizer", "ai"]
 categories = ["command-line-utilities", "filesystem", "visualization"]
 build = "build.rs"
 # Explicit allow-list of files shipped to crates.io. `prebuilt/ui.html` is
-# the pre-built browser UI; build.rs copies it into OUT_DIR for end users
-# who don't have Node.js installed. The file is committed in git so the
-# tarball is reproducible from source.
+# the pre-built browser UI; it's gitignored (regenerated each release via
+# `just ui-build-prebuilt`) so cargo publish needs `--allow-dirty`, but it
+# rides along in the published tarball so end users don't need Node.js.
 # Patterns are gitignore-style; the leading "/" anchors them to the package
 # root so we don't accidentally pick up matching files deep in ui/node_modules.
 include = [

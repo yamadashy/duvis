@@ -7,9 +7,12 @@
 //   read `prebuilt/ui.html` (which Cargo.toml `include` ships in the
 //   tarball) and copy that to OUT_DIR. No Node required.
 //
-// `prebuilt/ui.html` is committed and refreshed by `just ui-build-prebuilt`
-// before publishing. Cargo build never writes to `prebuilt/` itself, so the
-// working tree stays clean and `cargo publish` doesn't need `--allow-dirty`.
+// `prebuilt/ui.html` is gitignored (we don't want a 200KB blob diff per UI
+// change) and refreshed by `just ui-build-prebuilt` before publishing.
+// Cargo build never writes to `prebuilt/` itself, so day-to-day cargo runs
+// leave the working tree alone. `cargo publish` does need `--allow-dirty`
+// because the file is untracked at publish time, but the include list
+// guarantees it rides into the tarball.
 //
 // We deliberately avoid writing the bundle into `src/` — generated artifacts
 // inside the source tree confuse readers and `git status`.

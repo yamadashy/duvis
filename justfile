@@ -76,15 +76,15 @@ check: lint test
 package:
     cargo package --list
 
-# Verify a publish would succeed without uploading. Refreshes the committed
+# Verify a publish would succeed without uploading. Refreshes the gitignored
 # prebuilt/ui.html first so the published tarball reflects the latest UI.
+# `--allow-dirty` is required because prebuilt/ui.html is intentionally
+# gitignored (generated artifacts shouldn't bloat git history).
 publish-dry:
     just ui-build-prebuilt
-    cargo publish --dry-run
+    cargo publish --dry-run --allow-dirty
 
 # Publish to crates.io + git tag + GitHub release (uses Cargo.toml version).
-# Refreshes prebuilt/ui.html first; if it changed, commits the refresh
-# automatically so cargo publish sees a clean working tree.
 publish:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -95,13 +95,9 @@ publish:
     fi
     echo "publishing duvis v$VERSION"
     just ui-build-prebuilt
-    if ! git diff --quiet prebuilt/ui.html; then
-      git add prebuilt/ui.html
-      git commit -m "chore(ui): refresh prebuilt bundle for v$VERSION"
-    fi
-    cargo publish
+    cargo publish --allow-dirty
     git tag "v$VERSION"
-    git push origin "v$VERSION" main
+    git push origin "v$VERSION"
     gh release create "v$VERSION" --generate-notes
 
 # ----- housekeeping -----

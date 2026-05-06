@@ -1,3 +1,8 @@
 /target
 
+# Generated UI bundle. Refreshed by `just ui-build-prebuilt` and shipped to
+# crates.io via the `include` list in Cargo.toml; not tracked because
+# committing the binary blob would bloat git history on every UI change.
+/prebuilt/ui.html
+
 .DS_Store
