@@ -19,7 +19,7 @@ use crate::scanner::ScanCounts;
 /// this are counted toward the "Stale" stat in the UI.
 const STALE_DAYS: u32 = 90;
 
-const HTML_TEMPLATE: &str = include_str!("ui/index.html");
+const HTML_TEMPLATE: &str = include_str!(concat!(env!("OUT_DIR"), "/ui.html"));
 
 /// Live scan progress + result, shared between the HTTP handlers and the
 /// background scan task.

@@ -44,6 +44,11 @@ ui-dev:
 ui-build:
     cd ui && npm run build
 
+# Refresh the committed prebuilt/ui.html bundle. Run before `just publish`
+# so end users (who install via crates.io and lack Node) get the latest UI.
+ui-build-prebuilt:
+    cd ui && npm run build:prebuilt
+
 # Type-check the React UI.
 typecheck:
     cd ui && npm run typecheck
@@ -67,26 +72,19 @@ check: lint test
 
 # ----- release -----
 
-# List the files that would ship to crates.io. Build first so the gitignored
-# generated `src/ui/index.html` is present and shows up in the listing.
+# List the files that would ship to crates.io.
 package:
-    cargo build --release
-    cargo package --list --allow-dirty
+    cargo package --list
 
-# Verify a publish would succeed without uploading.
-#
-# Two non-obvious flags:
-# - We `cargo build` first so build.rs regenerates `src/ui/index.html`. Cargo
-#   does NOT run the current crate's build.rs before `cargo package`, so on a
-#   fresh checkout the file would otherwise be missing from the tarball and
-#   the verify step's build.rs would panic with "ui/ is not present".
-# - `--allow-dirty` because src/ui/index.html is gitignored; cargo flags it as
-#   untracked even though Cargo.toml `include` ships it correctly.
+# Verify a publish would succeed without uploading. Refreshes the committed
+# prebuilt/ui.html first so the published tarball reflects the latest UI.
 publish-dry:
-    cargo build --release
-    cargo publish --dry-run --allow-dirty
+    just ui-build-prebuilt
+    cargo publish --dry-run
 
 # Publish to crates.io + git tag + GitHub release (uses Cargo.toml version).
+# Refreshes prebuilt/ui.html first; if it changed, commits the refresh
+# automatically so cargo publish sees a clean working tree.
 publish:
     #!/usr/bin/env bash
     set -euo pipefail
@@ -96,16 +94,20 @@ publish:
       exit 1
     fi
     echo "publishing duvis v$VERSION"
-    # Ensure src/ui/index.html exists locally; see publish-dry comment.
-    cargo build --release
-    cargo publish --allow-dirty
+    just ui-build-prebuilt
+    if ! git diff --quiet prebuilt/ui.html; then
+      git add prebuilt/ui.html
+      git commit -m "chore(ui): refresh prebuilt bundle for v$VERSION"
+    fi
+    cargo publish
     git tag "v$VERSION"
-    git push origin "v$VERSION"
+    git push origin "v$VERSION" main
     gh release create "v$VERSION" --generate-notes
 
 # ----- housekeeping -----
 
-# Remove all build artifacts (Rust + UI).
+# Remove all build artifacts (Rust + UI). prebuilt/ui.html stays — it's
+# tracked in git and refreshed via `just ui-build-prebuilt`.
 clean:
     cargo clean
-    rm -rf ui/node_modules ui/dist src/ui/index.html
+    rm -rf ui/node_modules ui/dist
