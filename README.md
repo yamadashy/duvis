@@ -51,25 +51,29 @@ duvis
 duvis ~/projects --depth 2 --top 10
 
 # Category-aware summary (cache / build / log / media / vcs / ide / other)
-duvis ~/projects -f analyze
+duvis ~/projects --analyze
 
 # Structured JSON output (for AI agents and scripts)
-duvis ~/projects -f json
+duvis ~/projects --json
 
 # Open browser UI with an interactive treemap
-duvis ~/projects -f ui
+duvis ~/projects --ui
 ```
 
 ### Options
 
 | Flag | Description |
 | --- | --- |
-| `-f, --format <FORMAT>` | Output format: `tree` (default), `json`, `analyze`, `ui` |
 | `-d, --depth <N>` | Maximum depth to display |
 | `-n, --top <N>` | Show only the top N entries by size |
+| `--json` | Output as JSON |
+| `--analyze` | Show category-based summary with reclaimable size |
+| `--ui` | Open browser UI with treemap visualization |
 | `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
 | `--sort <size\|name>` | Sort order (default: `size`) |
 | `--reverse` | Reverse sort order |
+
+`--json` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown.
 
 ## Output examples
 

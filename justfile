@@ -11,7 +11,7 @@ default:
 
 # Run duvis against PATH (default `.`) with the browser UI.
 dev path=".":
-    cargo run --release -- {{path}} -f ui
+    cargo run --release -- {{path}} --ui
 
 # Release build of the duvis binary (target/release/duvis).
 build:

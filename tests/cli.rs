@@ -98,7 +98,7 @@ fn tree_format_default() {
 #[test]
 fn analyze_format() {
     let fixture = build_fixture();
-    let stdout = run_duvis(fixture.path(), &["--format", "analyze"]);
+    let stdout = run_duvis(fixture.path(), &["--analyze"]);
     redacted_settings(&fixture_basename(fixture.path())).bind(|| {
         insta::assert_snapshot!("analyze_default", stdout);
     });
@@ -107,7 +107,7 @@ fn analyze_format() {
 #[test]
 fn json_format_is_valid_and_classifies() {
     let fixture = build_fixture();
-    let stdout = run_duvis(fixture.path(), &["--format", "json", "--sort", "name"]);
+    let stdout = run_duvis(fixture.path(), &["--json", "--sort", "name"]);
 
     let value: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
     assert!(value.get("name").is_some(), "missing name");
@@ -125,10 +125,11 @@ fn json_format_is_valid_and_classifies() {
 }
 
 #[test]
-fn invalid_format_is_rejected() {
+fn conflicting_format_flags_are_rejected() {
+    // --json and --analyze are exclusive via clap ArgGroup.
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--format", "xml", "."])
+        .args(["--json", "--analyze", "."])
         .assert()
         .failure();
 }

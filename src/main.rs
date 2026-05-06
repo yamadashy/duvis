@@ -3,7 +3,7 @@ use std::io::{self, Write};
 use anyhow::Result;
 use clap::Parser;
 
-use duvis::cli::{Cli, OutputFormat};
+use duvis::cli::Cli;
 use duvis::output::{self, OutputConfig};
 use duvis::scanner;
 
@@ -12,7 +12,7 @@ fn main() -> Result<()> {
 
     let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
 
-    if cli.format == OutputFormat::Ui {
+    if cli.ui {
         // The UI server runs the scan in a background task so the browser can
         // pop up immediately and show "Scanning..." while we wait.
         let rt = tokio::runtime::Runtime::new()?;
@@ -28,7 +28,7 @@ fn main() -> Result<()> {
     };
     let stdout = io::stdout();
     let mut out = stdout.lock();
-    output::render(&tree, &config, cli.format, &mut out)?;
+    output::render(&tree, &config, cli.json, cli.analyze, &mut out)?;
     out.flush()?;
 
     let skipped = counts.skipped();

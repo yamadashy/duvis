@@ -5,7 +5,6 @@ pub mod tree;
 
 use std::io::Write;
 
-use crate::cli::OutputFormat;
 use crate::entry::Entry;
 
 pub struct OutputConfig {
@@ -54,21 +53,26 @@ pub(crate) fn select_top(children: &[Entry], top: Option<usize>) -> (Vec<&Entry>
     }
 }
 
-/// Render `entry` according to `format` to the given writer. Each backend
-/// takes a `&mut impl Write` so tests can capture output into a buffer.
+/// Dispatch to the appropriate output backend. Each backend takes a
+/// `&mut impl Write` so tests can capture output into a buffer.
+///
+/// `--json` and `--analyze` are mutually exclusive (enforced by clap's
+/// ArgGroup); when neither is set we fall back to the human-friendly tree.
+/// `--ui` is dispatched by main.rs since it spins up an async server
+/// instead of writing to a stream.
 pub fn render(
     entry: &Entry,
     config: &OutputConfig,
-    format: OutputFormat,
+    json: bool,
+    analyze: bool,
     out: &mut impl Write,
 ) -> anyhow::Result<()> {
-    match format {
-        OutputFormat::Tree => tree::write(entry, config, out)?,
-        OutputFormat::Json => json::write(entry, config, out)?,
-        OutputFormat::Analyze => analyze::write(entry, out)?,
-        // The `ui` variant is dispatched by main.rs since it spins up an
-        // async server instead of writing to a stream.
-        OutputFormat::Ui => unreachable!("UI format must be handled by main.rs"),
+    if analyze {
+        analyze::write(entry, out)?;
+    } else if json {
+        json::write(entry, config, out)?;
+    } else {
+        tree::write(entry, config, out)?;
     }
     Ok(())
 }

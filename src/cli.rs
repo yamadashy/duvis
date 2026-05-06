@@ -1,32 +1,20 @@
 use crate::entry::SortOrder;
-use clap::{Parser, ValueEnum};
+use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
-
-/// How duvis renders the scan result.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum, Default)]
-#[value(rename_all = "kebab-case")]
-pub enum OutputFormat {
-    /// Indented tree to stdout (the human default).
-    #[default]
-    Tree,
-    /// Structured JSON to stdout (for AI agents and pipelines).
-    Json,
-    /// Per-category size summary with reclaimable hints.
-    Analyze,
-    /// Open the browser UI (treemap / sunburst / list).
-    Ui,
-}
 
 #[derive(Parser)]
 #[command(name = "duvis", about = "Disk usage visualizer for both AI and humans")]
+// At most one of --json / --analyze / --ui may be set; tree is the default
+// when none are passed.
+#[command(group(
+    ArgGroup::new("output")
+        .multiple(false)
+        .args(["json", "analyze", "ui"])
+))]
 pub struct Cli {
     /// Target directory to analyze
     #[arg(default_value = ".")]
     pub path: PathBuf,
-
-    /// Output format (one of: tree, json, analyze, ui)
-    #[arg(short, long, value_enum, default_value_t = OutputFormat::Tree)]
-    pub format: OutputFormat,
 
     /// Maximum depth to display (1 = root + immediate children)
     #[arg(short, long, value_parser = positive_usize)]
@@ -36,7 +24,19 @@ pub struct Cli {
     #[arg(short = 'n', long, value_parser = positive_usize)]
     pub top: Option<usize>,
 
-    /// Port for UI server (used with --format ui). Falls back to a free port if busy.
+    /// Output as JSON (for AI agents and pipelines)
+    #[arg(long)]
+    pub json: bool,
+
+    /// Show category summary analysis with reclaimable hints
+    #[arg(long)]
+    pub analyze: bool,
+
+    /// Open browser UI with treemap / sunburst / list views
+    #[arg(long)]
+    pub ui: bool,
+
+    /// Port for UI server (used with --ui). Falls back to a free port if busy.
     #[arg(long, default_value = "7515")]
     pub port: u16,
 
