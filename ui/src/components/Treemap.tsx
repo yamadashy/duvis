@@ -259,7 +259,7 @@ function LeafCell(props: LeafProps) {
         height={h}
         rx={radius}
         fill={categoryVar(cat)}
-        fillOpacity={node.children ? 0.95 : 0.85}
+        fillOpacity={node.children ? 0.85 : 0.75}
       />
       {stale ? (
         <rect

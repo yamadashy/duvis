@@ -115,7 +115,7 @@ export function Sunburst(props: SunburstProps) {
             // sunburst rings look washed-out compared to treemap cells of
             // the same category.
             const hasChildren = !!d.children && d.children.length > 0;
-            const baseOpacity = hasChildren ? 0.95 : 0.85;
+            const baseOpacity = hasChildren ? 0.85 : 0.75;
 
             const path = arcGen(d) ?? "";
 
