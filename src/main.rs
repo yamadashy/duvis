@@ -1,13 +1,23 @@
 use std::io::{self, Write};
 
 use anyhow::Result;
-use clap::Parser;
+use clap::{CommandFactory, Parser};
 
 use duvis::cli::Cli;
 use duvis::output::{self, OutputConfig};
 use duvis::scanner;
 
 fn main() -> Result<()> {
+    // No arguments at all → show help instead of silently scanning the
+    // current directory. Once the user passes any flag (e.g. `duvis --ui`)
+    // we keep `.` as the default PATH, so power-user flows aren't gated
+    // behind typing `.` every time.
+    if std::env::args_os().len() == 1 {
+        Cli::command().print_help()?;
+        println!();
+        return Ok(());
+    }
+
     let cli = Cli::parse();
 
     let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
