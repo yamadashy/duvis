@@ -1,4 +1,5 @@
-import { Fragment, useState } from "react";
+import { Fragment, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { categoryMeta, categoryVar } from "../lib/categories";
 import { humanSize, pct, relTime } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
@@ -212,12 +213,34 @@ function RevealButton({ segments }: { segments: readonly string[] }) {
 // affordance (instead of omitting it) tells users where the boundary is
 // without us answering "why isn't there a delete button" repeatedly.
 //
-// The tooltip is a wrapper-hover hint rather than a `title` attribute
-// because Chrome/Safari don't reliably show native tooltips on disabled
-// buttons.
+// The tooltip is rendered through a portal at document.body so it can't
+// be clipped by the detail panel's overflow, and positioned via fixed
+// coords from the button's bounding rect so it lifts above any treemap
+// stacking context. (`title` doesn't render reliably on disabled buttons
+// in Chrome/Safari, which is why we don't use it.)
 function TrashButton() {
+  const wrapRef = useRef<HTMLSpanElement>(null);
+  const [anchor, setAnchor] = useState<{ cx: number; top: number } | null>(null);
+
+  function show() {
+    const el = wrapRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    setAnchor({ cx: r.left + r.width / 2, top: r.top });
+  }
+  function hide() {
+    setAnchor(null);
+  }
+
   return (
-    <span className="hint-wrap">
+    <span
+      ref={wrapRef}
+      className="hint-wrap"
+      onMouseEnter={show}
+      onMouseLeave={hide}
+      onFocus={show}
+      onBlur={hide}
+    >
       <button type="button" className="btn" disabled aria-disabled="true">
         <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M2 3.5h8" strokeLinecap="round" />
@@ -226,13 +249,22 @@ function TrashButton() {
         </svg>
         Move to trash
       </button>
-      <span className="hint-tip" role="tooltip">
-        <strong>duvis is read-only by design.</strong>
-        <br />
-        It visualizes disk usage but never deletes anything. To clean up, move
-        files to the Trash yourself via Finder, Explorer, <code>rm</code>, or a
-        tool like <code>trash</code> CLI.
-      </span>
+      {anchor
+        ? createPortal(
+            <div
+              className="hint-tip"
+              role="tooltip"
+              style={{ left: anchor.cx, top: anchor.top - 8 }}
+            >
+              <strong>duvis is read-only by design.</strong>
+              <br />
+              It visualizes disk usage but never deletes anything. To clean up,
+              move files to the Trash yourself via Finder, Explorer,{" "}
+              <code>rm</code>, or a tool like <code>trash</code> CLI.
+            </div>,
+            document.body,
+          )
+        : null}
     </span>
   );
 }
