@@ -52,14 +52,10 @@ export function Treemap(props: TreemapProps) {
 
   let parents: TreeNode[] = [];
   let leaves: TreeNode[] = [];
-  let hiddenCount = 0;
-  let totalLeaves = 0;
   if (size && size.w > 0 && size.h > 0) {
     const out = layoutTreemap(root, size.w, size.h, PAD_TOP, treemapPadding, maxDepth);
     parents = out.parents;
     leaves = out.leaves;
-    hiddenCount = out.hiddenTiny + out.hiddenByCap;
-    totalLeaves = out.totalLeaves;
   }
 
   return (
@@ -115,21 +111,6 @@ export function Treemap(props: TreemapProps) {
           ))}
         </g>
       </svg>
-      {hiddenCount > 0 ? (
-        <div
-          className="treemap-hidden-note mono"
-          title={
-            "Cells smaller than 2px or beyond the render cap are skipped to keep the UI " +
-            "responsive. Drill into a folder or lower the depth to inspect them."
-          }
-        >
-          {leaves.length.toLocaleString()} / {totalLeaves.toLocaleString()} cells
-          <span className="treemap-hidden-suffix">
-            {" · "}
-            {hiddenCount.toLocaleString()} hidden
-          </span>
-        </div>
-      ) : null}
     </div>
   );
 }

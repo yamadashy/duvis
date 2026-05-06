@@ -77,23 +77,3 @@
 [data-theme="light"] .tm-parent-rect {
   stroke: rgba(0, 0, 0, 0.08);
 }
-
-/* "X / Y cells · N hidden" badge in the corner. Cursor: help because we use
- * a native title tooltip to explain the threshold. */
-.treemap-hidden-note {
-  position: absolute;
-  bottom: 6px;
-  right: 6px;
-  padding: 3px 7px;
-  font-size: 10px;
-  color: var(--fg-mute);
-  background: var(--bg-1);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  pointer-events: auto;
-  cursor: help;
-  user-select: none;
-}
-.treemap-hidden-suffix {
-  color: var(--fg-dim);
-}

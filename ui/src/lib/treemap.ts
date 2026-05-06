@@ -36,20 +36,14 @@ export function isActive(node: TreeNode, activeCategories: ReadonlySet<string>):
 export interface LaidOutTree {
   parents: TreeNode[];
   leaves: TreeNode[];
-  /** Leaves dropped because their cell would be smaller than MIN_CELL_PX. */
-  hiddenTiny: number;
-  /** Leaves dropped because the visible count exceeded MAX_RENDER_LEAVES. */
-  hiddenByCap: number;
-  /** Total number of leaf candidates before any filtering. */
-  totalLeaves: number;
 }
 
 /** Cells smaller than this on either axis are not rendered: they're invisible
  *  to the eye, useless as hover/click targets, and just bloat the React tree. */
 const MIN_CELL_PX = 2;
 /** Hard cap on visible leaves. Above this we keep the largest by area and
- *  surface a "N cells hidden" indicator. Empirically the browser stays smooth
- *  with a few thousand SVG <g> nodes; 5000 leaves headroom for parents. */
+ *  silently drop the rest — empirically the browser stays smooth with a few
+ *  thousand SVG <g> nodes; 5000 leaves headroom for parents. */
 const MAX_RENDER_LEAVES = 5000;
 /** Cells shorter than this drop their header strip. At deep depth the headers
  *  otherwise stack up and crowd out the actual leaves. Exported so the
@@ -96,27 +90,22 @@ export function layoutTreemap(
     .filter(isRenderable)
     .sort((a, b) => a.depth - b.depth);
 
-  const allLeaves = visible.filter((n) => {
-    if (n.depth === max) return true;
-    if (n.depth < max && (!n.children || n.children.length === 0)) return true;
-    return false;
-  });
-  const totalLeaves = allLeaves.length;
+  let leaves = visible
+    .filter((n) => {
+      if (n.depth === max) return true;
+      if (n.depth < max && (!n.children || n.children.length === 0)) return true;
+      return false;
+    })
+    .filter(isRenderable);
 
-  const renderable = allLeaves.filter(isRenderable);
-  const hiddenTiny = totalLeaves - renderable.length;
-
-  let leaves = renderable;
-  let hiddenByCap = 0;
   if (leaves.length > MAX_RENDER_LEAVES) {
     // Keep the biggest cells; the viewer can drill in to see smaller ones.
     leaves = [...leaves]
       .sort((a, b) => (b.x1 - b.x0) * (b.y1 - b.y0) - (a.x1 - a.x0) * (a.y1 - a.y0))
       .slice(0, MAX_RENDER_LEAVES);
-    hiddenByCap = renderable.length - MAX_RENDER_LEAVES;
   }
 
-  return { parents, leaves, hiddenTiny, hiddenByCap, totalLeaves };
+  return { parents, leaves };
 }
 
 export interface CategoryAggregates {
