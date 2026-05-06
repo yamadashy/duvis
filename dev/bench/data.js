@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778070783607,
+  "lastUpdate": 1778071099417,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -90,6 +90,51 @@ window.BENCHMARK_DATA = {
             "range": "±48.32",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 692.94ms, Q3: 741.26ms\nMin: 680.07ms, Max: 774.87ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "c7a2e38b0badd965c68e9712fab942f24685577a",
+          "message": "refactor(build): write generated UI to OUT_DIR, ship prebuilt/ui.html\n\nEarlier `build.rs` wrote the bundled browser UI into `src/ui/index.html`\n(gitignored), and Cargo.toml's `include` list pulled it into the\npublished tarball. Two complaints, both raised by Codex:\n1. Generated artifacts inside `src/` confuse readers and `git status`.\n2. The gitignored output forced `cargo publish --allow-dirty`, weakening\n   the safety check that the tarball matches HEAD.\n\nRestructure:\n\n- `prebuilt/ui.html` is now committed and is the canonical bundle that\n  ships in the tarball (Cargo.toml `include` lists it).\n- `build.rs` writes only to `$OUT_DIR/ui.html`. Two paths:\n  * dev / repo build (`ui/` exists): runs `npm run build`, copies\n    `ui/dist/index.html` → OUT_DIR. `prebuilt/` is NOT touched, so the\n    working tree stays clean during routine cargo builds.\n  * end-user install from crates.io (`ui/` excluded from tarball):\n    copies `prebuilt/ui.html` → OUT_DIR. No Node required.\n- `src/ui.rs` reads via `include_str!(concat!(env!(\"OUT_DIR\"), \"/ui.html\"))`.\n- `prebuilt/ui.html` is refreshed by an explicit `just ui-build-prebuilt`\n  step, which is invoked automatically inside `just publish` /\n  `just publish-dry` so the published tarball always reflects the\n  current `ui/src/`.\n- `cargo publish` (and dry-run) no longer need `--allow-dirty`. The\n  publish recipe also auto-commits the `prebuilt/ui.html` refresh if\n  there's a diff, keeping the working tree clean.\n- `src/ui/` directory and its `.gitignore` removed, plus the\n  `/src/ui/index.html` line in the root `.gitignore`.\n- `ui/scripts/copy-to-rust.mjs` renamed to\n  `ui/scripts/copy-to-prebuilt.mjs` to reflect its new role.\n\nEnd-user `cargo install duvis` flow is unchanged: tarball contains\n`prebuilt/ui.html`, build.rs uses it, no Node ever invoked.\n\nResolves Codex review item #4 from the post-3a9e94c audit.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-06T21:36:00+09:00",
+          "tree_id": "ac8f58a73ba0b1b2a541baea7829b6401978e639",
+          "url": "https://github.com/yamadashy/duvis/commit/c7a2e38b0badd965c68e9712fab942f24685577a"
+        },
+        "date": 1778071098592,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 105.68,
+            "range": "±43",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 86.81ms, Q3: 129.81ms\nMin: 73.03ms, Max: 188.28ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.71,
+            "range": "±0.93",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 56.46ms, Q3: 57.39ms\nMin: 56.03ms, Max: 59.95ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 470.19,
+            "range": "±75.92",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 462.57ms, Q3: 538.49ms\nMin: 455.58ms, Max: 587.63ms"
           }
         ]
       }
