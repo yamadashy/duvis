@@ -64,7 +64,7 @@ pub fn write(entry: &Entry, out: &mut impl Write) -> io::Result<()> {
 }
 
 fn collect_stats(entry: &Entry, stats: &mut HashMap<Category, CategoryStats>) {
-    if !entry.is_dir {
+    if !entry.is_dir() {
         let stat = stats
             .entry(entry.category)
             .or_insert(CategoryStats { size: 0, count: 0 });
@@ -84,7 +84,7 @@ fn collect_stats(entry: &Entry, stats: &mut HashMap<Category, CategoryStats>) {
     }
 
     // For Other directories, recurse into children
-    if let Some(children) = &entry.children {
+    if let Some(children) = entry.children() {
         for child in children {
             collect_stats(child, stats);
         }

@@ -342,21 +342,17 @@ mod tests {
     use crate::category::Category;
 
     fn fake_entry(name: &str) -> Entry {
-        Entry {
-            name: name.to_string(),
-            size: 4096,
-            is_dir: true,
-            category: Category::Other,
-            modified_days_ago: Some(1),
-            children: Some(vec![Entry {
-                name: "file.txt".to_string(),
-                size: 4096,
-                is_dir: false,
-                category: Category::Other,
-                modified_days_ago: Some(1),
-                children: None,
-            }]),
-        }
+        Entry::dir(
+            name.to_string(),
+            Category::Other,
+            Some(1),
+            vec![Entry::file(
+                "file.txt".to_string(),
+                4096,
+                Category::Other,
+                Some(1),
+            )],
+        )
     }
 
     fn ready_state(scan_root: PathBuf) -> Arc<AppState> {

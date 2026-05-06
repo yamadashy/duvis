@@ -29,7 +29,7 @@ fn to_json_output(
 ) -> JsonOutput {
     let children = match depth {
         Some(max_depth) if current_depth >= max_depth => None,
-        _ => entry.children.as_ref().map(|c| {
+        _ => entry.children().map(|c| {
             let (kept, _, _) = select_top(c, top);
             kept.into_iter()
                 .map(|child| to_json_output(child, depth, top, current_depth + 1))
@@ -41,7 +41,7 @@ fn to_json_output(
         name: entry.name.clone(),
         size: entry.size,
         size_human: format_size(entry.size),
-        is_dir: entry.is_dir,
+        is_dir: entry.is_dir(),
         category: entry.category,
         modified_days_ago: entry.modified_days_ago,
         children,

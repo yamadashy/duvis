@@ -8,7 +8,7 @@ use crate::entry::Entry;
 pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::Result<()> {
     writeln!(out, "{} ({})", entry.name, format_size(entry.size))?;
 
-    if let Some(children) = &entry.children {
+    if let Some(children) = entry.children() {
         let (items, dropped_count, dropped_size) = select_top(children, config.top);
         let len = items.len();
         for (i, child) in items.iter().enumerate() {
@@ -29,7 +29,7 @@ fn write_entry(
     out: &mut impl Write,
 ) -> io::Result<()> {
     let connector = if is_last { "└── " } else { "├── " };
-    let suffix = if entry.is_dir { "/" } else { "" };
+    let suffix = if entry.is_dir() { "/" } else { "" };
     let category_tag = format_category_tag(entry.category);
     writeln!(
         out,
@@ -48,7 +48,7 @@ fn write_entry(
         }
     }
 
-    if let Some(children) = &entry.children {
+    if let Some(children) = entry.children() {
         let child_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
         let (items, dropped_count, dropped_size) = select_top(children, config.top);
         let len = items.len();

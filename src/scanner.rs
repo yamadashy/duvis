@@ -77,30 +77,19 @@ fn scan_recursive(
             own
         };
         let children = scan_children(path, depth, effective, counts);
-        let total_size: u64 = children.iter().map(|e| e.size).sum();
-
-        Ok(Entry {
-            name,
-            size: total_size,
-            is_dir: true,
-            category: effective,
-            modified_days_ago,
-            children: Some(children),
-        })
+        Ok(Entry::dir(name, effective, modified_days_ago, children))
     } else {
         let effective = if inherited != Category::Other {
             inherited
         } else {
             category::classify_file(&name)
         };
-        Ok(Entry {
+        Ok(Entry::file(
             name,
-            size: file_disk_usage(&metadata),
-            is_dir: false,
-            category: effective,
+            file_disk_usage(&metadata),
+            effective,
             modified_days_ago,
-            children: None,
-        })
+        ))
     }
 }
 
@@ -199,7 +188,7 @@ mod tests {
     }
 
     fn find<'a>(entry: &'a Entry, name: &str) -> Option<&'a Entry> {
-        entry.children.as_ref()?.iter().find(|c| c.name == name)
+        entry.children()?.iter().find(|c| c.name == name)
     }
 
     #[test]
@@ -211,13 +200,13 @@ mod tests {
         fs::write(tmp.join("sub/b.txt"), b"world!").unwrap();
 
         let (entry, _counts) = scan(&tmp).unwrap();
-        assert!(entry.is_dir);
+        assert!(entry.is_dir());
         // Sizes use disk allocation now (st_blocks * 512 on Unix), so the
         // exact byte count depends on the filesystem block size. We just
         // assert the size is at least the apparent total.
         assert!(entry.size >= 5 + 6);
 
-        let children = entry.children.as_ref().unwrap();
+        let children = entry.children().unwrap();
         assert_eq!(children.len(), 2);
 
         fs::remove_dir_all(&tmp).unwrap();
