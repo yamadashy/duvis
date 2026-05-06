@@ -8,9 +8,13 @@ use std::time::SystemTime;
 use crate::category::{self, Category};
 use crate::entry::Entry;
 
-/// Max depth at which parallel scanning is used.
-/// Beyond this depth, scanning falls back to sequential to avoid overhead.
-const PARALLEL_DEPTH: usize = 3;
+/// Above this depth, fall back to sequential to avoid task-spawn overhead
+/// dominating tiny leaf directories. Empirically, raising it from 3 to a
+/// large value cut warm-cache scan time on a deeply-nested ghq tree
+/// (lots of node_modules) roughly in half — a directory walk is I/O-bound,
+/// so issuing more concurrent metadata calls lets the kernel overlap them.
+/// Shallow / wide trees (e.g. ~/Library) see negligible change.
+const PARALLEL_DEPTH: usize = 16;
 
 /// Live counters shared between the scanner and any observer. `items_scanned`
 /// drives the "12,345 items…" progress UI; `items_skipped` reports filesystem
