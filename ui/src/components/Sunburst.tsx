@@ -110,7 +110,12 @@ export function Sunburst(props: SunburstProps) {
             const live = findInRoot(d);
             const active = live ? isActive(live, filterCategories) : true;
             const isSel = !!selected && live === selected;
-            const baseOpacity = d.depth === 1 ? 0.95 : d.depth === 2 ? 0.85 : 0.7;
+            // Match Treemap LeafCell: parents (with children) slightly more
+            // opaque than leaves. Avoids depth-based fade that made deep
+            // sunburst rings look washed-out compared to treemap cells of
+            // the same category.
+            const hasChildren = !!d.children && d.children.length > 0;
+            const baseOpacity = hasChildren ? 0.95 : 0.85;
 
             const path = arcGen(d) ?? "";
 
