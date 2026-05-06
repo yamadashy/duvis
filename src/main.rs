@@ -8,6 +8,16 @@ use duvis::output::{self, OutputConfig};
 use duvis::scanner;
 
 fn main() -> Result<()> {
+    // Restore SIGPIPE's default disposition so `duvis ... | head` exits
+    // silently (process killed by SIGPIPE) instead of surfacing
+    // `Error: Broken pipe (os error 32)`. Rust runtime ignores SIGPIPE by
+    // default, which is the wrong behavior for a Unix CLI that streams to
+    // stdout. Same approach as ripgrep, fd, etc.
+    #[cfg(unix)]
+    unsafe {
+        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
+    }
+
     // No arguments at all → show help instead of silently scanning the
     // current directory. Once the user passes any flag (e.g. `duvis --ui`)
     // we keep `.` as the default PATH, so power-user flows aren't gated
