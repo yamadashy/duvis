@@ -33,7 +33,12 @@ pub struct Entry {
 impl Entry {
     /// File constructor. Use this from the scanner so the (kind, size) pair
     /// stays consistent at construction time.
-    pub fn file(name: String, size: u64, category: Category, modified_days_ago: Option<u64>) -> Self {
+    pub fn file(
+        name: String,
+        size: u64,
+        category: Category,
+        modified_days_ago: Option<u64>,
+    ) -> Self {
         Self {
             name,
             size,
@@ -141,7 +146,12 @@ mod tests {
             vec![leaf("small", 10), leaf("big", 1000), leaf("medium", 100)],
         );
         root.sort(&SortOrder::Size, false);
-        let names: Vec<_> = root.children().unwrap().iter().map(|e| e.name.clone()).collect();
+        let names: Vec<_> = root
+            .children()
+            .unwrap()
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
         assert_eq!(names, vec!["big", "medium", "small"]);
     }
 
@@ -149,7 +159,12 @@ mod tests {
     fn sort_by_name_ascending() {
         let mut root = dir_with("root", vec![leaf("c", 1), leaf("a", 2), leaf("b", 3)]);
         root.sort(&SortOrder::Name, false);
-        let names: Vec<_> = root.children().unwrap().iter().map(|e| e.name.clone()).collect();
+        let names: Vec<_> = root
+            .children()
+            .unwrap()
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
         assert_eq!(names, vec!["a", "b", "c"]);
     }
 
@@ -157,7 +172,12 @@ mod tests {
     fn sort_reverse_flips_order() {
         let mut root = dir_with("root", vec![leaf("a", 1), leaf("b", 2), leaf("c", 3)]);
         root.sort(&SortOrder::Size, true);
-        let names: Vec<_> = root.children().unwrap().iter().map(|e| e.name.clone()).collect();
+        let names: Vec<_> = root
+            .children()
+            .unwrap()
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
         assert_eq!(names, vec!["a", "b", "c"]);
     }
 
@@ -169,7 +189,12 @@ mod tests {
         );
         root.sort(&SortOrder::Name, false);
         let inner = &root.children().unwrap()[0];
-        let names: Vec<_> = inner.children().unwrap().iter().map(|e| e.name.clone()).collect();
+        let names: Vec<_> = inner
+            .children()
+            .unwrap()
+            .iter()
+            .map(|e| e.name.clone())
+            .collect();
         assert_eq!(names, vec!["a", "z"]);
     }
 

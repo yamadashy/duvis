@@ -58,7 +58,11 @@ fn main() {
             dist.display()
         );
         fs::copy(&dist, &dst).unwrap_or_else(|e| {
-            panic!("failed to copy {} -> {}: {e}", dist.display(), dst.display())
+            panic!(
+                "failed to copy {} -> {}: {e}",
+                dist.display(),
+                dst.display()
+            )
         });
     } else if prebuilt.exists() {
         // End-user install: tarball ships prebuilt/ui.html via Cargo.toml
