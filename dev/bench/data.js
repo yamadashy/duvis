@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778073943387,
+  "lastUpdate": 1778076756412,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -180,6 +180,51 @@ window.BENCHMARK_DATA = {
             "range": "±3.36",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 516.53ms, Q3: 519.89ms\nMin: 512.37ms, Max: 527.43ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "48730822fe2fa03cf645d967bab964dd21177c96",
+          "message": "fix(cli): exit silently on SIGPIPE instead of printing 'Broken pipe'\n\n`duvis ~/ghq --json | head` was surfacing\n`Error: Broken pipe (os error 32)` on stderr because Rust's runtime\ninstalls SIG_IGN for SIGPIPE, turning every dropped pipe write into an\nio::Error that bubbles up through anyhow.\n\nRestore SIGPIPE's default disposition (SIG_DFL) at startup on Unix so the\nprocess is killed by the signal — same behavior as `cat`, `du`, `grep`,\nripgrep, fd, and any other Unix CLI that streams to stdout. The exit\nstatus becomes 141 under `set -o pipefail`, which is the expected POSIX\nconvention. No-op on Windows.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-06T23:10:14+09:00",
+          "tree_id": "a2ea9503ac891f2d57d3b2a44ff548a049599a32",
+          "url": "https://github.com/yamadashy/duvis/commit/48730822fe2fa03cf645d967bab964dd21177c96"
+        },
+        "date": 1778076755540,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 88.31,
+            "range": "±30.24",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 70.35ms, Q3: 100.59ms\nMin: 48.45ms, Max: 153.17ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 46.39,
+            "range": "±1.01",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 46.02ms, Q3: 47.03ms\nMin: 45.69ms, Max: 49.31ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 459.97,
+            "range": "±26.08",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 457.18ms, Q3: 483.26ms\nMin: 455.37ms, Max: 510.62ms"
           }
         ]
       }
