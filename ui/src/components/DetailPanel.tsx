@@ -208,31 +208,32 @@ function RevealButton({ segments }: { segments: readonly string[] }) {
   );
 }
 
-// Intentionally disabled. duvis never deletes anything — see TRASH_TOOLTIP.
-// Surfacing the affordance (instead of omitting it) tells users where the
-// boundary is without us having to answer "why isn't there a delete button"
-// over and over in issues.
-const TRASH_TOOLTIP =
-  "duvis intentionally has no delete feature. " +
-  "It only visualizes disk usage — please move files to the Trash yourself " +
-  "via Finder / Explorer / `rm` / `trash` CLI.";
-
+// Intentionally disabled. duvis never deletes anything — surfacing the
+// affordance (instead of omitting it) tells users where the boundary is
+// without us answering "why isn't there a delete button" repeatedly.
+//
+// The tooltip is a wrapper-hover hint rather than a `title` attribute
+// because Chrome/Safari don't reliably show native tooltips on disabled
+// buttons.
 function TrashButton() {
   return (
-    <button
-      type="button"
-      className="btn"
-      disabled
-      aria-disabled="true"
-      title={TRASH_TOOLTIP}
-    >
-      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
-        <path d="M2 3.5h8" strokeLinecap="round" />
-        <path d="M3 3.5V10a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3.5" />
-        <path d="M5 3.5V2.5a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1v1" />
-      </svg>
-      Move to trash
-    </button>
+    <span className="hint-wrap">
+      <button type="button" className="btn" disabled aria-disabled="true">
+        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <path d="M2 3.5h8" strokeLinecap="round" />
+          <path d="M3 3.5V10a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3.5" />
+          <path d="M5 3.5V2.5a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1v1" />
+        </svg>
+        Move to trash
+      </button>
+      <span className="hint-tip" role="tooltip">
+        <strong>duvis is read-only by design.</strong>
+        <br />
+        It visualizes disk usage but never deletes anything. To clean up, move
+        files to the Trash yourself via Finder, Explorer, <code>rm</code>, or a
+        tool like <code>trash</code> CLI.
+      </span>
+    </span>
   );
 }
 

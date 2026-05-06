@@ -219,6 +219,68 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+/* Hover hint that mirrors the treemap cell tooltip styling.
+   We can't use `title` here because browsers don't reliably show native
+   tooltips on disabled buttons. */
+.hint-wrap {
+  position: relative;
+  display: inline-flex;
+}
+/* While the tip is open, lift the wrapper above any treemap cells / panels
+   that might own a stacking context. Without this, the absolutely-positioned
+   .hint-tip inherits its parent's stacking position and can render *behind*
+   the treemap. */
+.hint-wrap:hover,
+.hint-wrap:focus-within {
+  z-index: 1000;
+}
+.hint-tip {
+  visibility: hidden;
+  opacity: 0;
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%) translateY(2px);
+  z-index: 1000;
+  width: 260px;
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-3);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  text-align: left;
+  pointer-events: none;
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.4),
+    0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+  transition:
+    opacity 0.1s,
+    transform 0.1s;
+}
+[data-theme="light"] .hint-tip {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.hint-tip strong {
+  color: var(--fg);
+  font-weight: 500;
+}
+.hint-tip code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 4px;
+  border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--fg);
+}
+.hint-wrap:hover .hint-tip,
+.hint-wrap:focus-within .hint-tip {
+  visibility: visible;
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
 .btn.primary {
   background: var(--accent);
   color: var(--accent-fg);
