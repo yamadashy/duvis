@@ -20,7 +20,7 @@
 📊 `duvis` is a fast, read-only disk usage visualizer written in Rust. It produces structured JSON output that AI agents can act on, and an interactive browser treemap (with sunburst and list views) that humans can explore. On Unix, sizes are the bytes a file actually occupies on disk (`st_blocks × 512`, same as `du`'s default) — so sparse VM images like OrbStack's `data.img.raw` show their real footprint, not the multi-terabyte logical size. Windows falls back to apparent size for now.
 
 <p align="center">
-  <img src="./docs/screenshots/treemap-dark.png" alt="duvis browser UI showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
+  <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
 </p>
 
 ## 🌟 Features
