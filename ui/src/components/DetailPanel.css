@@ -211,9 +211,13 @@
   color: var(--fg);
   transition: all 0.12s var(--ease);
 }
-.btn:hover {
+.btn:hover:not(:disabled) {
   background: var(--bg-3);
   border-color: var(--line-strong);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .btn.primary {
   background: var(--accent);
