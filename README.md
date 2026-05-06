@@ -17,7 +17,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
 
-📊 `duvis` is a fast, read-only disk usage visualizer written in Rust. It produces structured JSON output that AI agents can act on, and an interactive browser treemap (with sunburst and list views) that humans can explore. On Unix, sizes are the bytes a file actually occupies on disk (`st_blocks × 512`, same as `du`'s default) — so sparse VM images like OrbStack's `data.img.raw` show their real footprint, not the multi-terabyte logical size. Windows falls back to apparent size for now.
+📊 `duvis` is a fast, read-only disk usage analyzer for **both AI agents and humans**. Point it at any directory and get a structured JSON tree (so an agent can reason about what's filling your disk) or an interactive browser treemap with sunburst and list views (so you can click through it yourself). Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `media`, `ide` — so the answer to *"what's eating my disk?"* shows up at a glance. duvis only **shows** you the picture; deleting is your call to make with your own tools.
 
 <p align="center">
   <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
@@ -25,10 +25,11 @@
 
 ## 🌟 Features
 
-- **AI-friendly**: Hierarchical JSON with size, category, and freshness — so agents can suggest what to clean up.
-- **Human-friendly**: Built-in browser UI (React + d3) with treemap, sunburst, and list views — color-coded by category, drill in by clicking.
+- **AI-friendly**: Hierarchical JSON with size, category, and freshness — agents can reason about disk usage in one pass.
+- **Human-friendly**: Built-in browser UI (React + d3) with treemap, sunburst, and list views, color-coded by category. Drill in by clicking.
 - **Fast**: Parallel directory scanning powered by [rayon](https://github.com/rayon-rs/rayon).
-- **Safe**: Strictly read-only. Permission errors are silently skipped.
+- **Read-only by design**: duvis never deletes, never recommends deletions, never prints `rm` commands. Permission errors are silently skipped.
+- **Real disk footprint**: On Unix, sizes are the bytes actually occupied on disk (`st_blocks × 512`, same as `du`'s default), so sparse VM images like OrbStack's `data.img.raw` show their real footprint instead of the multi-terabyte logical size. Windows falls back to apparent size for now.
 - **Cross-platform**: macOS, Linux, Windows.
 
 ## Install
@@ -120,7 +121,7 @@ Potentially reclaimable: 438.9 MB (cache + build + log)
 
 ## Categories
 
-`duvis` classifies entries into seven categories so you can quickly spot what is safe to delete:
+`duvis` classifies entries into seven categories so you can quickly see what kind of data is filling your disk:
 
 - `cache` — package and tool caches (`node_modules/`, `.cache/`, `__pycache__/`, `.cargo/`, ...)
 - `build` — build artifacts (`target/`, `dist/`, `build/`, `.next/`, ...)
