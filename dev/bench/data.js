@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778163917721,
+  "lastUpdate": 1778164239733,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -630,6 +630,51 @@ window.BENCHMARK_DATA = {
             "range": "±68.37",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 519.43ms, Q3: 587.8ms\nMin: 507.91ms, Max: 632.8ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "009e9e11e0c943240d1983da5bd93473701eaa8a",
+          "message": "docs(cli): tighten --help based on agent dogfooding (Codex review)\n\nAsked Codex (acting as an AI agent) to drive duvis using only the\ninformation in --help, then report every gap. Specific surprises it\nhit, now addressed in the help text:\n\n- `size` field semantics weren't documented. Codex saw a 1-byte file\n  report 4096 and a sparse file report 0, but had no way to know it's\n  `st_blocks * 512` (allocated disk bytes). Now stated in the --json\n  description.\n- `children` array conditions weren't documented. Codex didn't know\n  that files never carry it, and that depth-limited or --top-trimmed\n  directories silently omit it. Now stated.\n- --analyze silently ignores --depth / --top / --sort / --reverse —\n  Codex tried `duvis . --analyze --depth 1 --top 1` and got the full\n  summary regardless. Now stated explicitly on each affected flag and\n  on --analyze itself.\n- --analyze's `item count` is the number of category roots in each\n  bucket (e.g. one `target/` = 1 build item), not the file count\n  inside categorized directories. Now stated.\n- PATH accepted files even though --help said \"directory\". Now says\n  \"file or directory\".\n- Permission-denied paths are skipped silently with a stderr warning\n  and exit 0. An agent watching exit codes wouldn't know to check\n  stderr. Now stated on the PATH description.\n- Symlink behavior was vague — actually they appear as leaf entries\n  reporting the symlink's own disk usage, not the target's. Now\n  stated.\n- --ui's display flags also being ignored wasn't called out. Now\n  stated.\n\nAlso dropped agent-distracting prose (\"feeding into MCP servers\",\n\"persisting as a snapshot\", \"see the README for why this number\") in\nfavor of the schema/limits/behavior info Codex actually needed.\n\nExamples block: replaced `duvis .` (would produce ~20k lines on a\nproject root, agents would copy verbatim) with depth-limited variants.\n\nEditing-note checklist updated with the four checks Codex's review\nrevealed: schema completeness, default output size, ignored flag\ninteractions, stderr/non-zero exit behaviors.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T23:28:26+09:00",
+          "tree_id": "c430b0f7105a0ddadcdbba6e0273fc47f8ab299f",
+          "url": "https://github.com/yamadashy/duvis/commit/009e9e11e0c943240d1983da5bd93473701eaa8a"
+        },
+        "date": 1778164239280,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 109.01,
+            "range": "±39.19",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 81.43ms, Q3: 120.61ms\nMin: 50.66ms, Max: 165.95ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 72.98,
+            "range": "±1.3",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 72.56ms, Q3: 73.86ms\nMin: 65.51ms, Max: 89.65ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 515.47,
+            "range": "±4.11",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 513.97ms, Q3: 518.09ms\nMin: 509.58ms, Max: 563.73ms"
           }
         ]
       }
