@@ -17,7 +17,7 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
 
-📊 `duvis` (pronounced **"DOO-vis"** — `du` as in *disk usage*, `vis` as in *visualizer*) is a fast, read-only disk usage analyzer for **both AI agents and humans**. Point it at any directory and get a structured JSON tree (so an agent can reason about what's filling your disk) or an interactive browser treemap with sunburst and list views (so you can click through it yourself). Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `media`, `ide` — so the answer to *"what's eating my disk?"* shows up at a glance. duvis only **shows** you the picture; deleting is your call to make with your own tools.
+📊 `duvis` (pronounced **/ˈduːvɪs/** — `du` as in *disk usage*, `vis` as in *visualizer*) is a fast, read-only disk usage analyzer for **both AI agents and humans**. Point it at any directory and get a structured JSON tree (so an agent can reason about what's filling your disk) or an interactive browser treemap with sunburst and list views (so you can click through it yourself). Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `media`, `ide` — so the answer to *"what's eating my disk?"* shows up at a glance. duvis only **shows** you the picture; deleting is your call to make with your own tools.
 
 <p align="center">
   <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
