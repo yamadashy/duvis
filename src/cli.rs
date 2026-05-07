@@ -6,16 +6,14 @@ use std::path::PathBuf;
 #[command(
     name = "duvis",
     version,
-    about = "Disk usage visualizer for both AI and humans",
-    long_about = "duvis (/ˈduːvɪs/) is a fast, read-only disk usage analyzer.
-
-Run it against any directory to see what's filling your disk. The default \
-output is a colorized terminal tree. Pass --analyze for a per-category size \
-summary, --json for AI-agent-friendly structured output, or --ui to open an \
-interactive browser treemap.
-
-duvis is strictly read-only — it shows you what's there, never deletes \
-anything, never recommends what to delete.",
+    // Single paragraph (no blank `///` lines anywhere) so `-h` and `--help`
+    // produce the same output. clap derive splits doc comments at the first
+    // blank line into "short" (-h) and "long" (--help) sections; keeping
+    // everything in one paragraph defeats that split intentionally.
+    about = "duvis (/ˈduːvɪs/) is a fast, read-only disk usage analyzer for both AI agents and humans. \
+Default output is a colorized terminal tree; pass --analyze for a per-category summary, --json for \
+AI-agent-friendly structured output, or --ui for an interactive browser treemap. duvis is strictly \
+read-only — it shows you what's there, never deletes anything, never recommends what to delete.",
     after_help = "EXAMPLES:
   Tree view of the current directory (default output)
   $ duvis .
@@ -43,28 +41,23 @@ anything, never recommends what to delete.",
         .args(["json", "analyze", "ui"])
 ))]
 pub struct Cli {
-    /// Target directory to scan.
-    ///
-    /// Symlinks inside the tree are not followed. Defaults to "." (current
-    /// directory) when at least one flag is given. Running `duvis` with no
-    /// arguments at all prints --help instead — use `duvis .` to scan the
-    /// current directory explicitly.
+    /// Target directory to scan. Symlinks inside the tree are not followed.
+    /// Defaults to "." (current directory) when at least one flag is given.
+    /// Running `duvis` with no arguments at all prints --help instead — use
+    /// `duvis .` to scan the current directory explicitly.
     #[arg(default_value = ".", value_name = "PATH")]
     pub path: PathBuf,
 
     // ----- Output Format ----------------------------------------------------
     /// Emit a structured JSON tree to stdout (for AI agents and scripts).
-    ///
     /// Each entry has `name`, `size`, `size_human`, `is_dir`, `category`,
     /// and `modified_days_ago`. Designed for piping into `jq`, feeding into
     /// MCP servers, or persisting as a snapshot. Mutually exclusive with
-    /// --analyze and --ui; default output (no flag) is a colorized terminal
-    /// tree.
+    /// --analyze and --ui; default output (no flag) is a colorized terminal tree.
     #[arg(long, help_heading = "Output Format")]
     pub json: bool,
 
     /// Print a per-category size summary instead of the tree view.
-    ///
     /// Categories: cache / build / log / media / vcs / ide / other. Output
     /// is fact-only (size, percentage, item count) — duvis intentionally
     /// does not flag anything as "safe to delete". Mutually exclusive with
@@ -72,50 +65,43 @@ pub struct Cli {
     #[arg(long, help_heading = "Output Format")]
     pub analyze: bool,
 
-    /// Open a browser UI with treemap, sunburst, and list views.
-    ///
-    /// Starts an embedded HTTP server (default port 7515; see --port) and
-    /// launches your default browser. Cells are color-coded by category;
-    /// click to drill in, hover for details. The bundle is embedded in the
-    /// binary — no internet access required. Mutually exclusive with
-    /// --json and --analyze.
+    /// Open a browser UI with treemap, sunburst, and list views. Starts an
+    /// embedded HTTP server (default port 7515; see --port) and launches
+    /// your default browser. Cells are color-coded by category; click to
+    /// drill in, hover for details. The bundle is embedded in the binary —
+    /// no internet access required. Mutually exclusive with --json and --analyze.
     #[arg(long, help_heading = "Output Format")]
     pub ui: bool,
 
     // ----- Display ----------------------------------------------------------
-    /// Maximum depth to display in the output (≥ 1).
-    ///
-    /// Depth 1 shows the root and its immediate children, depth 2 adds
-    /// grandchildren, and so on. Affects only what is *displayed* — sizes
-    /// are always summed from the full scanned subtree.
+    /// Maximum depth to display in the output (≥ 1). Depth 1 shows the root
+    /// and its immediate children, depth 2 adds grandchildren, and so on.
+    /// Affects only what is *displayed* — sizes are always summed from the
+    /// full scanned subtree.
     #[arg(
         short,
         long,
         value_parser = positive_usize,
         value_name = "N",
-        help_heading = "Display Options",
+        help_heading = "Display Options"
     )]
     pub depth: Option<usize>,
 
-    /// Show only the largest N entries at each level (≥ 1).
-    ///
-    /// Selection is always by size; the displayed order still follows
-    /// --sort. Combine with --depth to spot the biggest stuff fast:
-    /// `duvis ~/projects -d 2 -n 10`.
+    /// Show only the largest N entries at each level (≥ 1). Selection is
+    /// always by size; the displayed order still follows --sort. Combine
+    /// with --depth to spot the biggest stuff fast: `duvis ~/projects -d 2 -n 10`.
     #[arg(
         short = 'n',
         long,
         value_parser = positive_usize,
         value_name = "N",
-        help_heading = "Display Options",
+        help_heading = "Display Options"
     )]
     pub top: Option<usize>,
 
-    /// Sort order for tree / JSON / UI output.
-    ///
-    /// `size` (default, largest first) or `name` (alphabetical). The
-    /// *selection* of entries under --top is always by size regardless of
-    /// this flag; --sort only affects display order.
+    /// Sort order for tree / JSON / UI output: `size` (default, largest first)
+    /// or `name` (alphabetical). The *selection* of entries under --top is
+    /// always by size regardless of this flag; --sort only affects display order.
     #[arg(
         long,
         default_value = "size",
@@ -124,20 +110,16 @@ pub struct Cli {
     )]
     pub sort: SortOrder,
 
-    /// Reverse the --sort order.
-    ///
-    /// With `--sort size`, this puts the smallest entries first; with
-    /// `--sort name`, descending alphabetical.
+    /// Reverse the --sort order. With `--sort size`, this puts the smallest
+    /// entries first; with `--sort name`, descending alphabetical.
     #[arg(long, help_heading = "Display Options")]
     pub reverse: bool,
 
     // ----- UI Server --------------------------------------------------------
-    /// Port for the --ui HTTP server.
-    ///
-    /// Defaults to 7515 (see the README for why this number). If the port
-    /// is already bound, duvis falls back to a free OS-assigned port
-    /// automatically and prints the resolved URL on stderr. Ignored when
-    /// --ui is not set.
+    /// Port for the --ui HTTP server. Defaults to 7515 (see the README for
+    /// why this number). If the port is already bound, duvis falls back to
+    /// a free OS-assigned port automatically and prints the resolved URL on
+    /// stderr. Ignored when --ui is not set.
     #[arg(
         long,
         default_value = "7515",
