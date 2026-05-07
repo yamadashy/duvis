@@ -71,34 +71,30 @@ check: lint test
     @echo "all checks passed"
 
 # ----- release -----
+#
+# Releases run from GitHub Actions via crates.io Trusted Publishing — see
+# `.github/workflows/cargo-publish.yml`. To publish a new version:
+#
+#   1. Bump `version = ...` in Cargo.toml on main
+#   2. Open the "cargo-publish" workflow in the Actions tab
+#   3. Run with `dry-run=true` first to verify, then again with `dry-run=false`
+#
+# No crates.io API token lives in repo secrets — GitHub mints a short-lived
+# OIDC token at runtime and crates.io exchanges it for a publish token.
+#
+# The recipes below are local helpers for inspecting what would ship.
 
 # List the files that would ship to crates.io.
 package:
     cargo package --list
 
-# Verify a publish would succeed without uploading. Refreshes the gitignored
-# prebuilt/ui.html first so the published tarball reflects the latest UI.
-# `--allow-dirty` is required because prebuilt/ui.html is intentionally
-# gitignored (generated artifacts shouldn't bloat git history).
+# Verify a publish would succeed without uploading (runs locally, no token
+# needed for --dry-run). Refreshes the gitignored prebuilt/ui.html first so
+# the dry run reflects the latest UI. `--allow-dirty` is required because
+# prebuilt/ui.html is intentionally gitignored.
 publish-dry:
     just ui-build-prebuilt
     cargo publish --dry-run --allow-dirty
-
-# Publish to crates.io + git tag + GitHub release (uses Cargo.toml version).
-publish:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    VERSION=$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)
-    if [[ -z "$VERSION" ]]; then
-      echo "could not detect version in Cargo.toml" >&2
-      exit 1
-    fi
-    echo "publishing duvis v$VERSION"
-    just ui-build-prebuilt
-    cargo publish --allow-dirty
-    git tag "v$VERSION"
-    git push origin "v$VERSION"
-    gh release create "v$VERSION" --generate-notes
 
 # ----- housekeeping -----
 
