@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778160604213,
+  "lastUpdate": 1778160995426,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -360,6 +360,51 @@ window.BENCHMARK_DATA = {
             "range": "±4.04",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 514.93ms, Q3: 518.97ms\nMin: 505.67ms, Max: 538.83ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "8066ef38ed747e81b177ce0cde31f008f1fc5bbc",
+          "message": "chore: bump version to 0.1.1\n\nPatch release covering everything since 0.1.0:\n\nBug fixes\n- Restore default SIGPIPE behavior so `duvis ... | head` exits silently\n  instead of printing \"Error: Broken pipe (os error 32)\".\n- Drop `.ts` from the media-extension list — TypeScript files vastly\n  outnumber MPEG transport-stream files in real codebases, and\n  classifying `index.ts` as `media` was a daily annoyance.\n\nRead-only stance, fully implemented\n- Remove deletion-flavored language from the CLI: `--analyze` no longer\n  prints `(rebuildable)`, `(safely deletable)`, or \"Potentially\n  reclaimable: …\".\n- Remove deletion-flavored language from the browser UI: the\n  \"Reclaimable\" stat block, \"Safe to delete\" / \"Rebuildable\" tag chips,\n  and the per-category \"Hint\" section are gone.\n- Add a deliberately disabled \"Move to trash\" button in the detail panel\n  that, on hover, explains duvis is read-only by design and points the\n  user at their OS-native delete tools.\n\nDocs\n- Pronunciation note (`/ˈduːvɪs/`).\n- Vite-style intro: tagline, scannable feature list, then prose.\n- \"How sizes are measured\" section (st_blocks vs apparent, sparse files,\n  Windows fallback) split out of the lead.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T22:33:32+09:00",
+          "tree_id": "91d281d8aa37b096a58bf13595b004065e689146",
+          "url": "https://github.com/yamadashy/duvis/commit/8066ef38ed747e81b177ce0cde31f008f1fc5bbc"
+        },
+        "date": 1778160995080,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 85.76,
+            "range": "±51.51",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 64.24ms, Q3: 115.75ms\nMin: 52.32ms, Max: 151.94ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.63,
+            "range": "±0.56",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 56.43ms, Q3: 56.99ms\nMin: 56ms, Max: 58.06ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 507.22,
+            "range": "±6.19",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 504.93ms, Q3: 511.12ms\nMin: 500.41ms, Max: 538.89ms"
           }
         ]
       }
