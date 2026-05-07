@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778157381886,
+  "lastUpdate": 1778159713789,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -270,6 +270,51 @@ window.BENCHMARK_DATA = {
             "range": "±10.9",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 451.15ms, Q3: 462.05ms\nMin: 445.81ms, Max: 481.29ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "f1a6e51eb80772ae202e361adf2f5f156aa51ff5",
+          "message": "ci: publish to crates.io via Trusted Publishing instead of an API token\n\nAdd `.github/workflows/cargo-publish.yml`, mirroring the structure of\npdfvision's npm publish workflow but pointing at crates.io's OIDC-based\nTrusted Publishing (GA'd by crates.io in mid-2025).\n\nBehavior:\n- `workflow_dispatch` trigger with a `dry-run` input\n- fails early if Cargo.toml version is already on crates.io\n- runs fmt / clippy / cargo test / UI typecheck\n- builds prebuilt/ui.html so the published tarball ships the latest UI\n- mints a short-lived publish token via `rust-lang/crates-io-auth-action`\n  (no CARGO_REGISTRY_TOKEN secret in this repo)\n- on real (non-dry) publish, also creates the GitHub Release tag\n\nDrop the corresponding `just publish` recipe — local publishing was\nuseful when we only had API tokens, but mixing the two paths invites\n\"oops, I published from my laptop with the wrong branch checked out\"\nmistakes. Local `just publish-dry` stays for sanity-checking the\npackage contents without uploading.\n\nSetup still required (one-time, on crates.io dashboard):\n  duvis → Settings → Trusted Publishers → Add\n    Repository owner: yamadashy\n    Repository name:  duvis\n    Workflow filename: cargo-publish.yml\n    Environment:      (leave blank)\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T22:11:54+09:00",
+          "tree_id": "80502b65f7aa46c51937a6348664f69d46e55a9f",
+          "url": "https://github.com/yamadashy/duvis/commit/f1a6e51eb80772ae202e361adf2f5f156aa51ff5"
+        },
+        "date": 1778159713274,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 49.79,
+            "range": "±2.95",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 48.99ms, Q3: 51.94ms\nMin: 48.21ms, Max: 86.29ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 55.85,
+            "range": "±1.82",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 55.08ms, Q3: 56.91ms\nMin: 54.56ms, Max: 58.84ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 528.9,
+            "range": "±10.01",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 525.79ms, Q3: 535.8ms\nMin: 519.9ms, Max: 637.23ms"
           }
         ]
       }
