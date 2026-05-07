@@ -1,3 +1,35 @@
+// =============================================================================
+// EDITING NOTE — `--help` IS A FIRST-CLASS DELIVERABLE
+// =============================================================================
+// duvis is used by AI agents as well as humans. For an agent, `duvis --help`
+// IS the spec — it's the only documentation the agent reliably has on hand
+// when deciding how to invoke the tool. So the help text below should be
+// written so an agent that just ran `duvis --help` (and read nothing else)
+// can drive the tool end-to-end without surprises.
+//
+// When editing flag descriptions in this file, optimize for that reader:
+//
+//   1. State precisely what the flag does, what units it takes, and how it
+//      interacts with related flags. Do not assume the reader has seen the
+//      README.
+//   2. Call out non-obvious behavior explicitly. Example: --top selects by
+//      size REGARDLESS of --sort; that's a gotcha worth a sentence.
+//   3. Keep each flag's description in a SINGLE PARAGRAPH (no blank `///`
+//      lines anywhere). clap derive otherwise splits doc comments into
+//      "short" (-h) and "long" (--help) forms — we want `-h` and `--help`
+//      to produce identical, fully detailed output, so we deliberately
+//      collapse the two.
+//   4. Use clap's `help_heading` to group related flags by purpose
+//      (Output Format / Display Options / UI Server Options). Agents and
+//      humans both scan faster with sectioned help than with a flat list.
+//   5. Keep the `after_help` EXAMPLES block alive. The `--json | jq` recipe
+//      in particular is there so an agent has a copy-paste starting point
+//      for piping duvis into its own analysis flow.
+//
+// Rule of thumb: if a description doesn't tell an agent how to safely
+// combine the flag with the others, it's not detailed enough yet.
+// =============================================================================
+
 use crate::entry::SortOrder;
 use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
@@ -6,10 +38,6 @@ use std::path::PathBuf;
 #[command(
     name = "duvis",
     version,
-    // Single paragraph (no blank `///` lines anywhere) so `-h` and `--help`
-    // produce the same output. clap derive splits doc comments at the first
-    // blank line into "short" (-h) and "long" (--help) sections; keeping
-    // everything in one paragraph defeats that split intentionally.
     about = "duvis (/ˈduːvɪs/) is a fast, read-only disk usage analyzer for both AI agents and humans. \
 Default output is a colorized terminal tree; pass --analyze for a per-category summary, --json for \
 AI-agent-friendly structured output, or --ui for an interactive browser treemap. duvis is strictly \
