@@ -20,7 +20,6 @@
 - 🖥️ **Human-friendly** — browser UI with treemap, sunburst, and list views
 - ⚡ **Fast** — parallel directory scanning powered by [rayon](https://github.com/rayon-rs/rayon)
 - 🛡️ **Read-only by design** — never deletes, never recommends deletions
-- 📏 **Real disk footprint** — `st_blocks`-based sizes on Unix (sparse-aware)
 - 🌐 **Cross-platform** — macOS, Linux, Windows
 
 `duvis` (pronounced `/ˈduːvɪs/`, like "doo-vis") is a fast, read-only disk usage analyzer that helps both AI agents and humans understand what's filling their disk. Point it at any directory and it gives you two ways to look at it:
@@ -139,6 +138,15 @@ because that directory is the natural delete unit (`rm -rf node_modules` removes
 the whole subtree as one). The outermost named ancestor wins, so a project root
 that happens to contain a giant `node_modules` is *not* itself classified as
 `cache`.
+
+## How sizes are measured
+
+On Unix, `duvis` reports the bytes a file actually occupies on disk
+(`st_blocks × 512`, the same default as `du`). Sparse files like VM images —
+for example OrbStack's `data.img.raw` — show their real footprint, not the
+multi-terabyte logical size you'd get from `ls -l`.
+
+Windows falls back to apparent size for now.
 
 ## Why port 7515?
 
