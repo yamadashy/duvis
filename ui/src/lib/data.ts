@@ -1,9 +1,7 @@
-import type { Category, Entry } from "./types";
+import type { Entry } from "./types";
 
-/** Category semantics shipped from Rust so the UI stays in sync with
- *  `Category::is_deletable()` and the staleness threshold. */
+/** Server-derived constants shipped to the UI at boot. */
 export interface ScanMeta {
-  deletable_categories: Category[];
   stale_days: number;
 }
 

@@ -111,10 +111,6 @@ interface LoadedProps {
 }
 
 function Loaded({ data, meta, onRescan }: LoadedProps) {
-  const deletableCategories = useMemo(
-    () => new Set<string>(meta.deletable_categories),
-    [meta.deletable_categories],
-  );
   const [state, dispatch] = useAppState(data);
   const [hover, setHover] = useState<{
     node: TreeNode | null;
@@ -158,10 +154,7 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
     return buildHierarchy(slice, state.sort);
   }, [state.data, state.rootPath, state.sort]);
 
-  const agg = useMemo(
-    () => aggregate(root, deletableCategories, meta.stale_days),
-    [root, deletableCategories, meta.stale_days],
-  );
+  const agg = useMemo(() => aggregate(root, meta.stale_days), [root, meta.stale_days]);
   const itemCount = useMemo(() => root.descendants().length, [root]);
 
   // Locate the selected node within the current root by name path.
@@ -226,10 +219,8 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
         <DetailPanel
           node={detailNode}
           total={agg.total}
-          isRoot={detailNode === root}
           rootPath={state.rootPath}
           rootName={state.data.name}
-          deletableCategories={deletableCategories}
           onSelect={handleSelect}
           onDrillIn={handleDrillIn}
           onNavigateTo={(path) => dispatch({ type: "navigateTo", path })}

@@ -91,23 +91,6 @@
   height: 8px;
   border-radius: 2px;
 }
-.deletable-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  padding: 2px 6px;
-  border-radius: 3px;
-}
-.deletable-tag.warn {
-  background: rgba(245, 158, 11, 0.15);
-  color: #f59e0b;
-}
-.deletable-tag.safe {
-  background: rgba(34, 197, 94, 0.15);
-  color: #22c55e;
-}
-
 .detail-section {
   padding: 8px 10px;
   border-bottom: 1px solid var(--line);
@@ -187,12 +170,6 @@
 .detail-child-size {
   font-size: 11px;
   color: var(--fg-mute);
-}
-
-.detail-hint {
-  font-size: 12px;
-  color: var(--fg-mute);
-  line-height: 1.5;
 }
 
 .action-row {

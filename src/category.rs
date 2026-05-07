@@ -25,19 +25,6 @@ impl Category {
             Category::Other => "other",
         }
     }
-
-    pub fn is_deletable(&self) -> bool {
-        matches!(self, Category::Cache | Category::Build | Category::Log)
-    }
-
-    pub fn deletable_hint(&self) -> &'static str {
-        match self {
-            Category::Cache => "safely deletable",
-            Category::Build => "rebuildable",
-            Category::Log => "usually deletable",
-            _ => "",
-        }
-    }
 }
 
 impl fmt::Display for Category {
@@ -183,7 +170,10 @@ fn is_media_extension(lower_name: &str) -> bool {
         // Image
         ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".tiff", ".raw", ".heic",
         ".heif", ".psd", ".cr2", ".nef", ".dng", // Video
-        ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".ts", ".3gp",
+        // `.ts` is intentionally excluded: while it's the MPEG transport-stream extension,
+        // TypeScript files are vastly more common in real codebases and being miscategorized
+        // as `media` is more harmful than missing the rare transport-stream file.
+        ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp",
         // Audio
         ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff",
     ];
@@ -248,13 +238,12 @@ mod tests {
     }
 
     #[test]
-    fn deletable_categories() {
-        assert!(Category::Cache.is_deletable());
-        assert!(Category::Build.is_deletable());
-        assert!(Category::Log.is_deletable());
-        assert!(!Category::Media.is_deletable());
-        assert!(!Category::Vcs.is_deletable());
-        assert!(!Category::Ide.is_deletable());
-        assert!(!Category::Other.is_deletable());
+    fn typescript_files_are_not_media() {
+        // `.ts` is the MPEG transport-stream extension, but TypeScript is far
+        // more common in modern codebases. Keep these classified as `other`
+        // so we don't surprise users with `index.ts` showing up as `media`.
+        assert_eq!(classify_file("index.ts"), Category::Other);
+        assert_eq!(classify_file("App.tsx"), Category::Other);
+        assert_eq!(classify_file("eleventy.config.ts"), Category::Other);
     }
 }

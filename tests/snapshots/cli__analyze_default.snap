@@ -5,10 +5,8 @@ expression: stdout
 Total: <SIZE>
 
 Category Summary:
-  build <SIZE> <PCT>  1 items  (rebuildable)
-  cache <SIZE> <PCT>  1 items  (safely deletable)
-  log <SIZE> <PCT>  1 items  (usually deletable)
+  build <SIZE> <PCT>  1 items
+  cache <SIZE> <PCT>  1 items
+  log <SIZE> <PCT>  1 items
   other <SIZE> <PCT>  2 items
   vcs <SIZE> <PCT>  1 items
-
-Potentially reclaimable: <SIZE> (cache + build + log)

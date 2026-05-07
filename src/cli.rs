@@ -28,7 +28,7 @@ pub struct Cli {
     #[arg(long)]
     pub json: bool,
 
-    /// Show category summary analysis with reclaimable hints
+    /// Show a per-category size summary
     #[arg(long)]
     pub analyze: bool,
 

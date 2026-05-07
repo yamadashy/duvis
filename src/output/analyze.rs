@@ -27,37 +27,15 @@ pub fn write(entry: &Entry, out: &mut impl Write) -> io::Result<()> {
             .then_with(|| a.0.label().cmp(b.0.label()))
     });
 
-    let mut deletable_total: u64 = 0;
-
     for (category, stat) in &sorted {
         let pct = (stat.size * 100).checked_div(entry.size).unwrap_or(0);
-        let hint = category.deletable_hint();
-        let hint_str = if hint.is_empty() {
-            String::new()
-        } else {
-            format!("  ({})", hint)
-        };
         writeln!(
             out,
-            "  {:<8} {:>10}  {:>3}%  {} items{}",
+            "  {:<8} {:>10}  {:>3}%  {} items",
             category.label(),
             format_size(stat.size),
             pct,
             stat.count,
-            hint_str,
-        )?;
-
-        if category.is_deletable() {
-            deletable_total += stat.size;
-        }
-    }
-
-    if deletable_total > 0 {
-        writeln!(out)?;
-        writeln!(
-            out,
-            "Potentially reclaimable: {} (cache + build + log)",
-            format_size(deletable_total),
         )?;
     }
     Ok(())

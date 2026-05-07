@@ -8,37 +8,20 @@ import "./DetailPanel.css";
 interface DetailPanelProps {
   node: TreeNode;
   total: number;
-  isRoot: boolean;
   /** Path of names from data root to the current view root (rootPath in App state). */
   rootPath: readonly string[];
   rootName: string;
-  /** Categories the server marked as safe to reclaim. Drives the "Hint" section. */
-  deletableCategories: ReadonlySet<string>;
   onDrillIn: (node: TreeNode) => void;
   onSelect: (node: TreeNode) => void;
   onNavigateTo: (path: string[]) => void;
 }
 
 export function DetailPanel(props: DetailPanelProps) {
-  const {
-    node,
-    total,
-    isRoot,
-    rootPath,
-    rootName,
-    deletableCategories,
-    onDrillIn,
-    onSelect,
-    onNavigateTo,
-  } = props;
+  const { node, total, rootPath, rootName, onDrillIn, onSelect, onNavigateTo } = props;
   const cat = node.data.category;
   const meta = categoryMeta(cat);
   const days = node.data.modified_days_ago;
   const hasChildren = !!node.children && node.children.length > 0;
-
-  let tag: { label: string; cls: string } | null = null;
-  if (meta.tag === "safe") tag = { label: "Safe to delete", cls: "safe" };
-  else if (meta.tag === "warn") tag = { label: "Rebuildable", cls: "warn" };
 
   const topChildren = node.children
     ? [...node.children].sort((a, b) => (b.value ?? 0) - (a.value ?? 0)).slice(0, 10)
@@ -100,7 +83,6 @@ export function DetailPanel(props: DetailPanelProps) {
             <span className="detail-cat-chip-dot" style={{ background: categoryVar(cat) }} />
             {meta.label}
           </span>
-          {tag ? <span className={`deletable-tag ${tag.cls}`}>{tag.label}</span> : null}
         </div>
       </div>
 
@@ -157,15 +139,6 @@ export function DetailPanel(props: DetailPanelProps) {
           <TrashButton />
         </div>
       </div>
-
-      {!isRoot && deletableCategories.has(cat) ? (
-        <div className="detail-section">
-          <div className="detail-section-title">Hint</div>
-          <div className="detail-hint">
-            This is classified as <strong>{meta.label.toLowerCase()}</strong>. {meta.desc}.
-          </div>
-        </div>
-      ) : null}
     </aside>
   );
 }

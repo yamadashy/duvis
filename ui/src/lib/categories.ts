@@ -3,19 +3,18 @@ import type { Category } from "./types";
 export interface CategoryMeta {
   key: Category;
   label: string;
-  /** Tag shown next to the legend label. null when the category isn't reclaimable. */
-  tag: "safe" | "warn" | null;
+  /** One-line description of what kinds of files fall into this category. */
   desc: string;
 }
 
 export const CATEGORIES: CategoryMeta[] = [
-  { key: "cache", label: "Cache", tag: "safe", desc: "Safely deletable" },
-  { key: "build", label: "Build output", tag: "warn", desc: "Rebuildable" },
-  { key: "log", label: "Logs", tag: "safe", desc: "Usually deletable" },
-  { key: "media", label: "Media", tag: null, desc: "Images, video, audio" },
-  { key: "vcs", label: "Version control", tag: null, desc: ".git, .svn" },
-  { key: "ide", label: "IDE config", tag: null, desc: ".vscode, .idea" },
-  { key: "other", label: "Other", tag: null, desc: "Everything else" },
+  { key: "cache", label: "Cache", desc: "Package and tool caches" },
+  { key: "build", label: "Build output", desc: "Build artifacts" },
+  { key: "log", label: "Logs", desc: "Log files" },
+  { key: "media", label: "Media", desc: "Images, video, audio" },
+  { key: "vcs", label: "Version control", desc: ".git, .svn" },
+  { key: "ide", label: "IDE config", desc: ".vscode, .idea" },
+  { key: "other", label: "Other", desc: "Everything else" },
 ];
 
 export const ALL_CATEGORIES: ReadonlySet<Category> = new Set(CATEGORIES.map((c) => c.key));

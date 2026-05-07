@@ -74,7 +74,7 @@ duvis ~/projects --ui
 | `-d, --depth <N>` | Maximum depth to display |
 | `-n, --top <N>` | Show only the top N entries by size |
 | `--json` | Output as JSON |
-| `--analyze` | Show category-based summary with reclaimable size |
+| `--analyze` | Show a per-category size summary |
 | `--ui` | Open browser UI with treemap visualization |
 | `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
 | `--sort <size\|name>` | Sort order (default: `size`) |
@@ -100,9 +100,7 @@ project (438.9 MB)
 Total: 438.9 MB
 
 Category Summary:
-  build      438.9 MB  100%  1 items  (rebuildable)
-
-Potentially reclaimable: 438.9 MB (cache + build + log)
+  build      438.9 MB  100%  1 items
 ```
 
 ### JSON
@@ -135,10 +133,10 @@ Potentially reclaimable: 438.9 MB (cache + build + log)
 
 Categories are assigned by directory or file name. Once a directory is classified
 as anything other than `other`, **everything inside it inherits that category** —
-because that directory is the natural delete unit (`rm -rf node_modules` removes
-the whole subtree as one). The outermost named ancestor wins, so a project root
-that happens to contain a giant `node_modules` is *not* itself classified as
-`cache`.
+because that directory is the natural grouping unit (a `node_modules` is a
+single thing, not a heap of unrelated files). The outermost named ancestor
+wins, so a project root that happens to contain a giant `node_modules` is
+*not* itself classified as `cache`.
 
 ## How sizes are measured
 

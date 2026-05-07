@@ -24,13 +24,10 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
             className="legend-row"
             data-active={isActive}
             onClick={(e: MouseEvent) => onToggle(c.key, e.shiftKey)}
-            title={`${c.label}${tagHint(c.tag)}`}
+            title={`${c.label} — ${c.desc}`}
           >
             <span className="legend-swatch" style={{ background: categoryVar(c.key) }} />
-            <span className="legend-label">
-              {c.label}
-              {c.tag ? <span className="legend-tag">{c.tag}</span> : null}
-            </span>
+            <span className="legend-label">{c.label}</span>
             <span className="legend-size mono tabular">{humanSize(size)}</span>
             <span
               className="legend-pct mono"
@@ -49,8 +46,4 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
       })}
     </div>
   );
-}
-
-function tagHint(tag: "safe" | "warn" | null): string {
-  return tag ? ` — ${tag === "safe" ? "safely deletable" : "rebuildable"}` : "";
 }

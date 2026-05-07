@@ -42,16 +42,6 @@
   align-items: center;
   gap: 6px;
 }
-.legend-tag {
-  font-family: var(--font-mono);
-  font-size: 9px;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--fg-dim);
-  padding: 1px 4px;
-  border: 1px solid var(--line-2);
-  border-radius: 3px;
-}
 .legend-size {
   font-size: 11px;
   color: var(--fg-mute);

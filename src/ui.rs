@@ -11,7 +11,6 @@ use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use crate::category::Category;
 use crate::entry::{Entry, SortOrder};
 use crate::scanner::ScanCounts;
 
@@ -220,25 +219,9 @@ async fn data_json(State(s): State<Arc<AppState>>) -> Response {
     axum::Json(body).into_response()
 }
 
-/// Single source of truth for category semantics that the UI needs.
-/// Derived from `Category::is_deletable()` so adding a deletable category in
-/// Rust automatically propagates to the UI.
+/// Server-derived constants the UI needs at boot.
 fn meta_block() -> serde_json::Value {
-    let deletable: Vec<&'static str> = [
-        Category::Cache,
-        Category::Build,
-        Category::Log,
-        Category::Media,
-        Category::Vcs,
-        Category::Ide,
-        Category::Other,
-    ]
-    .into_iter()
-    .filter(|c| c.is_deletable())
-    .map(|c| c.label())
-    .collect();
     json!({
-        "deletable_categories": deletable,
         "stale_days": STALE_DAYS,
     })
 }
@@ -421,7 +404,6 @@ mod tests {
         assert_eq!(json["scanned_in_ms"], 42);
         assert_eq!(json["tree"]["name"], "root");
         let meta = &json["meta"];
-        assert!(meta["deletable_categories"].is_array());
         assert!(meta["stale_days"].is_number());
     }
 

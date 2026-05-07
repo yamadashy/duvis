@@ -111,16 +111,11 @@ export function layoutTreemap(
 export interface CategoryAggregates {
   byCategory: Record<string, number>;
   total: number;
-  deletable: number;
   stale: number;
   fileCount: number;
 }
 
-export function aggregate(
-  root: TreeNode,
-  deletableCategories: ReadonlySet<string>,
-  staleDays: number,
-): CategoryAggregates {
+export function aggregate(root: TreeNode, staleDays: number): CategoryAggregates {
   const byCategory: Record<string, number> = {};
   let fileCount = 0;
   let stale = 0;
@@ -151,13 +146,9 @@ export function aggregate(
   }
   visit(root);
 
-  const total = root.value ?? 0;
-  let deletable = 0;
-  for (const k of deletableCategories) deletable += byCategory[k] ?? 0;
   return {
     byCategory,
-    total,
-    deletable,
+    total: root.value ?? 0,
     stale,
     fileCount,
   };
