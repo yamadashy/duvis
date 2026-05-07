@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778164239733,
+  "lastUpdate": 1778167849952,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -675,6 +675,51 @@ window.BENCHMARK_DATA = {
             "range": "±4.11",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 513.97ms, Q3: 518.09ms\nMin: 509.58ms, Max: 563.73ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "d2f9221758c64711a8a277c77aa2e7d62de8b1d8",
+          "message": "docs(cli): trim --help — duvis is read-only, agents can just try it\n\nThe previous round of edits (after Codex review) pushed --help toward\n\"pre-document every edge case\" — exact JSON field semantics, when\n`children` is omitted, error stderr behavior, which flag is ignored in\nwhich mode, etc. That made sense for a tool where running the wrong\ncommand had a cost. duvis doesn't have that cost: it's read-only, it\ncan't damage anything, and `duvis . --json | head` answers most schema\nquestions in milliseconds.\n\nSo flip the default: orient the agent, then trust them to try things.\nEach flag's description is now one short sentence covering purpose\nand (where it matters) mutual exclusivity. We deliberately don't\nspell out:\n  - JSON field semantics — visible by running with `--json | head`\n  - which display flags are ignored by --analyze / --ui — visible\n    immediately on a single run\n  - exact stderr / exit behavior — same\n\nEditing note rewritten to capture the new stance: \"if a sentence's job\ncould be done by the agent running the command itself, it probably\ndoesn't belong here.\"\n\nExamples block trimmed to four entries — the most likely first reach\nfor tree / analyze / json / ui flows. `duvis .` stays out (unbounded\nrecursive output is a poor first impression even with `| head`).\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-08T00:28:20+09:00",
+          "tree_id": "d982a2776a6b99a1a05b8dc19e22ad4e9c961f98",
+          "url": "https://github.com/yamadashy/duvis/commit/d2f9221758c64711a8a277c77aa2e7d62de8b1d8"
+        },
+        "date": 1778167849566,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 82.72,
+            "range": "±25.63",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 65.78ms, Q3: 91.4ms\nMin: 54.97ms, Max: 150.38ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.13,
+            "range": "±1.02",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 55.75ms, Q3: 56.78ms\nMin: 55.22ms, Max: 57.55ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 512.12,
+            "range": "±5.13",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 510.43ms, Q3: 515.56ms\nMin: 508ms, Max: 546.35ms"
           }
         ]
       }
