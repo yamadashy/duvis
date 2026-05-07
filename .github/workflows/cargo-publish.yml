@@ -119,10 +119,19 @@ jobs:
   publish:
     name: Publish to crates.io
     needs: verify
-    # Belt-and-braces against `gh workflow run --ref <feature-branch>`:
-    # crates.io trusts this workflow filename, but until the dashboard
-    # Environment policy is set we enforce main-only here.
+    # Defense in depth: three independent gates have to all agree to
+    # publish.
+    #   1. `environment: release` — GitHub Actions runner refuses to
+    #      schedule the job unless the ref matches the environment's
+    #      deployment-branch policy (set to main only in repo settings).
+    #   2. `if: github.ref == 'refs/heads/main'` — workflow-file logic;
+    #      catches misconfigurations of the environment policy.
+    #   3. The crates.io trusted publisher entry pins
+    #      environment=release, so the OIDC handshake also checks the
+    #      environment claim. A workflow that drops `environment: release`
+    #      can't get a token.
     if: ${{ !inputs.dry-run && github.ref == 'refs/heads/main' }}
+    environment: release
     runs-on: ubuntu-latest
     timeout-minutes: 30
     permissions:
@@ -164,6 +173,9 @@ jobs:
     name: Tag GitHub Release
     needs: publish
     if: ${{ !inputs.dry-run && github.ref == 'refs/heads/main' }}
+    # Same `release` environment as `publish` so contents:write is also
+    # gated by the deployment-branch policy in repo settings.
+    environment: release
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
