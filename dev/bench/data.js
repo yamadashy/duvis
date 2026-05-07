@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778163688819,
+  "lastUpdate": 1778163917721,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -585,6 +585,51 @@ window.BENCHMARK_DATA = {
             "range": "±21.23",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 457.75ms, Q3: 478.98ms\nMin: 455.91ms, Max: 682.03ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "50775f7832fef7616c2d01bd4525406b6b907a64",
+          "message": "docs(cli): document why --help is written so densely\n\nAdd a top-of-file editing note explaining that `--help` is a\nfirst-class deliverable for AI agents (not just humans), so future\nedits should keep the same density: precise per-flag behavior, explicit\ngotchas (e.g. --top selects by size regardless of --sort), single\nparagraph per `///` block to keep `-h` and `--help` identical, and a\nworking `--json | jq` example in `after_help`.\n\nWithout this note, a future me — or another contributor — might trim\ndescriptions down to one-liners thinking they're being concise, and\nsilently degrade the agent UX.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T23:21:27+09:00",
+          "tree_id": "16e8126c14356bcda8168111e69152cfbf28e653",
+          "url": "https://github.com/yamadashy/duvis/commit/50775f7832fef7616c2d01bd4525406b6b907a64"
+        },
+        "date": 1778163916823,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 149.66,
+            "range": "±36.87",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 128.92ms, Q3: 165.79ms\nMin: 75.55ms, Max: 216.62ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 55.82,
+            "range": "±0.73",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 55.44ms, Q3: 56.17ms\nMin: 54.82ms, Max: 56.8ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 525.64,
+            "range": "±68.37",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 519.43ms, Q3: 587.8ms\nMin: 507.91ms, Max: 632.8ms"
           }
         ]
       }
