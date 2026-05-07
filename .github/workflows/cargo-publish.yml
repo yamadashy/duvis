@@ -1,10 +1,23 @@
 name: cargo-publish
 
-# Publishes to crates.io via Trusted Publishing — no API token stored in
-# repo secrets. crates.io is configured with this repo + workflow filename
-# as a trusted publisher and hands us a short-lived token at runtime via
-# OIDC. See https://crates.io/docs/trusted-publishing for the dashboard
-# setup.
+# Publishes to crates.io via Trusted Publishing — no API token in repo
+# secrets. crates.io is configured with this repo + workflow filename as a
+# trusted publisher and hands us a short-lived token at runtime via OIDC.
+# See https://crates.io/docs/trusted-publishing for the dashboard setup.
+#
+# The workflow is split into three jobs so each job runs with the minimum
+# permissions it needs:
+#
+#   verify   — fmt / clippy / tests / typecheck / dry-run publish.
+#              No id-token, no contents:write. Runs on every dispatch
+#              (including dry-run).
+#   publish  — actual `cargo publish`. Has id-token:write to mint the
+#              short-lived crates.io token; contents stays read-only.
+#              Skipped when dry-run=true; gated to refs/heads/main so a
+#              feature branch dispatch can't sneak a publish through.
+#   release  — `gh release create` to tag and publish notes. Isolated so
+#              that the contents:write capability doesn't bleed into the
+#              steps that hold the crates.io token.
 
 on:
   workflow_dispatch:
@@ -15,20 +28,27 @@ on:
         default: false
         type: boolean
 
+# Default to read-only at the workflow level. Each job that needs more
+# raises its own permissions block.
 permissions:
-  # `gh release create` needs to write a tag + GitHub Release.
-  contents: write
-  # Required so GitHub mints an OIDC token that crates.io can verify.
-  id-token: write
+  contents: read
 
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
 
+# Stop a second dispatch from racing the first to crates.io.
+concurrency:
+  group: cargo-publish
+  cancel-in-progress: false
+
 jobs:
-  publish:
+  verify:
+    name: Verify (lint, test, dry-run package)
     runs-on: ubuntu-latest
     timeout-minutes: 30
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -48,9 +68,10 @@ jobs:
           cache: npm
           cache-dependency-path: ui/package-lock.json
 
-      - name: Check if version already published
+      - name: Check Cargo.toml version isn't already on crates.io
         shell: bash
         run: |
+          set -euo pipefail
           VERSION=$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)
           if [[ -z "$VERSION" ]]; then
             echo "::error::could not detect version in Cargo.toml"
@@ -60,7 +81,7 @@ jobs:
           # `cargo search` returns the latest published version. Compare
           # exactly so we don't false-positive on substring matches
           # (e.g. 0.1.10 matching 0.1.1).
-          PUBLISHED=$(cargo search duvis --limit 1 | awk -F'"' '/^duvis = / { print $2; exit }')
+          PUBLISHED=$(cargo search duvis --limit 1 | awk -F'"' '/^duvis = / { print $2; exit }') || true
           echo "crates.io latest:    ${PUBLISHED:-<none>}"
           if [[ "$PUBLISHED" == "$VERSION" ]]; then
             echo "::error::duvis ${VERSION} is already on crates.io"
@@ -83,33 +104,87 @@ jobs:
           npm run typecheck
 
       - name: Build prebuilt UI bundle
-        # `cargo publish` includes prebuilt/ui.html via Cargo.toml's
-        # `include` list, so it has to exist before packaging. The file is
-        # gitignored (we don't want a 200KB blob diff per UI change), which
-        # is also why the publish step needs --allow-dirty.
-        run: |
-          cd ui && npm run build:prebuilt
+        # `cargo publish --dry-run` exercises the include list, so the
+        # bundle has to exist before we run it. The file is gitignored
+        # (we don't want a 200KB blob diff per UI change), which is also
+        # why both dry-run and real publish need --allow-dirty.
+        run: cd ui && npm run build:prebuilt
+
+      - name: Dry-run package + verify
+        # No CARGO_REGISTRY_TOKEN needed — `--dry-run` doesn't upload, so
+        # we don't mint an OIDC token in this job at all. That keeps the
+        # publish-token blast radius tight to the `publish` job below.
+        run: cargo publish --dry-run --allow-dirty
+
+  publish:
+    name: Publish to crates.io
+    needs: verify
+    # Belt-and-braces against `gh workflow run --ref <feature-branch>`:
+    # crates.io trusts this workflow filename, but until the dashboard
+    # Environment policy is set we enforce main-only here.
+    if: ${{ !inputs.dry-run && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      # Required so GitHub mints an OIDC token that crates.io can verify.
+      id-token: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Setup Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache cargo
+        uses: Swatinem/rust-cache@v2
+
+      - name: Setup Node.js (for UI bundle)
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: ui/package-lock.json
+
+      - name: Build prebuilt UI bundle
+        run: cd ui && npm ci && npm run build:prebuilt
 
       - name: Authenticate to crates.io (Trusted Publishing)
         id: auth
         uses: rust-lang/crates-io-auth-action@v1
 
-      - name: Publish (dry-run)
-        if: ${{ inputs.dry-run }}
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
-        run: cargo publish --dry-run --allow-dirty
-
       - name: Publish
-        if: ${{ !inputs.dry-run }}
         env:
           CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
         run: cargo publish --allow-dirty
 
-      - name: Tag the release
-        if: ${{ !inputs.dry-run }}
+  release:
+    name: Tag GitHub Release
+    needs: publish
+    if: ${{ !inputs.dry-run && github.ref == 'refs/heads/main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Isolated from the publish job so the crates.io token never coexists
+      # with contents:write in the same job context.
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
+          set -euo pipefail
           VERSION=$(awk -F'"' '/^version =/ { print $2; exit }' Cargo.toml)
+          if [[ -z "$VERSION" ]]; then
+            echo "::error::could not detect version in Cargo.toml"
+            exit 1
+          fi
           gh release create "v${VERSION}" --generate-notes --target "${{ github.sha }}"
