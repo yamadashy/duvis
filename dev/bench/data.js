@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778162338959,
+  "lastUpdate": 1778163688819,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -540,6 +540,51 @@ window.BENCHMARK_DATA = {
             "range": "±5.09",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 508.01ms, Q3: 513.1ms\nMin: 504.99ms, Max: 559.97ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "e8371e2f22d8109db5f27a039996624a86067502",
+          "message": "docs(cli): make -h and --help produce the same detailed output\n\nThe previous version exploited clap's two-tier help (short doc on -h,\nlong doc on --help), but the user prefers a single canonical help\noutput. Drop `long_about` and collapse every per-flag doc comment into\na single paragraph (no blank `///` line) so clap can't split short and\nlong.\n\nResult: typing `duvis -h` and `duvis --help` now produces identical\noutput — the full briefing every time. Sectioning, value names, and\nEXAMPLES block are unchanged.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T23:19:08+09:00",
+          "tree_id": "51aba1f83561b10cc8755bd2cfee9f403e057ffa",
+          "url": "https://github.com/yamadashy/duvis/commit/e8371e2f22d8109db5f27a039996624a86067502"
+        },
+        "date": 1778163688297,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 112.01,
+            "range": "±31.64",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 89.05ms, Q3: 120.69ms\nMin: 77.44ms, Max: 184.97ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 58.84,
+            "range": "±3.63",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 57.25ms, Q3: 60.88ms\nMin: 56.1ms, Max: 72ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 461.84,
+            "range": "±21.23",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 457.75ms, Q3: 478.98ms\nMin: 455.91ms, Max: 682.03ms"
           }
         ]
       }
