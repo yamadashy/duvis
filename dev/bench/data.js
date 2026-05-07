@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778076756412,
+  "lastUpdate": 1778157381886,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -225,6 +225,51 @@ window.BENCHMARK_DATA = {
             "range": "±26.08",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 457.18ms, Q3: 483.26ms\nMin: 455.37ms, Max: 510.62ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "4d52742fdbae875be5d52258f439479124cb84f1",
+          "message": "refactor!: drop deletion-flavored language from CLI, UI, and categories\n\nduvis is read-only by design — but a lot of the original output and UI\ncopy was nudging the reader toward deletions (\"Potentially reclaimable\",\n\"Safe to delete\", \"Rebuildable\", \"safely deletable\", \"natural delete\nunit\"). Strip all of it. duvis describes what's there; what to do about\nit is the user's call.\n\nCLI / Rust:\n- Remove `Category::is_deletable()` and `Category::deletable_hint()`\n- `--analyze` no longer prints per-row hints or a \"Potentially\n  reclaimable\" total — just a per-category size summary\n- `--analyze` doc string reworded (\"Show a per-category size summary\")\n- `meta_block()` no longer ships `deletable_categories` to the UI\n- Rebuild snapshot to match the new analyze output\n\nUI:\n- Drop the \"Reclaimable\" stat block (replaced with a neutral \"Files\"\n  count)\n- Remove the \"Safe to delete\" / \"Rebuildable\" tag chips on the detail\n  panel and the corresponding \"Hint\" section\n- `CategoryMeta.tag` (\"safe\" | \"warn\") removed; `desc` is now a plain\n  factual one-liner (\"Package and tool caches\", \"Build artifacts\", ...)\n- `aggregate()` no longer computes `deletable`\n- Delete leftover CSS for the removed surfaces\n\nAlso fix a related miscategorization: `.ts` was being tagged as `media`\n(it's the MPEG transport-stream extension), but in practice every `.ts`\nfile on a developer's disk is TypeScript. Drop it from the media list.\n\nREADME:\n- Options table: \"reclaimable size\" → \"per-category size summary\"\n- Output examples: drop the \"(rebuildable)\" annotation and the\n  \"Potentially reclaimable\" line\n- Categories section: \"natural delete unit\" → \"natural grouping unit\",\n  drop the `rm -rf node_modules` example\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T21:33:53+09:00",
+          "tree_id": "f90b7c9871346d5be8ddd82224e96a7b6d31c508",
+          "url": "https://github.com/yamadashy/duvis/commit/4d52742fdbae875be5d52258f439479124cb84f1"
+        },
+        "date": 1778157381336,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 106.65,
+            "range": "±18.75",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 95.99ms, Q3: 114.74ms\nMin: 80.04ms, Max: 187.76ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 45.7,
+            "range": "±1.03",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 45.25ms, Q3: 46.28ms\nMin: 44.85ms, Max: 46.61ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 452.54,
+            "range": "±10.9",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 451.15ms, Q3: 462.05ms\nMin: 445.81ms, Max: 481.29ms"
           }
         ]
       }
