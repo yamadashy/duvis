@@ -1,9 +1,6 @@
 <div align="center">
   <img src="./docs/logo.svg" alt="duvis" width="180" height="auto" />
-  <h1>Duvis</h1>
-  <p align="center">
-    <span><b>D</b>isk <b>U</b>sage <b>Vis</b>ualizer for both AI and humans</span>
-  </p>
+  <h1>Duvis 📊</h1>
 </div>
 
 <hr />
@@ -17,20 +14,25 @@
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
 
-📊 `duvis` **/ˈduːvɪs/** is a fast, read-only disk usage analyzer for **both AI agents and humans**. Point it at any directory and get a structured JSON tree (so an agent can reason about what's filling your disk) or an interactive browser treemap with sunburst and list views (so you can click through it yourself). Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `media`, `ide` — so the answer to *"what's eating my disk?"* shows up at a glance. duvis only **shows** you the picture; deleting is your call to make with your own tools.
+> **D**isk **U**sage **Vis**ualizer for both AI and humans
+
+- 🤖 **AI-friendly** — hierarchical JSON with size, category, and freshness
+- 🖥️ **Human-friendly** — browser UI with treemap, sunburst, and list views
+- ⚡ **Fast** — parallel directory scanning powered by [rayon](https://github.com/rayon-rs/rayon)
+- 🛡️ **Read-only by design** — never deletes, never recommends deletions
+- 📏 **Real disk footprint** — `st_blocks`-based sizes on Unix (sparse-aware)
+- 🌐 **Cross-platform** — macOS, Linux, Windows
+
+`duvis` (pronounced `/ˈduːvɪs/`, like "doo-vis") is a fast, read-only disk usage analyzer that helps both AI agents and humans understand what's filling their disk. Point it at any directory and it gives you two ways to look at it:
+
+- **A CLI** that emits a structured JSON tree, a category summary, or a colorized terminal tree — easy to pipe into agents, scripts, or `jq`.
+- **A browser UI** (React + d3) with treemap, sunburst, and list views, color-coded by category, so you can drill in visually.
+
+Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `media`, `ide` — so *"what's eating my disk?"* shows up at a glance. duvis only **shows** you the picture; deleting is your call to make with your own tools.
 
 <p align="center">
   <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
 </p>
-
-## 🌟 Features
-
-- **AI-friendly**: Hierarchical JSON with size, category, and freshness — agents can reason about disk usage in one pass.
-- **Human-friendly**: Built-in browser UI (React + d3) with treemap, sunburst, and list views, color-coded by category. Drill in by clicking.
-- **Fast**: Parallel directory scanning powered by [rayon](https://github.com/rayon-rs/rayon).
-- **Read-only by design**: duvis never deletes, never recommends deletions, never prints `rm` commands. Permission errors are silently skipped.
-- **Real disk footprint**: On Unix, sizes are the bytes actually occupied on disk (`st_blocks × 512`, same as `du`'s default), so sparse VM images like OrbStack's `data.img.raw` show their real footprint instead of the multi-terabyte logical size. Windows falls back to apparent size for now.
-- **Cross-platform**: macOS, Linux, Windows.
 
 ## Install
 
