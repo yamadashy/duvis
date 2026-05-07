@@ -1,6 +1,9 @@
 <div align="center">
   <img src="./docs/logo.svg" alt="duvis" width="180" height="auto" />
   <h1>Duvis 📊</h1>
+  <p align="center">
+    <span><b>D</b>isk <b>U</b>sage <b>Vis</b>ualizer for both AI and humans</span>
+  </p>
 </div>
 
 <hr />
@@ -13,8 +16,6 @@
   <a href="https://docs.rs/duvis"><img src="https://docs.rs/duvis/badge.svg" alt="docs.rs"></a>
   <a href="./LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="MIT License"></a>
 </p>
-
-> **D**isk **U**sage **Vis**ualizer for both AI and humans
 
 - 🤖 **AI-friendly** — hierarchical JSON with size, category, and freshness
 - 🖥️ **Human-friendly** — browser UI with treemap, sunburst, and list views
