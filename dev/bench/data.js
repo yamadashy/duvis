@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778167849952,
+  "lastUpdate": 1778168161842,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -720,6 +720,51 @@ window.BENCHMARK_DATA = {
             "range": "±5.13",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 510.43ms, Q3: 515.56ms\nMin: 508ms, Max: 546.35ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "8f1f906f39135f49e8f2c5bee513172a99b63a45",
+          "message": "chore: bump version to 0.1.2\n\nPatch release covering everything since v0.1.1:\n\n- Add `--version` / `-V` flag. v0.1.0 and v0.1.1 shipped without one;\n  standard Unix CLI hygiene.\n- Rewrite `--help` to be a proper deliverable for AI agents (and\n  humans). Group flags into Output Format / Display Options / UI Server\n  Options sections, add an EXAMPLES block, and make `-h` and `--help`\n  produce identical output. Density is tuned to \"orient and let the\n  agent try things\" — duvis is read-only, so over-documenting edge\n  cases buys little.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-08T00:29:37+09:00",
+          "tree_id": "e2c1bf51c9bfd2114941ed123e57a151df45376c",
+          "url": "https://github.com/yamadashy/duvis/commit/8f1f906f39135f49e8f2c5bee513172a99b63a45"
+        },
+        "date": 1778168160939,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 149.3,
+            "range": "±51.02",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 110.7ms, Q3: 161.72ms\nMin: 63.19ms, Max: 187.68ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 57.47,
+            "range": "±1.16",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 57.09ms, Q3: 58.25ms\nMin: 56.73ms, Max: 58.95ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 361.7,
+            "range": "±60.2",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 358.24ms, Q3: 418.44ms\nMin: 356.44ms, Max: 470.54ms"
           }
         ]
       }
