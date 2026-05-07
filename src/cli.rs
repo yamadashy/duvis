@@ -3,7 +3,11 @@ use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(name = "duvis", about = "Disk usage visualizer for both AI and humans")]
+#[command(
+    name = "duvis",
+    version,
+    about = "Disk usage visualizer for both AI and humans"
+)]
 // At most one of --json / --analyze / --ui may be set; tree is the default
 // when none are passed.
 #[command(group(
