@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778161894358,
+  "lastUpdate": 1778162338959,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -495,6 +495,51 @@ window.BENCHMARK_DATA = {
             "range": "±5.82",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 513.03ms, Q3: 518.85ms\nMin: 509.84ms, Max: 540.58ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "4d433b6202ea1838315afe38c2e97dbf7a06922a",
+          "message": "docs(cli): expand --help into AI-agent-readable sections\n\nThe previous --help was a flat list of one-line descriptions. Repomix's\nhelp is the bar to clear: an agent reading it cold should be able to\ndrive the tool without ever opening the README. Mirror that density.\n\nChanges:\n- Group flags under \"Output Format\" / \"Display Options\" / \"UI Server\n  Options\" headings via clap's `help_heading`. Output formats appear\n  first because they're the primary axis of choice.\n- Long-form per-flag descriptions (one paragraph each on `--help`,\n  one line each on `-h`) covering: what it does, how it interacts with\n  related flags, gotchas (e.g. --top selects by size regardless of\n  --sort), and units / value names where relevant.\n- `long_about` on the command itself states the tool's purpose, the\n  three output modes, and the read-only stance up front.\n- `after_help` carries an EXAMPLES block with five copy-paste-ready\n  invocations, including a `--json | jq` recipe for agent pipelines.\n\nVisible to a first-time agent reader on `-h` (~30 lines, scannable),\nor on `--help` (paragraphs per flag, the full briefing).\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T22:55:28+09:00",
+          "tree_id": "327091ae80bb21416500529d5908a06360dba0a3",
+          "url": "https://github.com/yamadashy/duvis/commit/4d433b6202ea1838315afe38c2e97dbf7a06922a"
+        },
+        "date": 1778162338647,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 129.71,
+            "range": "±42.29",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 100.8ms, Q3: 143.09ms\nMin: 66.5ms, Max: 193.81ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 57.27,
+            "range": "±1.8",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 56.75ms, Q3: 58.55ms\nMin: 56.06ms, Max: 62.64ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 510.25,
+            "range": "±5.09",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 508.01ms, Q3: 513.1ms\nMin: 504.99ms, Max: 559.97ms"
           }
         ]
       }
