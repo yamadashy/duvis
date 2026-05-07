@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778161470589,
+  "lastUpdate": 1778161894358,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -450,6 +450,51 @@ window.BENCHMARK_DATA = {
             "range": "±3.21",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 344.39ms, Q3: 347.6ms\nMin: 343.02ms, Max: 366.49ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "5ef9c39f37fdb2e178567930ce1759fb46af95d4",
+          "message": "feat(cli): add --version / -V flag\n\nclap's `version` attribute pulls the version string from CARGO_PKG_VERSION\nat build time, so `duvis --version` (and the conventional `-V` short form)\nnow print `duvis <version>` instead of erroring out with \"unexpected\nargument '--version' found\". Standard Unix CLI hygiene that v0.1.0/0.1.1\nshipped without.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T22:49:15+09:00",
+          "tree_id": "578f8c5c8fde73f47ed6b8af592b87a09496146e",
+          "url": "https://github.com/yamadashy/duvis/commit/5ef9c39f37fdb2e178567930ce1759fb46af95d4"
+        },
+        "date": 1778161893828,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 88.49,
+            "range": "±20.53",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 71.59ms, Q3: 92.12ms\nMin: 49.06ms, Max: 117.32ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 39.9,
+            "range": "±0.55",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 39.78ms, Q3: 40.33ms\nMin: 39.46ms, Max: 48.07ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 516.45,
+            "range": "±5.82",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 513.03ms, Q3: 518.85ms\nMin: 509.84ms, Max: 540.58ms"
           }
         ]
       }
