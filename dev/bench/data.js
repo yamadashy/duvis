@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778159713789,
+  "lastUpdate": 1778160604213,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -315,6 +315,51 @@ window.BENCHMARK_DATA = {
             "range": "±10.01",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 525.79ms, Q3: 535.8ms\nMin: 519.9ms, Max: 637.23ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "04602c5733a10b1c98554f6bb2e3b78ebb1ef430",
+          "message": "ci(publish): split into verify/publish/release jobs with least-privilege scopes\n\nCodex review of the original single-job cargo-publish.yml flagged two\nreal holes and a few smaller things. Address them:\n\nMust-fix:\n- `workflow_dispatch` lets you pick any ref from the Actions UI, and\n  crates.io's trusted-publisher entry has no Environment policy to\n  restrict branch. A feature branch dispatch could therefore publish a\n  modified workflow. Gate the publish + release jobs to\n  `github.ref == 'refs/heads/main'`.\n\nShould-fix:\n- The original job carried `contents: write` for the entire publish run\n  (needed only by `gh release create`), so any third-party action in the\n  same job — `setup-node`, `rust-toolchain`, `rust-cache` — implicitly\n  inherited write access alongside the live crates.io token. Split into\n  three jobs: verify (read-only), publish (id-token + read), release\n  (contents:write only). The crates.io token never coexists with\n  contents:write in the same job context.\n- The dry-run path was minting an OIDC token even though\n  `cargo publish --dry-run` doesn't upload. Move dry-run into the verify\n  job, which never calls `crates-io-auth-action`. Real publishes are the\n  only path that mints a token.\n\nNice-to-have:\n- `concurrency: cargo-publish` blocks racing dispatches.\n- `set -euo pipefail` on bash steps so failed pipes don't slip through.\n\nWhat's NOT changed (deliberate, with rationale):\n- Third-party actions are still tag-pinned (`@v4`, `@v2`, `@v1`,\n  `@stable`) rather than SHA-pinned. Tag pinning is the industry\n  baseline; SHA pinning is stricter but adds maintenance churn. The\n  actions used (actions/*, rust-lang/*, dtolnay/rust-toolchain,\n  Swatinem/rust-cache) are de-facto standards with active maintainers,\n  so the trade-off favors readability for a solo-maintained crate.\n- `cargo semver-checks` is not added here; that's a feature decision\n  (do we want semver enforcement at all?) and belongs in its own change.\n\nBranch protection on main + a GitHub Actions Environment named \"release\"\n(with deployment-branch policy) would close the remaining gap, but both\nrequire dashboard setup outside this workflow file.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T22:27:34+09:00",
+          "tree_id": "11db4038fcff7a14bda58b9b38bd408d5469ca52",
+          "url": "https://github.com/yamadashy/duvis/commit/04602c5733a10b1c98554f6bb2e3b78ebb1ef430"
+        },
+        "date": 1778160603029,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 64.86,
+            "range": "±24.21",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 54.59ms, Q3: 78.79ms\nMin: 50.92ms, Max: 117.68ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 72.45,
+            "range": "±0.64",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 72.21ms, Q3: 72.84ms\nMin: 66.93ms, Max: 73.46ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 517.69,
+            "range": "±4.04",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 514.93ms, Q3: 518.97ms\nMin: 505.67ms, Max: 538.83ms"
           }
         ]
       }
