@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778160995426,
+  "lastUpdate": 1778161470589,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -405,6 +405,51 @@ window.BENCHMARK_DATA = {
             "range": "±6.19",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 504.93ms, Q3: 511.12ms\nMin: 500.41ms, Max: 538.89ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "533c2fd0eb816723863ade311cba87132513e8c7",
+          "message": "ci(publish): also gate jobs through GitHub Actions Environment 'release'\n\nAdds `environment: release` to the publish + release jobs so the\ndeployment-branch policy configured in repo settings (main only)\nparticipates in the gating, on top of the existing\n`if: github.ref == 'refs/heads/main'` workflow-file check.\n\nThree independent gates now all have to agree to publish:\n  1. GitHub Actions Environment policy refuses to schedule the job from\n     a non-main ref.\n  2. `if: github.ref == 'refs/heads/main'` in the workflow file catches\n     misconfigurations of (1).\n  3. crates.io's trusted publisher entry pins environment=release, so a\n     workflow that drops `environment: release` can't get an OIDC token.\n\nDefense in depth: any one of these can be removed by mistake without\nopening a publish path.\n\nSetup left for the user (one-time, on crates.io dashboard):\n  duvis → Settings → Trusted Publishers → Edit/Re-add\n    Environment: release   (was blank)\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-07T22:40:02+09:00",
+          "tree_id": "004465bc9709480ef4cb4bc15f0b2715291de7c1",
+          "url": "https://github.com/yamadashy/duvis/commit/533c2fd0eb816723863ade311cba87132513e8c7"
+        },
+        "date": 1778161469880,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 85.49,
+            "range": "±39.37",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 64.36ms, Q3: 103.73ms\nMin: 54.2ms, Max: 141.37ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.66,
+            "range": "±0.79",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 56.44ms, Q3: 57.23ms\nMin: 56.25ms, Max: 60.04ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 345.77,
+            "range": "±3.21",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 344.39ms, Q3: 347.6ms\nMin: 343.02ms, Max: 366.49ms"
           }
         ]
       }
