@@ -209,6 +209,9 @@ pub fn parse_size(s: &str) -> Result<u64> {
     let num: f64 = num_str
         .parse()
         .map_err(|_| anyhow!("not a number: '{num_str}' in '{s}'"))?;
+    if !num.is_finite() {
+        return Err(anyhow!("not a finite number: '{s}'"));
+    }
     if num.is_sign_negative() {
         return Err(anyhow!("negative size: '{s}'"));
     }
@@ -222,7 +225,14 @@ pub fn parse_size(s: &str) -> Result<u64> {
         other => return Err(anyhow!("unknown size unit: '{other}' in '{s}'")),
     };
 
-    Ok((num * mult as f64).round() as u64)
+    // Range check before the cast: `f64 as u64` saturates silently to
+    // u64::MAX on overflow, which would let `--min-size 99999P` quietly
+    // become an effectively unmatchable filter instead of an error.
+    let bytes = (num * mult as f64).round();
+    if bytes > u64::MAX as f64 {
+        return Err(anyhow!("size out of range (exceeds u64): '{s}'"));
+    }
+    Ok(bytes as u64)
 }
 
 /// Parse a relative duration: `<integer><suffix>` where suffix is
@@ -299,6 +309,18 @@ mod tests {
         assert!(parse_size("xyz").is_err());
         assert!(parse_size("1XB").is_err());
         assert!(parse_size("-1M").is_err());
+    }
+
+    #[test]
+    fn parse_size_rejects_non_finite_and_overflow() {
+        // f64::parse accepts "inf"/"nan" — we must reject them, not let
+        // them silently cast to u64::MAX / 0.
+        assert!(parse_size("inf").is_err());
+        assert!(parse_size("nan").is_err());
+        // 1e20 bytes overflows u64 (max ≈ 1.8e19).
+        assert!(parse_size("1e20").is_err());
+        // Same magnitude with a unit multiplier.
+        assert!(parse_size("99999999999T").is_err());
     }
 
     #[test]

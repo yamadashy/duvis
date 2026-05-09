@@ -34,6 +34,19 @@ fn main() -> Result<()> {
 
     let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
 
+    // Parse filter inputs *before* scanning. A typo in --min-size or
+    // --newer-than should fail in milliseconds, not after a multi-minute
+    // walk of a huge tree. Also runs before scanner::scan's path-existence
+    // check so the user sees the most actionable error first.
+    let filter = Filter::from_inputs(FilterInputs {
+        categories: cli.category.clone(),
+        type_: cli.r#type,
+        min_size: cli.min_size.clone(),
+        names: cli.name.clone(),
+        newer_than: cli.newer_than.clone(),
+        older_than: cli.older_than.clone(),
+    })?;
+
     if cli.ui {
         // The UI server runs the scan in a background task so the browser can
         // pop up immediately and show "Scanning..." while we wait.
@@ -50,15 +63,6 @@ fn main() -> Result<()> {
 
     let (mut tree, counts) = scanner::scan(&path, cli.hardlinks)?;
     tree.sort(&cli.sort, cli.reverse);
-
-    let filter = Filter::from_inputs(FilterInputs {
-        categories: cli.category.clone(),
-        type_: cli.r#type,
-        min_size: cli.min_size.clone(),
-        names: cli.name.clone(),
-        newer_than: cli.newer_than.clone(),
-        older_than: cli.older_than.clone(),
-    })?;
 
     let config = OutputConfig {
         depth: cli.depth,

@@ -145,7 +145,11 @@ fn write_text(
     writeln!(out)?;
 
     if rows.is_empty() {
-        writeln!(out, "(scan tree is empty)")?;
+        if total_entries == 0 {
+            writeln!(out, "(scan tree is empty)")?;
+        } else {
+            writeln!(out, "(no entries match the active filters)")?;
+        }
         return Ok(());
     }
 

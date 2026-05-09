@@ -388,3 +388,40 @@ fn filter_invalid_duration_is_rejected_with_error() {
         .assert()
         .failure();
 }
+
+#[test]
+fn filter_largest_with_no_matches_reports_no_matching_entries() {
+    let dir = build_fixture();
+    // No `.xyz` files exist anywhere in the fixture.
+    let assert = Command::cargo_bin("duvis")
+        .unwrap()
+        .args([
+            "--largest",
+            "5",
+            "--name",
+            "*.xyz",
+            dir.path().to_str().unwrap(),
+        ])
+        .assert()
+        .success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(
+        stdout.contains("no entries match"),
+        "expected 'no entries match' message, got: {stdout}"
+    );
+    assert!(
+        !stdout.contains("scan tree is empty"),
+        "scanned tree was non-empty; should not claim it was: {stdout}"
+    );
+}
+
+#[test]
+fn filter_ui_combo_is_rejected_with_error() {
+    // `--ui` and filter flags conflict: the browser has its own filter
+    // controls, and silently ignoring CLI filters would be a foot-gun.
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--ui", "--min-size", "1M", "."])
+        .assert()
+        .failure();
+}
