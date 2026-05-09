@@ -40,15 +40,26 @@ struct Row<'a> {
     depth: u32,
 }
 
-/// Walk the tree and collect every entry except the scan root itself.
-/// Each row carries its computed `relative_path` and `depth` so the
-/// renderer doesn't have to recompute. Order is irrelevant — caller
-/// sorts.
+/// Walk the tree and collect every entry. The scan root is normally
+/// excluded — for a directory scan it's the implicit "everything under
+/// here" container and would always rank #1 by size, swamping the list.
+/// But when the user points duvis at a single *file* (`duvis some.bin
+/// --largest 1`), the root *is* the only thing there is, and excluding
+/// it would produce an empty list. So we include the root when it's a
+/// file leaf.
 fn collect_all<'a>(entry: &'a Entry, rel_path: String, depth: u32, out: &mut Vec<Row<'a>>) {
     if depth > 0 {
         out.push(Row {
             entry,
             relative_path: rel_path.clone(),
+            depth,
+        });
+    } else if !entry.is_dir() {
+        // File-as-scan-root special case: surface the file with its
+        // name (not "."), matching what the user typed on the CLI.
+        out.push(Row {
+            entry,
+            relative_path: entry.name.clone(),
             depth,
         });
     }
@@ -93,6 +104,11 @@ pub fn write(
     Ok(())
 }
 
+/// Maximum width of the rendered path column in text output. A single
+/// pathological deep path would otherwise push the rest of each row off
+/// the screen.
+const PATH_DISPLAY_CAP: usize = 60;
+
 fn write_text(
     rows: &[Row<'_>],
     config: &OutputConfig,
@@ -114,17 +130,17 @@ fn write_text(
         return Ok(());
     }
 
-    // Path column width: max actual width capped at 60 so a single
-    // pathological deep path doesn't push everything else out.
-    let path_width = rows
+    // Pre-render every path so width and printed value match. Without
+    // this the `{:<width$}` directive treated `width` as a *minimum*,
+    // letting long paths overflow into the category column.
+    let rendered: Vec<String> = rows.iter().map(render_path_for_text).collect();
+    let path_width = rendered
         .iter()
-        .map(|r| display_path(r).len())
+        .map(|p| p.chars().count())
         .max()
-        .unwrap_or(0)
-        .min(60);
+        .unwrap_or(0);
 
-    for row in rows {
-        let path = display_path(row);
+    for (row, path) in rows.iter().zip(rendered.iter()) {
         let size = format_size(row.entry.size);
         let cat = format!("[{}]", row.entry.category.label());
         let kind = if row.entry.is_dir() { "dir" } else { "file" };
@@ -141,14 +157,23 @@ fn write_text(
     Ok(())
 }
 
-/// `relative_path` with a trailing `/` for directories so the user can
-/// tell at a glance.
-fn display_path(row: &Row<'_>) -> String {
-    if row.entry.is_dir() {
+/// `relative_path` with a trailing `/` for directories, truncated from
+/// the *front* with `…` if it exceeds [`PATH_DISPLAY_CAP`]. The tail of
+/// a path is more identifying than the head (deepest segment names the
+/// actual file), so we keep that side.
+fn render_path_for_text(row: &Row<'_>) -> String {
+    let raw = if row.entry.is_dir() {
         format!("{}/", row.relative_path)
     } else {
         row.relative_path.clone()
+    };
+    let count = raw.chars().count();
+    if count <= PATH_DISPLAY_CAP {
+        return raw;
     }
+    let keep = PATH_DISPLAY_CAP.saturating_sub(1);
+    let tail: String = raw.chars().skip(count - keep).collect();
+    format!("…{tail}")
 }
 
 #[derive(Serialize)]
@@ -369,6 +394,41 @@ mod tests {
         assert!(paths.contains(&"target/app".to_string()));
         assert!(paths.contains(&"src/a.rs".to_string()));
         assert!(!paths.contains(&".".to_string()), "root should be excluded");
+    }
+
+    #[test]
+    fn collect_all_includes_file_scan_root() {
+        // `duvis --largest 1 some_file.txt` should still produce a result.
+        let root = file("solo.bin", 1024, Category::Other);
+        let mut rows: Vec<Row<'_>> = Vec::new();
+        collect_all(&root, ".".to_string(), 0, &mut rows);
+        assert_eq!(rows.len(), 1);
+        assert_eq!(rows[0].relative_path, "solo.bin");
+        assert!(!rows[0].entry.is_dir());
+    }
+
+    #[test]
+    fn render_path_for_text_truncates_long_paths_from_the_front() {
+        let long_name = "a".repeat(80);
+        let row = Row {
+            entry: &file(&long_name, 0, Category::Other),
+            relative_path: long_name.clone(),
+            depth: 1,
+        };
+        let rendered = render_path_for_text(&row);
+        assert!(
+            rendered.chars().count() <= PATH_DISPLAY_CAP,
+            "truncated path exceeded cap: {rendered:?}",
+        );
+        assert!(
+            rendered.starts_with('…'),
+            "ellipsis should mark front-truncation: {rendered:?}",
+        );
+        // Tail (the identifying part) is preserved.
+        assert!(
+            rendered.ends_with("aaaaa"),
+            "tail not preserved: {rendered:?}"
+        );
     }
 
     #[test]

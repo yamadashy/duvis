@@ -187,10 +187,15 @@ fn conflicting_format_flags_are_rejected() {
         .args(["--ndjson", "--analyze", "."])
         .assert()
         .failure();
-    // --largest conflicts with --analyze (different views).
+    // --largest conflicts with --analyze and --ui (different views).
     Command::cargo_bin("duvis")
         .unwrap()
         .args(["--largest", "5", "--analyze", "."])
+        .assert()
+        .failure();
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--largest", "5", "--ui", "."])
         .assert()
         .failure();
 }
@@ -205,7 +210,10 @@ fn largest_text_lists_top_n_by_size() {
     assert!(stdout.contains("of "), "missing total count: {stdout}");
     // The build artifact is the biggest in the fixture and must show up
     // in any top-N where N >= 1.
-    assert!(stdout.contains("target"), "expected 'target' in top 3: {stdout}");
+    assert!(
+        stdout.contains("target"),
+        "expected 'target' in top 3: {stdout}"
+    );
 }
 
 #[test]
@@ -218,10 +226,17 @@ fn largest_json_returns_meta_and_flat_largest_array() {
     assert!(meta.get("total_entries").is_some());
     // No tree field — flat list, not hierarchical.
     assert!(value.get("tree").is_none());
-    let largest = value.get("largest").expect("missing largest").as_array().unwrap();
+    let largest = value
+        .get("largest")
+        .expect("missing largest")
+        .as_array()
+        .unwrap();
     assert!(largest.len() <= 3);
     // Sorted by size descending.
-    let sizes: Vec<u64> = largest.iter().map(|e| e["size"].as_u64().unwrap()).collect();
+    let sizes: Vec<u64> = largest
+        .iter()
+        .map(|e| e["size"].as_u64().unwrap())
+        .collect();
     let mut sorted = sizes.clone();
     sorted.sort_by(|a, b| b.cmp(a));
     assert_eq!(sizes, sorted, "largest must be sorted by size desc");
