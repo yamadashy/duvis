@@ -1,7 +1,22 @@
 // Mirrors the Rust `Entry` struct serialized by serde_json.
 // Keep field names/cases identical to what `src/entry.rs` emits.
 
-export type Category = "cache" | "build" | "log" | "media" | "vcs" | "ide" | "other";
+export type Category =
+  // Core (always shown in the legend, even at 0 bytes).
+  | "cache"
+  | "build"
+  | "log"
+  | "media"
+  | "vcs"
+  | "ide"
+  | "other"
+  // Extended (shown in the legend only when at least one entry of this
+  // category is present in the scan).
+  | "archive"
+  | "installer"
+  | "vm_image"
+  | "model_cache"
+  | "backup";
 
 export interface Entry {
   name: string;

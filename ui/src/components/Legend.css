@@ -58,3 +58,17 @@
 .legend-bar-fill {
   height: 100%;
 }
+
+/* Section header that splits the always-shown core categories from the
+   extended categories that only appear when present. */
+.legend-divider {
+  margin: 6px 0 2px;
+  padding: 0 0 0 2px;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-faint);
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}

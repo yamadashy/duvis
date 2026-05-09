@@ -43,6 +43,7 @@
   --fg-faint: #4a5060;
 
   /* category palette — semantic warm/cool */
+  /* Core: warm/cool spread, always reserved in the legend. */
   --cat-cache: #f59e0b;
   --cat-build: #ef4444;
   --cat-log: #f97316;
@@ -50,6 +51,13 @@
   --cat-vcs: #10b981;
   --cat-ide: #3b82f6;
   --cat-other: #6b7280;
+  /* Extended: only appear in the legend when present, so we tolerate a
+     less-distinctive palette here than the core slots get. */
+  --cat-archive: #a16207;
+  --cat-installer: #06b6d4;
+  --cat-vm_image: #ec4899;
+  --cat-model_cache: #84cc16;
+  --cat-backup: #64748b;
 }
 
 [data-theme="light"] {
@@ -73,6 +81,11 @@
   --cat-vcs: #059669;
   --cat-ide: #2563eb;
   --cat-other: #71717a;
+  --cat-archive: #854d0e;
+  --cat-installer: #0891b2;
+  --cat-vm_image: #db2777;
+  --cat-model_cache: #65a30d;
+  --cat-backup: #475569;
 }
 
 [data-accent="indigo"] {

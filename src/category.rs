@@ -1,9 +1,25 @@
 use serde::Serialize;
 use std::fmt;
 
+/// Whether a category is part of the always-shown core vocabulary or an
+/// extended category that only surfaces in the legend / sidebar when at
+/// least one entry of that category is actually present in the scan.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Tier {
+    /// Universal categories. The color and label are reserved in the legend
+    /// regardless of whether anything was matched, so the visual vocabulary
+    /// stays stable across scans.
+    Core,
+    /// Niche categories that would be noise on a typical project tree but
+    /// are valuable when present (e.g. a 5 GB `model_cache` block on an AI
+    /// dev machine, or a 50 GB `vm_image` on a VM user's disk).
+    Extended,
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Category {
+    // ----- Core -----
     Cache,
     Build,
     Log,
@@ -11,6 +27,12 @@ pub enum Category {
     Vcs,
     Ide,
     Other,
+    // ----- Extended -----
+    Archive,
+    Installer,
+    VmImage,
+    ModelCache,
+    Backup,
 }
 
 impl Category {
@@ -23,6 +45,28 @@ impl Category {
             Category::Vcs => "vcs",
             Category::Ide => "ide",
             Category::Other => "other",
+            Category::Archive => "archive",
+            Category::Installer => "installer",
+            Category::VmImage => "vm_image",
+            Category::ModelCache => "model_cache",
+            Category::Backup => "backup",
+        }
+    }
+
+    pub fn tier(&self) -> Tier {
+        match self {
+            Category::Cache
+            | Category::Build
+            | Category::Log
+            | Category::Media
+            | Category::Vcs
+            | Category::Ide
+            | Category::Other => Tier::Core,
+            Category::Archive
+            | Category::Installer
+            | Category::VmImage
+            | Category::ModelCache
+            | Category::Backup => Tier::Extended,
         }
     }
 }
@@ -36,6 +80,23 @@ impl fmt::Display for Category {
 /// Classify a directory by its name.
 pub fn classify_dir(name: &str) -> Category {
     let lower = name.to_lowercase();
+
+    // ----- Extended (checked first so they win over the more generic
+    // `cache` rules below; e.g. `.ollama` is more specifically a model
+    // cache than just "a cache directory") -----
+
+    // AI model stores (re-downloadable; large enough to deserve their own
+    // category on AI dev machines).
+    if matches!(lower.as_str(), ".ollama" | ".lmstudio" | ".huggingface") {
+        return Category::ModelCache;
+    }
+
+    // OS-level backup stores (Apple Time Machine etc.).
+    if matches!(lower.as_str(), "time machine backups" | "backups.backupdb") {
+        return Category::Backup;
+    }
+
+    // ----- Core -----
 
     // Exact match: Cache directories
     if matches!(
@@ -78,13 +139,9 @@ pub fn classify_dir(name: &str) -> Category {
             | ".cabal"
             | ".deno"
             | ".bun"
-            // Container / VM images (re-buildable / re-downloadable)
+            // Container / VM bundles (re-buildable / re-downloadable)
             | ".docker"
             | "vm_bundles"
-            // AI model stores (re-downloadable)
-            | ".ollama"
-            | ".lmstudio"
-            | ".huggingface"
     ) {
         return Category::Cache;
     }
@@ -148,13 +205,40 @@ pub fn classify_dir(name: &str) -> Category {
     Category::Other
 }
 
-/// Classify a file by its extension.
+/// Classify a file by its name (extension or, for a few special cases,
+/// full filename).
 pub fn classify_file(name: &str) -> Category {
     let lower = name.to_lowercase();
 
     // Log files
     if lower.ends_with(".log") {
         return Category::Log;
+    }
+
+    // ----- Extended file types (checked before media so a `data.img.raw`
+    // VM image isn't dragged into media just because of its `.raw` tail) -----
+
+    // OrbStack-style raw VM disk image: file is literally named
+    // `data.img.raw`. We match on the name so we don't pull every Sony α
+    // RAW photo into the vm_image bucket.
+    if lower.ends_with("data.img.raw") {
+        return Category::VmImage;
+    }
+
+    if is_vm_image_extension(&lower) {
+        return Category::VmImage;
+    }
+
+    if is_installer_extension(&lower) {
+        return Category::Installer;
+    }
+
+    if is_archive_extension(&lower) {
+        return Category::Archive;
+    }
+
+    if is_backup_extension(&lower) {
+        return Category::Backup;
     }
 
     // Media files
@@ -168,16 +252,65 @@ pub fn classify_file(name: &str) -> Category {
 fn is_media_extension(lower_name: &str) -> bool {
     const MEDIA_EXTENSIONS: &[&str] = &[
         // Image
-        ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".tiff", ".raw", ".heic",
-        ".heif", ".psd", ".cr2", ".nef", ".dng", // Video
+        ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".tiff", ".heic", ".heif",
+        ".psd", ".cr2", ".nef", ".dng", // Video
         // `.ts` is intentionally excluded: while it's the MPEG transport-stream extension,
         // TypeScript files are vastly more common in real codebases and being miscategorized
         // as `media` is more harmful than missing the rare transport-stream file.
+        // `.raw` is also intentionally excluded: it overlaps with VM disk images
+        // (e.g. OrbStack's `data.img.raw`) and we'd rather under-label a few photo
+        // RAWs as `other` than mis-label a 50 GB VM image as `media`.
         ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp",
         // Audio
         ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff",
     ];
     MEDIA_EXTENSIONS.iter().any(|ext| lower_name.ends_with(ext))
+}
+
+fn is_vm_image_extension(lower_name: &str) -> bool {
+    // `.iso` is OS install media most of the time, but it can also be
+    // a game ROM dump. Bucketed here for now — both are large blobs the
+    // user knows they put there.
+    const VM_IMAGE_EXTENSIONS: &[&str] = &[".vdi", ".vmdk", ".qcow2", ".vhd", ".vhdx", ".iso"];
+    VM_IMAGE_EXTENSIONS
+        .iter()
+        .any(|ext| lower_name.ends_with(ext))
+}
+
+fn is_installer_extension(lower_name: &str) -> bool {
+    const INSTALLER_EXTENSIONS: &[&str] = &[
+        ".dmg",      // macOS disk image
+        ".pkg",      // macOS installer package
+        ".msi",      // Windows installer
+        ".exe",      // Windows executable / installer
+        ".deb",      // Debian package
+        ".rpm",      // RedHat package
+        ".appimage", // Linux AppImage
+        ".snap",     // Linux Snap package
+        ".flatpak",  // Linux Flatpak
+        ".apk",      // Android package
+    ];
+    INSTALLER_EXTENSIONS
+        .iter()
+        .any(|ext| lower_name.ends_with(ext))
+}
+
+fn is_archive_extension(lower_name: &str) -> bool {
+    // Match the common "single-extension" tail. Multi-part extensions like
+    // `.tar.gz` are still caught because they end in `.gz`.
+    const ARCHIVE_EXTENSIONS: &[&str] = &[
+        ".zip", ".tar", ".tgz", ".tbz2", ".txz", ".gz", ".bz2", ".xz", ".7z", ".rar", ".zst",
+    ];
+    ARCHIVE_EXTENSIONS
+        .iter()
+        .any(|ext| lower_name.ends_with(ext))
+}
+
+fn is_backup_extension(lower_name: &str) -> bool {
+    const BACKUP_EXTENSIONS: &[&str] = &[".bak", ".backup", ".old"];
+    BACKUP_EXTENSIONS
+        .iter()
+        .any(|ext| lower_name.ends_with(ext))
 }
 
 #[cfg(test)]
@@ -210,7 +343,6 @@ mod tests {
         assert_eq!(classify_dir("mise"), Category::Cache);
         assert_eq!(classify_dir("pipx"), Category::Cache);
         assert_eq!(classify_dir(".docker"), Category::Cache);
-        assert_eq!(classify_dir(".ollama"), Category::Cache);
         assert_eq!(classify_dir("vm_bundles"), Category::Cache);
     }
 
@@ -245,5 +377,87 @@ mod tests {
         assert_eq!(classify_file("index.ts"), Category::Other);
         assert_eq!(classify_file("App.tsx"), Category::Other);
         assert_eq!(classify_file("eleventy.config.ts"), Category::Other);
+    }
+
+    // ----- Extended categories ------------------------------------------------
+
+    #[test]
+    fn ai_model_stores_classify_as_model_cache() {
+        // Beats the more generic Cache rules because ModelCache is checked first.
+        assert_eq!(classify_dir(".ollama"), Category::ModelCache);
+        assert_eq!(classify_dir(".lmstudio"), Category::ModelCache);
+        assert_eq!(classify_dir(".huggingface"), Category::ModelCache);
+    }
+
+    #[test]
+    fn time_machine_backup_directories_classify_as_backup() {
+        assert_eq!(classify_dir("Time Machine Backups"), Category::Backup);
+        assert_eq!(classify_dir("Backups.backupdb"), Category::Backup);
+    }
+
+    #[test]
+    fn installer_files_classify_as_installer() {
+        assert_eq!(classify_file("Codex.dmg"), Category::Installer);
+        assert_eq!(classify_file("googlechrome.dmg"), Category::Installer);
+        assert_eq!(classify_file("setup.exe"), Category::Installer);
+        assert_eq!(classify_file("package.deb"), Category::Installer);
+        assert_eq!(classify_file("MyApp.AppImage"), Category::Installer);
+    }
+
+    #[test]
+    fn vm_images_classify_as_vm_image() {
+        assert_eq!(classify_file("disk.vdi"), Category::VmImage);
+        assert_eq!(classify_file("disk.vmdk"), Category::VmImage);
+        assert_eq!(classify_file("disk.qcow2"), Category::VmImage);
+        // OrbStack's macOS-side raw disk image — name match, not just `.raw`.
+        assert_eq!(classify_file("data.img.raw"), Category::VmImage);
+    }
+
+    #[test]
+    fn raw_photo_is_not_vm_image() {
+        // Sony α and similar produce generic `.raw` files. Better to leave
+        // them as `other` than mis-categorize them as VM images.
+        assert_eq!(classify_file("DSC0001.raw"), Category::Other);
+    }
+
+    #[test]
+    fn archive_files_classify_as_archive() {
+        assert_eq!(classify_file("snapshot.zip"), Category::Archive);
+        assert_eq!(classify_file("source.tar.gz"), Category::Archive);
+        assert_eq!(classify_file("source.tgz"), Category::Archive);
+        assert_eq!(classify_file("blob.7z"), Category::Archive);
+        assert_eq!(classify_file("data.zst"), Category::Archive);
+    }
+
+    #[test]
+    fn backup_files_classify_as_backup() {
+        assert_eq!(classify_file("config.bak"), Category::Backup);
+        assert_eq!(classify_file("notes.old"), Category::Backup);
+    }
+
+    #[test]
+    fn tier_split_matches_intent() {
+        // Core categories.
+        for c in [
+            Category::Cache,
+            Category::Build,
+            Category::Log,
+            Category::Media,
+            Category::Vcs,
+            Category::Ide,
+            Category::Other,
+        ] {
+            assert_eq!(c.tier(), Tier::Core, "{c:?} should be Core");
+        }
+        // Extended categories.
+        for c in [
+            Category::Archive,
+            Category::Installer,
+            Category::VmImage,
+            Category::ModelCache,
+            Category::Backup,
+        ] {
+            assert_eq!(c.tier(), Tier::Extended, "{c:?} should be Extended");
+        }
     }
 }
