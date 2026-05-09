@@ -14,7 +14,7 @@ use tempfile::TempDir;
 ///
 /// File sizes are deliberately spread across orders of magnitude so the
 /// category ranking is the same on Unix (which rounds to FS block size via
-/// `st_blocks * 512`) and Windows (apparent size). Otherwise the analyze
+/// `st_blocks * 512`) and Windows (apparent size). Otherwise the summary
 /// snapshot order would diverge between platforms.
 fn build_fixture() -> TempDir {
     let dir = tempfile::Builder::new()
@@ -67,7 +67,7 @@ fn run_duvis(fixture: &Path, args: &[&str]) -> String {
 }
 
 /// Settings that strip sources of cross-machine flakiness:
-/// * the random tempdir basename in the first line of tree/analyze output;
+/// * the random tempdir basename in the first line of tree/summary output;
 /// * size strings (vary by FS block size between Unix and Windows);
 /// * percentages (vary because the totals depend on which sizes round up).
 ///
@@ -96,11 +96,11 @@ fn tree_format_default() {
 }
 
 #[test]
-fn analyze_format() {
+fn summary_format() {
     let fixture = build_fixture();
-    let stdout = run_duvis(fixture.path(), &["--analyze"]);
+    let stdout = run_duvis(fixture.path(), &["--summary"]);
     redacted_settings(&fixture_basename(fixture.path())).bind(|| {
-        insta::assert_snapshot!("analyze_default", stdout);
+        insta::assert_snapshot!("summary_default", stdout);
     });
 }
 
@@ -171,10 +171,10 @@ fn ndjson_emits_meta_then_pre_order_entries() {
 
 #[test]
 fn conflicting_format_flags_are_rejected() {
-    // --json / --ndjson / --analyze / --ui are exclusive via clap ArgGroup.
+    // --json / --ndjson / --summary / --ui are exclusive via clap ArgGroup.
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--json", "--analyze", "."])
+        .args(["--json", "--summary", "."])
         .assert()
         .failure();
     Command::cargo_bin("duvis")
@@ -184,13 +184,13 @@ fn conflicting_format_flags_are_rejected() {
         .failure();
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--ndjson", "--analyze", "."])
+        .args(["--ndjson", "--summary", "."])
         .assert()
         .failure();
-    // --largest conflicts with --analyze and --ui (different views).
+    // --largest conflicts with --summary and --ui (different views).
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--largest", "5", "--analyze", "."])
+        .args(["--largest", "5", "--summary", "."])
         .assert()
         .failure();
     Command::cargo_bin("duvis")
@@ -384,7 +384,7 @@ fn filter_invalid_size_is_rejected_with_error() {
 fn filter_invalid_duration_is_rejected_with_error() {
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--newer-than", "7h", "."])
+        .args(["--changed-within", "7h", "."])
         .assert()
         .failure();
 }

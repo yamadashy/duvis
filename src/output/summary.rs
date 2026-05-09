@@ -18,8 +18,8 @@ pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::
 
     // Total reflects what's actually being summarized — i.e. the
     // filtered subtree. Unfiltered total stays available via meta in
-    // the structured outputs; the analyze view is a single-glance
-    // summary so we don't bother showing both.
+    // the structured outputs; the summary view is a single-glance
+    // view so we don't bother showing both.
     let total: u64 = stats.values().map(|s| s.size).sum();
     writeln!(out, "Total: {}", format_size(total))?;
     writeln!(out)?;

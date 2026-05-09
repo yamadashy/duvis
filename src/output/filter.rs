@@ -11,7 +11,7 @@
 //!   the dir itself matches OR any of its descendants does. A file is
 //!   shown when it matches. The pre-pass `precompute_subtree_match`
 //!   records `subtree_has_match` once so renderers can lookup O(1).
-//! - analyze: only matching entries enter the per-category aggregate.
+//! - summary: only matching entries enter the per-category aggregate.
 //! - ndjson: only matching entries are emitted.
 //! - largest: filter rows before the partial sort + truncate.
 //!
@@ -47,8 +47,8 @@ pub struct Filter {
     /// `entry.name` to match at least one glob in `set` (OR within the
     /// set, AND with the rest of the filters).
     names: Option<GlobSet>,
-    newer_than_days: Option<u64>,
-    older_than_days: Option<u64>,
+    changed_within_days: Option<u64>,
+    changed_before_days: Option<u64>,
 }
 
 /// Inputs collected from clap. Kept as a separate struct so `Filter`
@@ -58,8 +58,8 @@ pub struct FilterInputs {
     pub type_: Option<EntryType>,
     pub min_size: Option<String>,
     pub names: Vec<String>,
-    pub newer_than: Option<String>,
-    pub older_than: Option<String>,
+    pub changed_within: Option<String>,
+    pub changed_before: Option<String>,
 }
 
 impl Filter {
@@ -79,13 +79,13 @@ impl Filter {
         };
 
         let min_size = inputs.min_size.as_deref().map(parse_size).transpose()?;
-        let newer_than_days = inputs
-            .newer_than
+        let changed_within_days = inputs
+            .changed_within
             .as_deref()
             .map(parse_duration_days)
             .transpose()?;
-        let older_than_days = inputs
-            .older_than
+        let changed_before_days = inputs
+            .changed_before
             .as_deref()
             .map(parse_duration_days)
             .transpose()?;
@@ -95,8 +95,8 @@ impl Filter {
             type_: inputs.type_,
             min_size,
             names,
-            newer_than_days,
-            older_than_days,
+            changed_within_days,
+            changed_before_days,
         })
     }
 
@@ -107,8 +107,8 @@ impl Filter {
             && self.type_.is_none()
             && self.min_size.is_none()
             && self.names.is_none()
-            && self.newer_than_days.is_none()
-            && self.older_than_days.is_none()
+            && self.changed_within_days.is_none()
+            && self.changed_before_days.is_none()
     }
 
     /// Test a single entry against every active sub-filter (AND).
@@ -136,13 +136,15 @@ impl Filter {
         // mtime filters: entries with no `modified_days_ago` are
         // excluded conservatively. In practice the scanner always sets
         // it, so this is just defense against future Entry constructors.
-        if let Some(threshold) = self.newer_than_days {
+        // `--changed-within` keeps recent entries (mtime ≤ threshold).
+        if let Some(threshold) = self.changed_within_days {
             match entry.modified_days_ago {
                 Some(d) if d <= threshold => {}
                 _ => return false,
             }
         }
-        if let Some(threshold) = self.older_than_days {
+        // `--changed-before` keeps stale entries (mtime > threshold).
+        if let Some(threshold) = self.changed_before_days {
             match entry.modified_days_ago {
                 Some(d) if d > threshold => {}
                 _ => return false,
@@ -288,8 +290,8 @@ mod tests {
             type_: None,
             min_size: None,
             names: vec![],
-            newer_than: None,
-            older_than: None,
+            changed_within: None,
+            changed_before: None,
         }
     }
 
@@ -395,13 +397,13 @@ mod tests {
 
     #[test]
     fn mtime_filters() {
-        let newer = Filter::from_inputs(FilterInputs {
-            newer_than: Some("7d".into()),
+        let within = Filter::from_inputs(FilterInputs {
+            changed_within: Some("7d".into()),
             ..empty_inputs()
         })
         .unwrap();
-        let older = Filter::from_inputs(FilterInputs {
-            older_than: Some("30d".into()),
+        let before = Filter::from_inputs(FilterInputs {
+            changed_before: Some("30d".into()),
             ..empty_inputs()
         })
         .unwrap();
@@ -410,13 +412,13 @@ mod tests {
         let mid = file("a", 0, Category::Other, Some(15));
         let stale = file("a", 0, Category::Other, Some(60));
 
-        assert!(newer.matches(&recent));
-        assert!(!newer.matches(&mid));
-        assert!(!newer.matches(&stale));
+        assert!(within.matches(&recent));
+        assert!(!within.matches(&mid));
+        assert!(!within.matches(&stale));
 
-        assert!(!older.matches(&recent));
-        assert!(!older.matches(&mid));
-        assert!(older.matches(&stale));
+        assert!(!before.matches(&recent));
+        assert!(!before.matches(&mid));
+        assert!(before.matches(&stale));
     }
 
     #[test]

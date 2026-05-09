@@ -93,7 +93,7 @@ fn write_entry(
 ) -> Result<()> {
     // Counts always reflect the *full* scanned subtree at this entry, not
     // the truncated view. Agents need this so they can detect "we only
-    // see N of M children" even when --depth or --top is in play.
+    // see N of M children" even when --max-depth or --top is in play.
     let (file_count, dir_count_with_self) = ctx
         .counts
         .get(&(entry as *const Entry))
@@ -158,7 +158,7 @@ pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Resu
         Some(precompute_subtree_match(entry, config.filter))
     };
     let ctx = WriteCtx {
-        max_depth: config.depth,
+        max_depth: config.max_depth,
         top: config.top,
         counts: &counts,
         visible: visible_map.as_ref(),
@@ -198,7 +198,7 @@ mod tests {
         let counts = crate::scanner::ScanCounts::default();
         let filter = crate::output::filter::Filter::default();
         let cfg = OutputConfig {
-            depth: None,
+            max_depth: None,
             top: None,
             scan_root: &scan_root,
             counts: &counts,
@@ -231,7 +231,7 @@ mod tests {
         let counts = crate::scanner::ScanCounts::default();
         let filter = crate::output::filter::Filter::default();
         let cfg = OutputConfig {
-            depth: None,
+            max_depth: None,
             top: None,
             scan_root: &scan_root,
             counts: &counts,

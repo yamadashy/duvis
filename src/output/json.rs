@@ -42,7 +42,7 @@ struct JsonOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
     modified_days_ago: Option<u64>,
     /// Total regular files in this subtree (recursive). Constant for a
-    /// given Entry — does *not* change with `--top` / `--depth` since
+    /// given Entry — does *not* change with `--top` / `--max-depth` since
     /// those only affect what we emit, not what was measured.
     file_count: u64,
     /// Total directories in this subtree, excluding self.
@@ -149,7 +149,7 @@ pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Resu
         entry,
         ".".to_string(),
         0,
-        config.depth,
+        config.max_depth,
         config.top,
         &counts,
         visible_map.as_ref(),
@@ -194,7 +194,7 @@ mod tests {
         filter: &'a Filter,
     ) -> OutputConfig<'a> {
         OutputConfig {
-            depth: None,
+            max_depth: None,
             top: None,
             scan_root,
             counts,
@@ -278,7 +278,7 @@ mod tests {
         let counts = crate::scanner::ScanCounts::default();
         let filter = Filter::default();
         let cfg = OutputConfig {
-            depth: None,
+            max_depth: None,
             top: Some(1),
             scan_root: &scan_root,
             counts: &counts,

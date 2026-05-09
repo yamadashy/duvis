@@ -45,15 +45,15 @@ use std::path::PathBuf;
     name = "duvis",
     version,
     about = "duvis (/ˈduːvɪs/) is a fast, read-only disk usage analyzer for both AI agents and humans. \
-Default output is a colorized terminal tree; pass --analyze for a per-category summary, --json for \
+Default output is a colorized terminal tree; pass --summary for a per-category summary, --json for \
 structured output, or --ui for an interactive browser treemap. Strictly read-only — duvis never \
 deletes anything and never recommends what to delete.",
     after_help = "EXAMPLES:
   Tree view, depth-limited
-  $ duvis ~/projects --depth 2 --top 10
+  $ duvis ~/projects --max-depth 2 --top 10
 
   Per-category summary
-  $ duvis ~/projects --analyze
+  $ duvis ~/projects --summary
 
   Structured JSON for scripts and agents
   $ duvis ~/projects --json | jq '.children[] | {name, size_human, category}'
@@ -62,11 +62,11 @@ deletes anything and never recommends what to delete.",
   $ duvis ~/projects --ui"
 )]
 // Output formats are mutually exclusive; tree is the default when none of
-// --json / --ndjson / --analyze / --ui is given.
+// --json / --ndjson / --summary / --ui is given.
 #[command(group(
     ArgGroup::new("output")
         .multiple(false)
-        .args(["json", "ndjson", "analyze", "ui"])
+        .args(["json", "ndjson", "summary", "ui"])
 ))]
 pub struct Cli {
     /// Target file or directory to scan. Defaults to "." (current directory)
@@ -79,14 +79,14 @@ pub struct Cli {
     /// Emit a structured JSON tree to stdout. Top-level shape is
     /// `{meta, tree}`; `meta` carries `scan_root`, `wire_version`,
     /// `hardlinks`, scan counters, etc. Mutually exclusive with
-    /// --ndjson, --analyze, and --ui.
+    /// --ndjson, --summary, and --ui.
     #[arg(long, help_heading = "Output Format")]
     pub json: bool,
 
     /// Stream entries as newline-delimited JSON (one record per line).
     /// First line is `{type:"meta",...}`, subsequent lines are
     /// `{type:"entry",...}` in DFS pre-order. Designed for jq /
-    /// streaming agents. Mutually exclusive with --json, --analyze,
+    /// streaming agents. Mutually exclusive with --json, --summary,
     /// and --ui.
     #[arg(long, help_heading = "Output Format")]
     pub ndjson: bool,
@@ -95,11 +95,11 @@ pub struct Cli {
     /// vcs / ide / other). Mutually exclusive with --json, --ndjson,
     /// and --ui.
     #[arg(long, help_heading = "Output Format")]
-    pub analyze: bool,
+    pub summary: bool,
 
     /// Open a browser UI with treemap, sunburst, and list views. Starts an
     /// embedded HTTP server (default port 7515; see --port) and launches
-    /// your default browser. Mutually exclusive with --json and --analyze.
+    /// your default browser. Mutually exclusive with --json and --summary.
     #[arg(long, help_heading = "Output Format")]
     pub ui: bool,
 
@@ -107,13 +107,13 @@ pub struct Cli {
     /// Maximum depth to display (≥ 1). Affects only what is shown — sizes
     /// are always summed from the full scanned subtree.
     #[arg(
-        short,
-        long,
+        short = 'd',
+        long = "max-depth",
         value_parser = positive_usize,
         value_name = "N",
         help_heading = "Display Options"
     )]
-    pub depth: Option<usize>,
+    pub max_depth: Option<usize>,
 
     /// Show only the largest N entries at each level (≥ 1). Selection is
     /// by size; display order follows --sort.
@@ -141,13 +141,13 @@ pub struct Cli {
 
     /// Show the N largest entries (files and directories) globally as a
     /// flat list ordered by size. Combines with --json / --ndjson for
-    /// structured output. Mutually exclusive with --analyze and --ui
+    /// structured output. Mutually exclusive with --summary and --ui
     /// (those are different views, not just different formats).
     #[arg(
         long,
         value_name = "N",
         value_parser = positive_usize,
-        conflicts_with_all = ["analyze", "ui"],
+        conflicts_with_all = ["summary", "ui"],
         help_heading = "Display Options"
     )]
     pub largest: Option<usize>,
@@ -171,7 +171,7 @@ pub struct Cli {
     /// `--category cache --category build`. AND-combined with other
     /// filters. Totals (parent dir size, scan counts) are unaffected —
     /// only what's shown is filtered.
-    // Filters compose with every CLI view (tree / json / ndjson / analyze /
+    // Filters compose with every CLI view (tree / json / ndjson / summary /
     // largest) but are intentionally rejected with --ui: the browser already
     // has interactive controls for these axes, and silently ignoring them at
     // the CLI would be a foot-gun. clap surfaces the conflict with a clear
@@ -219,25 +219,26 @@ pub struct Cli {
 
     /// Show only entries modified within the past <DURATION>. Suffix:
     /// `d` (days, default), `w` (7d), `m` (30d), `y` (365d). e.g.
-    /// `--newer-than 7d` or `--newer-than 2w`.
+    /// `--changed-within 7d` or `--changed-within 2w`. Field name
+    /// (`changed`) leaves room for future `--accessed-within` etc.
     #[arg(
         long,
         value_name = "DURATION",
         conflicts_with = "ui",
         help_heading = "Filters"
     )]
-    pub newer_than: Option<String>,
+    pub changed_within: Option<String>,
 
     /// Show only entries modified more than <DURATION> ago. Same suffix
-    /// rules as --newer-than. Combine for a window:
-    /// `--newer-than 1y --older-than 30d` = 30 days .. 1 year ago.
+    /// rules as --changed-within. Combine for a window:
+    /// `--changed-within 1y --changed-before 30d` = 30 days .. 1 year ago.
     #[arg(
         long,
         value_name = "DURATION",
         conflicts_with = "ui",
         help_heading = "Filters"
     )]
-    pub older_than: Option<String>,
+    pub changed_before: Option<String>,
 
     // ----- UI Server --------------------------------------------------------
     /// Port for the --ui HTTP server (default 7515). Falls back to a free
@@ -251,8 +252,9 @@ pub struct Cli {
     pub port: u16,
 }
 
-/// `clap` value parser used by `--depth` / `--top`. Rejects 0 so depth=0 isn't
-/// silently equivalent to depth=1 (was previously inconsistent across formats).
+/// `clap` value parser used by `--max-depth` / `--top`. Rejects 0 so a
+/// zero value isn't silently equivalent to 1 (was previously inconsistent
+/// across formats).
 fn positive_usize(s: &str) -> Result<usize, String> {
     let n: usize = s
         .parse()

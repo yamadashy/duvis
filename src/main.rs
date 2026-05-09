@@ -35,7 +35,7 @@ fn main() -> Result<()> {
     let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
 
     // Parse filter inputs *before* scanning. A typo in --min-size or
-    // --newer-than should fail in milliseconds, not after a multi-minute
+    // --changed-within should fail in milliseconds, not after a multi-minute
     // walk of a huge tree. Also runs before scanner::scan's path-existence
     // check so the user sees the most actionable error first.
     let filter = Filter::from_inputs(FilterInputs {
@@ -43,8 +43,8 @@ fn main() -> Result<()> {
         type_: cli.r#type,
         min_size: cli.min_size.clone(),
         names: cli.name.clone(),
-        newer_than: cli.newer_than.clone(),
-        older_than: cli.older_than.clone(),
+        changed_within: cli.changed_within.clone(),
+        changed_before: cli.changed_before.clone(),
     })?;
 
     if cli.ui {
@@ -65,7 +65,7 @@ fn main() -> Result<()> {
     tree.sort(&cli.sort, cli.reverse);
 
     let config = OutputConfig {
-        depth: cli.depth,
+        max_depth: cli.max_depth,
         top: cli.top,
         scan_root: &path,
         counts: &counts,
@@ -73,7 +73,7 @@ fn main() -> Result<()> {
         filter: &filter,
     };
     let mode = if let Some(n) = cli.largest {
-        // --largest is a view, mutually exclusive with --analyze and --ui
+        // --largest is a view, mutually exclusive with --summary and --ui
         // (clap enforces). Format follows the (orthogonal) format flag.
         let format = if cli.json {
             LargestFormat::Json
@@ -87,8 +87,8 @@ fn main() -> Result<()> {
         OutputMode::Json
     } else if cli.ndjson {
         OutputMode::Ndjson
-    } else if cli.analyze {
-        OutputMode::Analyze
+    } else if cli.summary {
+        OutputMode::Summary
     } else {
         OutputMode::Tree
     };

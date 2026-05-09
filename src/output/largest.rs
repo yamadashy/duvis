@@ -7,7 +7,7 @@
 //!   query, not a hierarchical view)
 //! - `--ndjson` → meta line + one `entry` line per result
 //!
-//! Mutually exclusive with `--analyze` and `--ui` (different views), but
+//! Mutually exclusive with `--summary` and `--ui` (different views), but
 //! orthogonal to `--json` / `--ndjson` (formats).
 
 use std::io::{self, Write};
@@ -401,7 +401,7 @@ mod tests {
         filter: &'a crate::output::filter::Filter,
     ) -> OutputConfig<'a> {
         OutputConfig {
-            depth: None,
+            max_depth: None,
             top: None,
             scan_root,
             counts,

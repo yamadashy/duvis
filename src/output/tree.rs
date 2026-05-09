@@ -71,7 +71,7 @@ fn write_entry(
         format_size(entry.size),
     )?;
 
-    if let Some(max_depth) = config.depth {
+    if let Some(max_depth) = config.max_depth {
         if current_depth >= max_depth {
             return Ok(());
         }

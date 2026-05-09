@@ -1,9 +1,9 @@
-pub mod analyze;
 pub mod filter;
 mod format;
 pub mod json;
 pub mod largest;
 pub mod ndjson;
+pub mod summary;
 pub mod tree;
 
 use std::collections::HashMap;
@@ -14,7 +14,7 @@ use crate::entry::Entry;
 use crate::scanner::{HardlinkPolicy, ScanCounts};
 
 pub struct OutputConfig<'a> {
-    pub depth: Option<usize>,
+    pub max_depth: Option<usize>,
     pub top: Option<usize>,
     /// Absolute, canonicalized scan root. Surfaced via `meta.scan_root` in
     /// JSON / NDJSON so an agent that pipes the output elsewhere can still
@@ -91,7 +91,7 @@ pub enum OutputMode {
     Tree,
     Json,
     Ndjson,
-    Analyze,
+    Summary,
     /// Flat list of the N largest entries. The format (text / JSON /
     /// NDJSON) is decided by which format flag was passed alongside
     /// `--largest` — see [`largest::LargestFormat`].
@@ -190,7 +190,7 @@ pub fn render(
         OutputMode::Tree => tree::write(entry, config, out)?,
         OutputMode::Json => json::write(entry, config, out)?,
         OutputMode::Ndjson => ndjson::write(entry, config, out)?,
-        OutputMode::Analyze => analyze::write(entry, config, out)?,
+        OutputMode::Summary => summary::write(entry, config, out)?,
         OutputMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
     }
     Ok(())
