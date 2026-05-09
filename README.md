@@ -165,9 +165,7 @@ Hardlinked files are counted once per inode by default, also matching `du` —
 a 1 GB file with two hardlinks contributes 1 GB to the total, not 2 GB. The
 first path to reach the inode reports the bytes; later links report 0.
 Pass `--hardlinks count-each` to opt out and have every link contribute
-its full size (useful if you want to see how much each path *would* free
-if it were the only link, though duvis won't tell you that — it's just a
-reporting knob).
+its full size (matching tools that don't dedupe by inode).
 
 Windows falls back to apparent size for now and does not dedupe hardlinks.
 

@@ -8,7 +8,7 @@ interface LegendProps {
   byCategory: Readonly<Record<string, number>>;
   total: number;
   active: ReadonlySet<Category>;
-  onToggle: (category: Category, solo: boolean) => void;
+  onToggle: (category: Category, solo: boolean, visible: ReadonlySet<Category>) => void;
 }
 
 export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
@@ -20,6 +20,11 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
   const extended = CATEGORIES.filter(
     (c) => c.tier === "extended" && (byCategory[c.key] ?? 0) > 0,
   );
+  // Hand the reducer the set of categories the user can actually see, so
+  // it can detect "every visible category is off" and reset, instead of
+  // getting stuck because hidden extended categories are still in the
+  // active set.
+  const visible: ReadonlySet<Category> = new Set([...core, ...extended].map((c) => c.key));
 
   function row(c: CategoryMeta) {
     const isActive = active.has(c.key);
@@ -30,7 +35,7 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
         key={c.key}
         className="legend-row"
         data-active={isActive}
-        onClick={(e: MouseEvent) => onToggle(c.key, e.shiftKey)}
+        onClick={(e: MouseEvent) => onToggle(c.key, e.shiftKey, visible)}
         title={`${c.label} — ${c.desc}`}
       >
         <span className="legend-swatch" style={{ background: categoryVar(c.key) }} />
