@@ -70,13 +70,14 @@ fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
     }
 }
 
-/// `/`-normalized path. Mirrors json.rs::child_relative_path.
+/// Path from scan root. Mirrors json.rs::child_relative_path: components
+/// are joined with `/` but segments are passed through verbatim because
+/// `\` is a legitimate filename character on Unix.
 fn child_relative_path(parent: &str, name: &str) -> String {
-    let normalized = name.replace('\\', "/");
     if parent == "." {
-        normalized
+        name.to_string()
     } else {
-        format!("{parent}/{normalized}")
+        format!("{parent}/{name}")
     }
 }
 

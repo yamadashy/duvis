@@ -79,17 +79,19 @@ fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
     }
 }
 
-/// `/`-normalized path from scan root. Root is `"."`; immediate children
-/// are just their name; deeper paths are `parent/child`. Always forward
-/// slashes regardless of OS or filenames containing literal `\` (Linux
-/// allows them, Windows file_name() should never produce them but
-/// fallback paths can).
+/// Path from scan root. Root is `"."`; immediate children are just their
+/// name; deeper paths are `parent/child`. Components are joined with `/`
+/// regardless of OS so the wire shape is stable. Segments themselves are
+/// passed through verbatim — `\` is a legitimate filename character on
+/// Unix and we won't corrupt those names by treating it as a separator.
+/// Windows `file_name()` strips separators upstream, so an Entry.name
+/// containing `\` here can only be a real filename, not a path fragment.
+/// `serde_json` JSON-escapes `\` as `\\` on the wire automatically.
 fn child_relative_path(parent: &str, name: &str) -> String {
-    let normalized = name.replace('\\', "/");
     if parent == "." {
-        normalized
+        name.to_string()
     } else {
-        format!("{parent}/{normalized}")
+        format!("{parent}/{name}")
     }
 }
 
