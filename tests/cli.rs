@@ -187,6 +187,59 @@ fn conflicting_format_flags_are_rejected() {
         .args(["--ndjson", "--analyze", "."])
         .assert()
         .failure();
+    // --largest conflicts with --analyze (different views).
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--largest", "5", "--analyze", "."])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn largest_text_lists_top_n_by_size() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(fixture.path(), &["--largest", "3"]);
+    // Header announces both the requested count and the total entries
+    // visited so an agent can tell whether it saw a truncated view.
+    assert!(stdout.contains("Largest"), "missing header: {stdout}");
+    assert!(stdout.contains("of "), "missing total count: {stdout}");
+    // The build artifact is the biggest in the fixture and must show up
+    // in any top-N where N >= 1.
+    assert!(stdout.contains("target"), "expected 'target' in top 3: {stdout}");
+}
+
+#[test]
+fn largest_json_returns_meta_and_flat_largest_array() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(fixture.path(), &["--json", "--largest", "3"]);
+    let value: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
+    let meta = value.get("meta").expect("missing meta");
+    assert_eq!(meta["largest_requested"], 3);
+    assert!(meta.get("total_entries").is_some());
+    // No tree field — flat list, not hierarchical.
+    assert!(value.get("tree").is_none());
+    let largest = value.get("largest").expect("missing largest").as_array().unwrap();
+    assert!(largest.len() <= 3);
+    // Sorted by size descending.
+    let sizes: Vec<u64> = largest.iter().map(|e| e["size"].as_u64().unwrap()).collect();
+    let mut sorted = sizes.clone();
+    sorted.sort_by(|a, b| b.cmp(a));
+    assert_eq!(sizes, sorted, "largest must be sorted by size desc");
+}
+
+#[test]
+fn largest_ndjson_streams_meta_then_entries() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(fixture.path(), &["--ndjson", "--largest", "2"]);
+    let lines: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    assert!(lines.len() >= 2, "want meta + at least one entry");
+    assert_eq!(lines[0]["type"], "meta");
+    assert_eq!(lines[0]["largest_requested"], 2);
+    assert!(lines[1..].iter().all(|l| l["type"] == "entry"));
 }
 
 #[test]

@@ -137,6 +137,19 @@ pub struct Cli {
     #[arg(long, help_heading = "Display Options")]
     pub reverse: bool,
 
+    /// Show the N largest entries (files and directories) globally as a
+    /// flat list ordered by size. Combines with --json / --ndjson for
+    /// structured output. Mutually exclusive with --analyze and --ui
+    /// (those are different views, not just different formats).
+    #[arg(
+        long,
+        value_name = "N",
+        value_parser = positive_usize,
+        conflicts_with_all = ["analyze", "ui"],
+        help_heading = "Display Options"
+    )]
+    pub largest: Option<usize>,
+
     /// How to attribute bytes to hardlinked files. `count-once` (default)
     /// matches `du` — each inode is counted once even when reachable via
     /// multiple paths. `count-each` reports every link separately, which

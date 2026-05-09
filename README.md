@@ -66,6 +66,13 @@ duvis ~/projects --json
 # Streaming NDJSON (one record per line, jq / DB / agent friendly)
 duvis ~/projects --ndjson | jq -c 'select(.type == "entry" and .size > 1000000)'
 
+# Largest 10 entries (files + dirs) anywhere under the scan root
+duvis ~/projects --largest 10
+
+# Largest as JSON / NDJSON for agents
+duvis ~/projects --json --largest 10
+duvis ~/projects --ndjson --largest 10 | jq -c '. | select(.type == "entry")'
+
 # Open browser UI with an interactive treemap
 duvis ~/projects --ui
 ```
@@ -78,6 +85,7 @@ duvis ~/projects --ui
 | `-n, --top <N>` | Show only the top N entries by size |
 | `--json` | Output as a single JSON document with `meta` + `tree` |
 | `--ndjson` | Stream entries as newline-delimited JSON (one record per line) |
+| `--largest <N>` | Flat list of the N largest entries (files + dirs) ordered by size. Combines with `--json` / `--ndjson`. |
 | `--analyze` | Show a per-category size summary |
 | `--ui` | Open browser UI with treemap visualization |
 | `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
@@ -85,7 +93,7 @@ duvis ~/projects --ui
 | `--reverse` | Reverse sort order |
 | `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
 
-`--json` / `--ndjson` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown.
+`--json` / `--ndjson` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--analyze` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output.
 
 ## Output examples
 
@@ -107,6 +115,23 @@ Total: 438.9 MB
 Category Summary:
   build      438.9 MB  100%  1 items
 ```
+
+### Largest
+
+```
+$ duvis ~/projects --largest 5
+Largest 5 entries in /Users/me/projects (of 1234 total):
+
+  438.8 MB  target/                 [build]   dir
+   54.7 KB  .git/                   [vcs]     dir
+   24.5 KB  src/                    [other]   dir
+    8.2 KB  src/main.rs             [other]   file
+      418 B Cargo.toml              [other]   file
+```
+
+With `--json --largest`, the response is `{meta, largest: [...]}` (no `tree` field
+— this is a flat list, not a hierarchical view). `meta.largest_requested` and
+`meta.total_entries` let an agent tell whether the list it sees was truncated.
 
 ### JSON
 
