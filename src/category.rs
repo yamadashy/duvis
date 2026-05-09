@@ -251,18 +251,19 @@ pub fn classify_file(name: &str) -> Category {
 
 fn is_media_extension(lower_name: &str) -> bool {
     const MEDIA_EXTENSIONS: &[&str] = &[
-        // Image (including camera RAW formats — `.raw` for generic Sony α etc.,
-        // `.cr2` Canon, `.nef` Nikon, `.dng` DNG). The literal `data.img.raw`
-        // OrbStack VM image is matched earlier in `classify_file` and never
-        // reaches here, so reintroducing `.raw` to media doesn't bring back
-        // the VM-image-as-media confusion.
+        // Image (including camera RAW formats — `.raw` for generic exporters,
+        // `.arw` Sony α, `.cr2` Canon, `.nef` Nikon, `.dng` Adobe DNG).
+        // The literal `data.img.raw` OrbStack VM image is matched earlier in
+        // `classify_file` and never reaches here, so reintroducing `.raw` to
+        // media doesn't bring back the VM-image-as-media confusion.
         ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".tiff", ".heic", ".heif",
-        ".psd", ".raw", ".cr2", ".nef", ".dng", // Video
+        ".psd", ".raw", ".arw", ".cr2", ".nef", ".dng",
+        // Video.
         // `.ts` is intentionally excluded: while it's the MPEG transport-stream extension,
         // TypeScript files are vastly more common in real codebases and being miscategorized
         // as `media` is more harmful than missing the rare transport-stream file.
         ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp",
-        // Audio
+        // Audio.
         ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff",
     ];
     MEDIA_EXTENSIONS.iter().any(|ext| lower_name.ends_with(ext))
@@ -416,12 +417,14 @@ mod tests {
 
     #[test]
     fn raw_photo_classifies_as_media() {
-        // Sony α and similar produce generic `.raw` files; they belong with
-        // the rest of the camera RAW formats (`.cr2`, `.nef`, `.dng`). The
+        // Sony α uses `.arw` natively, but third-party exporters and older
+        // firmwares still emit generic `.raw` files; both belong with the
+        // rest of the camera RAW formats (`.cr2`, `.nef`, `.dng`). The
         // OrbStack `data.img.raw` literal is matched earlier in
         // `classify_file` so it still wins as VmImage and never reaches the
         // media extension list.
         assert_eq!(classify_file("DSC0001.raw"), Category::Media);
+        assert_eq!(classify_file("DSC0001.arw"), Category::Media);
         assert_eq!(classify_file("data.img.raw"), Category::VmImage);
     }
 
