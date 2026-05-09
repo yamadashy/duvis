@@ -110,9 +110,21 @@ fn json_format_is_valid_and_classifies() {
     let stdout = run_duvis(fixture.path(), &["--json", "--sort", "name"]);
 
     let value: serde_json::Value = serde_json::from_str(&stdout).expect("valid json");
-    assert!(value.get("name").is_some(), "missing name");
-    assert!(value.get("size").is_some(), "missing size");
-    assert!(value.get("category").is_some(), "missing category");
+    // v0.1.4: top-level wrapper with `meta` + `tree`.
+    let meta = value.get("meta").expect("missing meta");
+    assert_eq!(meta["wire_version"], 2);
+    assert!(meta.get("scan_root").is_some(), "missing meta.scan_root");
+    assert_eq!(meta["hardlinks"], "count-once");
+    assert!(meta.get("items_scanned").is_some(), "missing items_scanned");
+
+    let tree = value.get("tree").expect("missing tree");
+    assert!(tree.get("name").is_some(), "missing name");
+    assert!(tree.get("size").is_some(), "missing size");
+    assert!(tree.get("category").is_some(), "missing category");
+    assert_eq!(tree["relative_path"], ".");
+    assert_eq!(tree["depth"], 0);
+    assert!(tree["file_count"].as_u64().unwrap() > 0);
+    assert!(tree["dir_count"].as_u64().unwrap() > 0);
 
     let dump = value.to_string();
     // Each fixture branch should appear with the right category somewhere
@@ -125,11 +137,54 @@ fn json_format_is_valid_and_classifies() {
 }
 
 #[test]
+fn ndjson_emits_meta_then_pre_order_entries() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(fixture.path(), &["--ndjson", "--sort", "name"]);
+
+    let lines: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("each line is valid json"))
+        .collect();
+    assert!(lines.len() >= 2, "expected meta + at least one entry");
+    assert_eq!(lines[0]["type"], "meta");
+    assert_eq!(lines[0]["wire_version"], 2);
+
+    // Every other record is an entry; the first entry is root with
+    // relative_path ".".
+    assert_eq!(lines[1]["type"], "entry");
+    assert_eq!(lines[1]["relative_path"], ".");
+    assert_eq!(lines[1]["depth"], 0);
+
+    // Pre-order: a parent's relative_path always appears before any of
+    // its descendants. Sanity-check by ensuring "node_modules" comes
+    // before "node_modules/foo" etc.
+    let paths: Vec<&str> = lines[1..]
+        .iter()
+        .filter_map(|l| l["relative_path"].as_str())
+        .collect();
+    let nm = paths.iter().position(|p| *p == "node_modules");
+    let nm_foo = paths.iter().position(|p| *p == "node_modules/foo");
+    assert!(nm.is_some() && nm_foo.is_some());
+    assert!(nm.unwrap() < nm_foo.unwrap(), "parent must precede child");
+}
+
+#[test]
 fn conflicting_format_flags_are_rejected() {
-    // --json and --analyze are exclusive via clap ArgGroup.
+    // --json / --ndjson / --analyze / --ui are exclusive via clap ArgGroup.
     Command::cargo_bin("duvis")
         .unwrap()
         .args(["--json", "--analyze", "."])
+        .assert()
+        .failure();
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--json", "--ndjson", "."])
+        .assert()
+        .failure();
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--ndjson", "--analyze", "."])
         .assert()
         .failure();
 }

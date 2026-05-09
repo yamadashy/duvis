@@ -60,11 +60,11 @@ deletes anything and never recommends what to delete.",
   $ duvis ~/projects --ui"
 )]
 // Output formats are mutually exclusive; tree is the default when none of
-// --json / --analyze / --ui is given.
+// --json / --ndjson / --analyze / --ui is given.
 #[command(group(
     ArgGroup::new("output")
         .multiple(false)
-        .args(["json", "analyze", "ui"])
+        .args(["json", "ndjson", "analyze", "ui"])
 ))]
 pub struct Cli {
     /// Target file or directory to scan. Defaults to "." (current directory)
@@ -74,13 +74,24 @@ pub struct Cli {
     pub path: PathBuf,
 
     // ----- Output Format ----------------------------------------------------
-    /// Emit a structured JSON tree to stdout. Mutually exclusive with
-    /// --analyze and --ui.
+    /// Emit a structured JSON tree to stdout. Top-level shape is
+    /// `{meta, tree}`; `meta` carries `scan_root`, `wire_version`,
+    /// `hardlinks`, scan counters, etc. Mutually exclusive with
+    /// --ndjson, --analyze, and --ui.
     #[arg(long, help_heading = "Output Format")]
     pub json: bool,
 
+    /// Stream entries as newline-delimited JSON (one record per line).
+    /// First line is `{type:"meta",...}`, subsequent lines are
+    /// `{type:"entry",...}` in DFS pre-order. Designed for jq /
+    /// streaming agents. Mutually exclusive with --json, --analyze,
+    /// and --ui.
+    #[arg(long, help_heading = "Output Format")]
+    pub ndjson: bool,
+
     /// Print a per-category size summary (cache / build / log / media /
-    /// vcs / ide / other). Mutually exclusive with --json and --ui.
+    /// vcs / ide / other). Mutually exclusive with --json, --ndjson,
+    /// and --ui.
     #[arg(long, help_heading = "Output Format")]
     pub analyze: bool,
 
