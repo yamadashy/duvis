@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778168161842,
+  "lastUpdate": 1778294665116,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -765,6 +765,51 @@ window.BENCHMARK_DATA = {
             "range": "±60.2",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 358.24ms, Q3: 418.44ms\nMin: 356.44ms, Max: 470.54ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "349a7176dd86c81f5b477c66dd5125dbd7106539",
+          "message": "feat(category): add extended categories (archive, installer, vm_image, model_cache, backup)\n\nTwo-tier category model: the existing seven categories become \"core\"\n(always reserved in the legend, even at 0 bytes — their colors are a\nstable visual vocabulary worth preserving across scans), plus five\n\"extended\" categories that only appear in the legend when at least one\nmatching entry is present in the scan. So a typical project root still\nshows the same compact legend, but a scan of `~` on an AI dev machine\nwill surface a `model_cache` row, and a scan of `~/Downloads` will\nsurface `installer`.\n\nNew categories:\n- `archive`     — .zip, .tar.gz, .tgz, .tbz2, .txz, .gz, .bz2, .xz,\n                  .7z, .rar, .zst\n- `installer`   — .dmg, .pkg, .msi, .exe, .deb, .rpm, .AppImage, .snap,\n                  .flatpak, .apk\n- `vm_image`    — .vdi, .vmdk, .qcow2, .vhd, .vhdx, .iso, plus the\n                  literal `data.img.raw` filename (OrbStack)\n- `model_cache` — .ollama, .lmstudio, .huggingface (moved out of cache;\n                  these are now matched before the generic cache rules\n                  so they win the more-specific categorization)\n- `backup`      — Time Machine Backups, Backups.backupdb, *.bak,\n                  *.backup, *.old\n\nAll five fit duvis's existing \"regenerability + behavior\" axis, so we\ndidn't have to dilute the category model with an iOS/Mac-style\n\"content type\" axis. Photos / Mail / Music etc. are explicitly NOT\nadded — those would break the axis and pull duvis toward end-user\nstorage management, which isn't its job.\n\nImplementation:\n- src/category.rs: enum extended, Tier enum, classify rules, tests\n- ui/src/lib/types.ts: Category union extended\n- ui/src/lib/categories.ts: CategoryMeta gets a `tier` field, five new\n  entries added\n- ui/src/components/Legend.tsx: render core then (if non-empty) an\n  \"Extended\" subsection\n- ui/src/styles/tokens.css: five new --cat-* color variables (dark and\n  light themes)\n\nNotable gotchas handled in tests:\n- `.raw` is excluded from both vm_image and media (overlap between\n  Sony α photo RAWs and OrbStack-style raw VM disk images would be a\n  judgment call either way; the literal `data.img.raw` is special-cased\n  for the common OrbStack case)\n- `.ts` stays excluded from media (TypeScript files >> MPEG transport\n  streams in real codebases)\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-09T11:42:11+09:00",
+          "tree_id": "491b6bf113afa205623e31ec388f81939a52c97c",
+          "url": "https://github.com/yamadashy/duvis/commit/349a7176dd86c81f5b477c66dd5125dbd7106539"
+        },
+        "date": 1778294664853,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 78.26,
+            "range": "±56.19",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 55.06ms, Q3: 111.25ms\nMin: 51.19ms, Max: 150.83ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 58.81,
+            "range": "±1.2",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 58.21ms, Q3: 59.41ms\nMin: 58.01ms, Max: 60.29ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 535.13,
+            "range": "±21.06",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 532.95ms, Q3: 554.01ms\nMin: 526.77ms, Max: 630.23ms"
           }
         ]
       }
