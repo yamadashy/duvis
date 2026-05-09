@@ -71,17 +71,30 @@ fn collect_all<'a>(entry: &'a Entry, rel_path: String, depth: u32, out: &mut Vec
     }
 }
 
-/// Pick the top-N rows by size descending. Tie-break by `relative_path`
-/// alphabetically so the output is deterministic across runs (rayon
-/// scan order would otherwise leak through for equal-sized entries).
+/// Comparator: size descending, then `relative_path` ascending as a
+/// deterministic tiebreaker. The combined ordering is a strict total
+/// order on (size, path) pairs, so the `_unstable` sort variants are
+/// safe — they can't reorder true ties because there are none.
+fn compare_rows(a: &Row<'_>, b: &Row<'_>) -> std::cmp::Ordering {
+    b.entry
+        .size
+        .cmp(&a.entry.size)
+        .then_with(|| a.relative_path.cmp(&b.relative_path))
+}
+
+/// Pick the top-N rows by size descending, with deterministic tiebreak.
+///
+/// Uses `select_nth_unstable_by` to partition the input so positions
+/// `[0, n)` hold the N largest in unspecified order, then sorts only
+/// that prefix. This is `O(M + N log N)` vs `O(M log M)` for a full
+/// sort — meaningful when `N` is much smaller than the total entry
+/// count (the common `--largest 10` case on a million-file tree).
 fn select_largest<'a>(rows: &mut Vec<Row<'a>>, n: usize) {
-    rows.sort_by(|a, b| {
-        b.entry
-            .size
-            .cmp(&a.entry.size)
-            .then_with(|| a.relative_path.cmp(&b.relative_path))
-    });
-    rows.truncate(n);
+    if rows.len() > n {
+        rows.select_nth_unstable_by(n, compare_rows);
+        rows.truncate(n);
+    }
+    rows.sort_unstable_by(compare_rows);
 }
 
 pub fn write(
