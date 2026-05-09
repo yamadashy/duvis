@@ -286,9 +286,11 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
               byCategory={agg.byCategory}
               total={agg.total}
               active={state.filterCategories}
-              onToggle={(category: Category, solo: boolean) =>
-                dispatch({ type: "toggleCategory", category, solo })
-              }
+              onToggle={(
+                category: Category,
+                solo: boolean,
+                visible: ReadonlySet<Category>,
+              ) => dispatch({ type: "toggleCategory", category, solo, visible })}
             />
           </SidebarSection>
         </Sidebar>

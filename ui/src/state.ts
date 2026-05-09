@@ -92,7 +92,15 @@ export interface AppState {
 export type Action =
   | { type: "navigateTo"; path: string[] }
   | { type: "select"; path: string[] | null }
-  | { type: "toggleCategory"; category: Category; solo?: boolean }
+  | {
+      type: "toggleCategory";
+      category: Category;
+      solo?: boolean;
+      /** Categories currently rendered in the legend. Hidden extended
+       *  categories must not block the "all visible turned off → reset"
+       *  rescue. */
+      visible: ReadonlySet<Category>;
+    }
   | { type: "resetCategories" }
   | { type: "setSort"; sort: SortMode }
   | { type: "setView"; view: ViewMode }
@@ -125,8 +133,13 @@ function reducer(state: AppState, action: Action): AppState {
       const next = new Set(state.filterCategories);
       if (next.has(action.category)) next.delete(action.category);
       else next.add(action.category);
-      // Avoid empty state — re-enable everything if user toggled the last one off.
-      if (next.size === 0) return { ...state, filterCategories: new Set(ALL_CATEGORIES) };
+      // Avoid a fully-dim UI: if the user toggled off every category they
+      // can actually see in the legend, reset to all-on. We check
+      // `action.visible` rather than `next.size` because hidden extended
+      // categories (no entries in this scan) linger in the set and would
+      // otherwise mask the "everything visible is off" condition.
+      const anyVisibleActive = Array.from(action.visible).some((c) => next.has(c));
+      if (!anyVisibleActive) return { ...state, filterCategories: new Set(ALL_CATEGORIES) };
       return { ...state, filterCategories: next };
     }
     case "resetCategories":
