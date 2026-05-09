@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778321389977,
+  "lastUpdate": 1778323564859,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -1035,6 +1035,51 @@ window.BENCHMARK_DATA = {
             "range": "±5.25",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 530.91ms, Q3: 536.16ms\nMin: 527.06ms, Max: 554.04ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e3271374eb5970a13afc64425fb2ade888976ce4",
+          "message": "Merge pull request #5 from yamadashy/feat/largest-flag\n\nfeat(largest): add --largest N flat global largest-entries query",
+          "timestamp": "2026-05-09T19:44:01+09:00",
+          "tree_id": "5d6cf3384a4483062de6575452613f2719b61d9e",
+          "url": "https://github.com/yamadashy/duvis/commit/e3271374eb5970a13afc64425fb2ade888976ce4"
+        },
+        "date": 1778323564397,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 56.25,
+            "range": "±12.54",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 54.6ms, Q3: 67.15ms\nMin: 52.54ms, Max: 137.25ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 55.42,
+            "range": "±0.73",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 55.09ms, Q3: 55.82ms\nMin: 53.89ms, Max: 57.76ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 446.03,
+            "range": "±6.67",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 444.74ms, Q3: 451.4ms\nMin: 443.52ms, Max: 477.91ms"
           }
         ]
       }
