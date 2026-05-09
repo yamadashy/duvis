@@ -79,6 +79,7 @@ duvis ~/projects --ui
 | `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
 | `--sort <size\|name>` | Sort order (default: `size`) |
 | `--reverse` | Reverse sort order |
+| `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
 
 `--json` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown.
 
@@ -160,7 +161,15 @@ On Unix, `duvis` reports the bytes a file actually occupies on disk
 for example OrbStack's `data.img.raw` — show their real footprint, not the
 multi-terabyte logical size you'd get from `ls -l`.
 
-Windows falls back to apparent size for now.
+Hardlinked files are counted once per inode by default, also matching `du` —
+a 1 GB file with two hardlinks contributes 1 GB to the total, not 2 GB. The
+first path to reach the inode reports the bytes; later links report 0.
+Pass `--hardlinks count-each` to opt out and have every link contribute
+its full size (useful if you want to see how much each path *would* free
+if it were the only link, though duvis won't tell you that — it's just a
+reporting knob).
+
+Windows falls back to apparent size for now and does not dedupe hardlinks.
 
 ## Why port 7515?
 

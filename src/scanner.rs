@@ -1,12 +1,30 @@
 use anyhow::Result;
 use rayon::prelude::*;
+use std::collections::HashSet;
 use std::fs;
 use std::path::Path;
 use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::Mutex;
 use std::time::SystemTime;
 
 use crate::category::{self, Category};
 use crate::entry::Entry;
+
+/// How to attribute bytes when the same inode is reachable via multiple
+/// hardlinked paths. Default matches `du` — each inode counts once. Unix
+/// only; on Windows this knob has no effect because the std `Metadata`
+/// API can't surface a portable file id.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+pub enum HardlinkPolicy {
+    /// Each (dev, inode) is counted once. Subsequent links to the same
+    /// inode contribute 0 bytes. Matches `du`'s default behavior.
+    #[default]
+    CountOnce,
+    /// Each link contributes its full disk usage, even when the underlying
+    /// inode is shared. Inflates totals on trees with many hardlinks
+    /// (e.g. content-addressable stores like pnpm).
+    CountEach,
+}
 
 /// Above this depth, fall back to sequential to avoid task-spawn overhead
 /// dominating tiny leaf directories. Empirically, raising it from 3 to a
@@ -36,20 +54,46 @@ impl ScanCounts {
     }
 }
 
+/// Per-scan state that has to be shared across the rayon workers but
+/// isn't part of the public progress signal. `seen_inodes` is what makes
+/// hardlink dedup work: the first worker to see a multi-link inode wins
+/// the bytes, others report 0.
+struct ScanCtx<'a> {
+    counts: &'a ScanCounts,
+    hardlinks: HardlinkPolicy,
+    seen_inodes: Mutex<HashSet<(u64, u64)>>,
+}
+
+impl<'a> ScanCtx<'a> {
+    fn new(counts: &'a ScanCounts, hardlinks: HardlinkPolicy) -> Self {
+        Self {
+            counts,
+            hardlinks,
+            seen_inodes: Mutex::new(HashSet::new()),
+        }
+    }
+}
+
 /// Scan `path` to completion, returning the tree and the final counters
 /// (visited / skipped). Callers that need live progress should use
 /// [`scan_with_progress`] and observe a shared [`ScanCounts`] from another
 /// thread.
-pub fn scan(path: &Path) -> Result<(Entry, ScanCounts)> {
+pub fn scan(path: &Path, hardlinks: HardlinkPolicy) -> Result<(Entry, ScanCounts)> {
     let counts = ScanCounts::default();
-    let entry = scan_recursive(path, 0, Category::Other, &counts)?;
+    let ctx = ScanCtx::new(&counts, hardlinks);
+    let entry = scan_recursive(path, 0, Category::Other, &ctx)?;
     Ok((entry, counts))
 }
 
 /// Same as [`scan`] but writes progress into `counts` so a UI thread can poll
 /// the running totals while the scan is in flight.
-pub fn scan_with_progress(path: &Path, counts: &ScanCounts) -> Result<Entry> {
-    scan_recursive(path, 0, Category::Other, counts)
+pub fn scan_with_progress(
+    path: &Path,
+    counts: &ScanCounts,
+    hardlinks: HardlinkPolicy,
+) -> Result<Entry> {
+    let ctx = ScanCtx::new(counts, hardlinks);
+    scan_recursive(path, 0, Category::Other, &ctx)
 }
 
 /// Walk one entry. The outermost ancestor with an explicit (non-Other) category
@@ -58,9 +102,9 @@ fn scan_recursive(
     path: &Path,
     depth: usize,
     inherited: Category,
-    counts: &ScanCounts,
+    ctx: &ScanCtx<'_>,
 ) -> Result<Entry> {
-    counts.items_scanned.fetch_add(1, Ordering::Relaxed);
+    ctx.counts.items_scanned.fetch_add(1, Ordering::Relaxed);
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().to_string())
@@ -76,7 +120,7 @@ fn scan_recursive(
         } else {
             own
         };
-        let children = scan_children(path, depth, effective, counts);
+        let children = scan_children(path, depth, effective, ctx);
         Ok(Entry::dir(name, effective, modified_days_ago, children))
     } else {
         let effective = if inherited != Category::Other {
@@ -86,7 +130,7 @@ fn scan_recursive(
         };
         Ok(Entry::file(
             name,
-            file_disk_usage(&metadata),
+            file_disk_usage(&metadata, ctx),
             effective,
             modified_days_ago,
         ))
@@ -99,29 +143,51 @@ fn scan_recursive(
 /// don't appear hundreds of times bigger than they really are. APFS/NTFS
 /// transparent compression is reflected for the same reason. Windows lacks
 /// a portable per-file allocated-bytes API, so we fall back to apparent size.
+///
+/// When `ctx.hardlinks == CountOnce` we dedupe regular files with
+/// `nlink > 1`: the first walker to claim a (dev, ino) reports the bytes,
+/// later walkers see 0. Only regular files participate — hardlinks to
+/// symlinks/FIFOs/sockets are rare and their footprint is negligible, so
+/// counting them every time is simpler than risking surprising "0 B"
+/// rows for those types.
+///
+/// Note: because the walk is parallel via rayon, *which* path among
+/// several hardlinks ends up holding the bytes is not deterministic
+/// across runs. Totals are stable; per-path attribution and per-category
+/// attribution (when the same inode lives under directories of different
+/// categories) can shuffle. Use `count-each` if you need every path to
+/// report its raw size.
 #[cfg(unix)]
-fn file_disk_usage(metadata: &fs::Metadata) -> u64 {
+fn file_disk_usage(metadata: &fs::Metadata, ctx: &ScanCtx<'_>) -> u64 {
     use std::os::unix::fs::MetadataExt;
-    metadata.blocks() * 512
+    let bytes = metadata.blocks() * 512;
+    if ctx.hardlinks == HardlinkPolicy::CountEach {
+        return bytes;
+    }
+    if !metadata.file_type().is_file() || metadata.nlink() <= 1 {
+        return bytes;
+    }
+    let key = (metadata.dev(), metadata.ino());
+    let mut seen = ctx.seen_inodes.lock().unwrap();
+    if seen.insert(key) {
+        bytes
+    } else {
+        0
+    }
 }
 
 #[cfg(not(unix))]
-fn file_disk_usage(metadata: &fs::Metadata) -> u64 {
+fn file_disk_usage(metadata: &fs::Metadata, _ctx: &ScanCtx<'_>) -> u64 {
     metadata.len()
 }
 
-fn scan_children(
-    path: &Path,
-    depth: usize,
-    inherited: Category,
-    counts: &ScanCounts,
-) -> Vec<Entry> {
+fn scan_children(path: &Path, depth: usize, inherited: Category, ctx: &ScanCtx<'_>) -> Vec<Entry> {
     let entries: Vec<_> = match fs::read_dir(path) {
         Ok(rd) => rd
             .filter_map(|e| match e {
                 Ok(entry) => Some(entry),
                 Err(_) => {
-                    counts.items_skipped.fetch_add(1, Ordering::Relaxed);
+                    ctx.counts.items_skipped.fetch_add(1, Ordering::Relaxed);
                     None
                 }
             })
@@ -130,7 +196,7 @@ fn scan_children(
             // Couldn't open the directory at all (permission denied, vanished,
             // …). Count one skipped entry and bail; the parent dir size will
             // simply be the sum of whatever we managed to read elsewhere.
-            counts.items_skipped.fetch_add(1, Ordering::Relaxed);
+            ctx.counts.items_skipped.fetch_add(1, Ordering::Relaxed);
             return Vec::new();
         }
     };
@@ -139,10 +205,10 @@ fn scan_children(
         entries
             .par_iter()
             .filter_map(
-                |entry| match scan_recursive(&entry.path(), depth + 1, inherited, counts) {
+                |entry| match scan_recursive(&entry.path(), depth + 1, inherited, ctx) {
                     Ok(e) => Some(e),
                     Err(_) => {
-                        counts.items_skipped.fetch_add(1, Ordering::Relaxed);
+                        ctx.counts.items_skipped.fetch_add(1, Ordering::Relaxed);
                         None
                     }
                 },
@@ -152,10 +218,10 @@ fn scan_children(
         entries
             .iter()
             .filter_map(
-                |entry| match scan_recursive(&entry.path(), depth + 1, inherited, counts) {
+                |entry| match scan_recursive(&entry.path(), depth + 1, inherited, ctx) {
                     Ok(e) => Some(e),
                     Err(_) => {
-                        counts.items_skipped.fetch_add(1, Ordering::Relaxed);
+                        ctx.counts.items_skipped.fetch_add(1, Ordering::Relaxed);
                         None
                     }
                 },
@@ -199,7 +265,7 @@ mod tests {
         fs::write(tmp.join("a.txt"), b"hello").unwrap();
         fs::write(tmp.join("sub/b.txt"), b"world!").unwrap();
 
-        let (entry, _counts) = scan(&tmp).unwrap();
+        let (entry, _counts) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
         assert!(entry.is_dir());
         // Sizes use disk allocation now (st_blocks * 512 on Unix), so the
         // exact byte count depends on the filesystem block size. We just
@@ -222,7 +288,7 @@ mod tests {
         fs::write(tmp.join("node_modules/some-pkg/preview.png"), b"x").unwrap();
         fs::write(tmp.join("node_modules/some-pkg/debug.log"), b"x").unwrap();
 
-        let (root, _counts) = scan(&tmp).unwrap();
+        let (root, _counts) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
         let nm = find(&root, "node_modules").unwrap();
         assert_eq!(nm.category, Category::Cache);
         let pkg = find(nm, "some-pkg").unwrap();
@@ -247,7 +313,7 @@ mod tests {
         fs::create_dir_all(tmp.join("node_modules/inner/target")).unwrap();
         fs::write(tmp.join("node_modules/inner/target/main.o"), b"x").unwrap();
 
-        let (root, _counts) = scan(&tmp).unwrap();
+        let (root, _counts) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
         let nm = find(&root, "node_modules").unwrap();
         let inner = find(nm, "inner").unwrap();
         let target = find(inner, "target").unwrap();
@@ -267,7 +333,7 @@ mod tests {
         fs::write(tmp.join("Movies/clip.mp4"), b"x").unwrap();
         fs::write(tmp.join("Movies/notes.txt"), b"x").unwrap();
 
-        let (root, _counts) = scan(&tmp).unwrap();
+        let (root, _counts) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
         let movies = find(&root, "Movies").unwrap();
         // The dir name "Movies" is not in classify_dir, so dir is Other.
         assert_eq!(movies.category, Category::Other);
@@ -287,7 +353,7 @@ mod tests {
         fs::write(tmp.join("a/x.txt"), b"x").unwrap();
         fs::write(tmp.join("y.txt"), b"y").unwrap();
 
-        let (_, counts) = scan(&tmp).unwrap();
+        let (_, counts) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
         // root + "a" + "x.txt" + "y.txt" = 4 visited.
         assert_eq!(counts.scanned(), 4);
         assert_eq!(counts.skipped(), 0);
@@ -314,7 +380,7 @@ mod tests {
         perms.set_mode(0o000);
         fs::set_permissions(tmp.join("locked"), perms).unwrap();
 
-        let (_, counts) = scan(&tmp).unwrap();
+        let (_, counts) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
         // We tried to walk into "locked" → +1 skip when read_dir failed.
         assert!(
             counts.skipped() >= 1,
@@ -326,6 +392,44 @@ mod tests {
         let mut perms = fs::metadata(tmp.join("locked")).unwrap().permissions();
         perms.set_mode(0o755);
         fs::set_permissions(tmp.join("locked"), perms).unwrap();
+        fs::remove_dir_all(&tmp).unwrap();
+    }
+
+    /// A hardlinked file should contribute its bytes once under CountOnce
+    /// (matching `du`) and twice under CountEach. This is the v0.1.3 fix:
+    /// before, the dedup didn't exist and totals were inflated by every
+    /// extra link.
+    #[cfg(unix)]
+    #[test]
+    fn hardlink_dedup_obeys_policy() {
+        let tmp = unique_tmp("hardlink");
+        let _ = fs::remove_dir_all(&tmp);
+        fs::create_dir_all(&tmp).unwrap();
+        // 4 KiB of payload — comfortably bigger than one block on any
+        // sensible filesystem so the size diff is obvious.
+        fs::write(tmp.join("original.bin"), vec![b'x'; 4096]).unwrap();
+        fs::hard_link(tmp.join("original.bin"), tmp.join("alias.bin")).unwrap();
+
+        let (once, _) = scan(&tmp, HardlinkPolicy::CountOnce).unwrap();
+        let (each, _) = scan(&tmp, HardlinkPolicy::CountEach).unwrap();
+
+        // Same inode reachable from two paths: CountEach must report 2x
+        // CountOnce because both links contribute their full disk usage.
+        assert!(once.size > 0);
+        assert_eq!(each.size, once.size * 2);
+
+        // Per-child accounting: under CountOnce one of the links holds
+        // the bytes and the other reports 0 (which one wins is rayon-
+        // order-dependent). Under CountEach both report the full size.
+        let once_children = once.children().unwrap();
+        let once_sizes: Vec<u64> = once_children.iter().map(|c| c.size).collect();
+        assert_eq!(once_sizes.iter().filter(|s| **s == 0).count(), 1);
+        assert_eq!(once_sizes.iter().filter(|s| **s > 0).count(), 1);
+
+        for c in each.children().unwrap() {
+            assert!(c.size > 0, "{} reported 0 under CountEach", c.name);
+        }
+
         fs::remove_dir_all(&tmp).unwrap();
     }
 }

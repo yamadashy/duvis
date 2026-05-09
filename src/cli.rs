@@ -34,6 +34,7 @@
 // =============================================================================
 
 use crate::entry::SortOrder;
+use crate::scanner::HardlinkPolicy;
 use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
 
@@ -124,6 +125,19 @@ pub struct Cli {
     /// Reverse the --sort order.
     #[arg(long, help_heading = "Display Options")]
     pub reverse: bool,
+
+    /// How to attribute bytes to hardlinked files. `count-once` (default)
+    /// matches `du` — each inode is counted once even when reachable via
+    /// multiple paths. `count-each` reports every link separately, which
+    /// inflates totals on trees with many hardlinks (e.g. pnpm stores).
+    /// Unix only.
+    #[arg(
+        long,
+        default_value = "count-once",
+        value_name = "count-once|count-each",
+        help_heading = "Display Options"
+    )]
+    pub hardlinks: HardlinkPolicy,
 
     // ----- UI Server --------------------------------------------------------
     /// Port for the --ui HTTP server (default 7515). Falls back to a free

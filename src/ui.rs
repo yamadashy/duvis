@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use crate::entry::{Entry, SortOrder};
-use crate::scanner::ScanCounts;
+use crate::scanner::{HardlinkPolicy, ScanCounts};
 
 /// Days threshold for "stale" classification. Files modified longer ago than
 /// this are counted toward the "Stale" stat in the UI.
@@ -54,6 +54,7 @@ struct AppState {
     scan_root: PathBuf,
     sort: SortOrder,
     reverse: bool,
+    hardlinks: HardlinkPolicy,
     /// Monotonic id. Each call to `start_scan` bumps it; the spawned task
     /// commits its result only if the id still matches when it finishes.
     next_scan_id: AtomicU64,
@@ -64,8 +65,14 @@ struct AppState {
     state: Mutex<ScanState>,
 }
 
-pub async fn serve(scan_root: PathBuf, port: u16, sort: SortOrder, reverse: bool) -> Result<()> {
-    let app_state = Arc::new(AppState::new(scan_root, sort, reverse));
+pub async fn serve(
+    scan_root: PathBuf,
+    port: u16,
+    sort: SortOrder,
+    reverse: bool,
+    hardlinks: HardlinkPolicy,
+) -> Result<()> {
+    let app_state = Arc::new(AppState::new(scan_root, sort, reverse, hardlinks));
 
     // Kick off the initial scan immediately so the browser can render a
     // "scanning..." UI while we wait.
@@ -102,11 +109,12 @@ fn build_router(state: Arc<AppState>) -> axum::Router {
 
 impl AppState {
     /// Construct a fresh `AppState` in the `Scanning` placeholder state.
-    fn new(scan_root: PathBuf, sort: SortOrder, reverse: bool) -> Self {
+    fn new(scan_root: PathBuf, sort: SortOrder, reverse: bool, hardlinks: HardlinkPolicy) -> Self {
         Self {
             scan_root,
             sort,
             reverse,
+            hardlinks,
             next_scan_id: AtomicU64::new(1),
             scan_in_flight: AtomicBool::new(false),
             state: Mutex::new(ScanState::scanning(0)),
@@ -140,7 +148,8 @@ fn start_scan(state: Arc<AppState>) {
     }
     tokio::task::spawn_blocking(move || {
         let started = Instant::now();
-        let scan_result = crate::scanner::scan_with_progress(&state.scan_root, &counts);
+        let scan_result =
+            crate::scanner::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
         {
             let mut s = state.state.lock().unwrap();
             if s.scan_id == scan_id {
@@ -339,7 +348,12 @@ mod tests {
     }
 
     fn ready_state(scan_root: PathBuf) -> Arc<AppState> {
-        let state = Arc::new(AppState::new(scan_root, SortOrder::Size, false));
+        let state = Arc::new(AppState::new(
+            scan_root,
+            SortOrder::Size,
+            false,
+            HardlinkPolicy::CountOnce,
+        ));
         {
             let mut s = state.state.lock().unwrap();
             s.inner = Inner::Ready {
@@ -367,6 +381,7 @@ mod tests {
             dir.path().to_path_buf(),
             SortOrder::Size,
             false,
+            HardlinkPolicy::CountOnce,
         ));
         let response = build_router(state)
             .oneshot(
@@ -484,6 +499,7 @@ mod tests {
             dir.path().to_path_buf(),
             SortOrder::Size,
             false,
+            HardlinkPolicy::CountOnce,
         ));
         let response = build_router(state)
             .oneshot(Request::builder().uri("/").body(Body::empty()).unwrap())

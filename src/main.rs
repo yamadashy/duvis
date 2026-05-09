@@ -36,11 +36,17 @@ fn main() -> Result<()> {
         // The UI server runs the scan in a background task so the browser can
         // pop up immediately and show "Scanning..." while we wait.
         let rt = tokio::runtime::Runtime::new()?;
-        rt.block_on(duvis::ui::serve(path, cli.port, cli.sort, cli.reverse))?;
+        rt.block_on(duvis::ui::serve(
+            path,
+            cli.port,
+            cli.sort,
+            cli.reverse,
+            cli.hardlinks,
+        ))?;
         return Ok(());
     }
 
-    let (mut tree, counts) = scanner::scan(&path)?;
+    let (mut tree, counts) = scanner::scan(&path, cli.hardlinks)?;
     tree.sort(&cli.sort, cli.reverse);
     let config = OutputConfig {
         depth: cli.depth,
