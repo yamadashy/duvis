@@ -80,6 +80,50 @@ pub enum OutputMode {
     Analyze,
 }
 
+/// Bumped when the structured (JSON / NDJSON) wire format makes a
+/// non-additive change. Pure field additions don't bump this — only
+/// rename / removal / semantic shifts do. v0.1.0..v0.1.3 emitted an
+/// unwrapped tree (no `meta` / `tree` split); v0.1.4 wrapped it.
+pub(crate) const WIRE_VERSION: u32 = 2;
+
+/// String form of `HardlinkPolicy` for the `meta.hardlinks` field.
+/// Mirrors the `--hardlinks` flag value so an agent piping the output
+/// elsewhere can tell whether per-path sizes already account for shared
+/// inodes.
+pub(crate) fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
+    match p {
+        HardlinkPolicy::CountOnce => "count-once",
+        HardlinkPolicy::CountEach => "count-each",
+    }
+}
+
+/// Path from scan root for a child of `parent`. Root is `"."`; immediate
+/// children are just their name; deeper paths are `parent/child`.
+/// Components are joined with `/` regardless of OS so the wire shape is
+/// stable. Per-segment names pass through verbatim — `\` is a legitimate
+/// filename character on Unix and we won't corrupt those names by
+/// treating it as a separator. Windows `file_name()` strips separators
+/// upstream, so an Entry.name reaching here can only be a real filename.
+pub(crate) fn child_relative_path(parent: &str, name: &str) -> String {
+    if parent == "." {
+        name.to_string()
+    } else {
+        format!("{parent}/{name}")
+    }
+}
+
+/// `Path::display()` uses the OS-native separator. Force `/` so the
+/// wire shape is stable on Windows too.
+pub(crate) fn scan_root_for_wire(scan_root: &Path) -> String {
+    scan_root.display().to_string().replace('\\', "/")
+}
+
+/// Serde `skip_serializing_if` for u64 fields whose `0` value carries no
+/// information (e.g. `truncated_count` when --top didn't drop anything).
+pub(crate) fn is_zero_u64(n: &u64) -> bool {
+    *n == 0
+}
+
 /// Precomputed `(file_count, dir_count_including_self)` for every entry
 /// in a scanned tree, keyed by entry pointer. JSON / NDJSON renderers
 /// look up here instead of recomputing per visit, which would otherwise

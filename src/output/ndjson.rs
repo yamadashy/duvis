@@ -14,12 +14,12 @@ use anyhow::Result;
 use serde::Serialize;
 
 use super::format::format_size;
-use super::{precompute_subtree_counts, select_top, OutputConfig, SubtreeCounts};
+use super::{
+    child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
+    scan_root_for_wire, select_top, OutputConfig, SubtreeCounts, WIRE_VERSION,
+};
 use crate::category::Category;
 use crate::entry::Entry;
-use crate::scanner::HardlinkPolicy;
-
-const WIRE_VERSION: u32 = 2;
 
 #[derive(Serialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
@@ -59,33 +59,11 @@ struct EntryRecord<'a> {
     truncated_size: u64,
 }
 
-fn is_zero_u64(n: &u64) -> bool {
-    *n == 0
-}
-
-fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
-    match p {
-        HardlinkPolicy::CountOnce => "count-once",
-        HardlinkPolicy::CountEach => "count-each",
-    }
-}
-
-/// Path from scan root. Mirrors json.rs::child_relative_path: components
-/// are joined with `/` but segments are passed through verbatim because
-/// `\` is a legitimate filename character on Unix.
-fn child_relative_path(parent: &str, name: &str) -> String {
-    if parent == "." {
-        name.to_string()
-    } else {
-        format!("{parent}/{name}")
-    }
-}
-
 fn write_meta(out: &mut impl Write, config: &OutputConfig) -> Result<()> {
     let rec = Record::Meta(MetaRecord {
         wire_version: WIRE_VERSION,
         duvis_version: env!("CARGO_PKG_VERSION"),
-        scan_root: config.scan_root.display().to_string().replace('\\', "/"),
+        scan_root: scan_root_for_wire(config.scan_root),
         hardlinks: hardlinks_label(config.hardlinks),
         items_scanned: config.counts.scanned(),
         items_skipped: config.counts.skipped(),
@@ -171,6 +149,7 @@ mod tests {
     use super::*;
     use crate::category::Category;
     use crate::entry::Entry;
+    use crate::scanner::HardlinkPolicy;
     use std::path::PathBuf;
 
     fn dir(name: &str, children: Vec<Entry>) -> Entry {

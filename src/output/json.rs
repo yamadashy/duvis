@@ -4,16 +4,12 @@ use anyhow::Result;
 use serde::Serialize;
 
 use super::format::format_size;
-use super::{precompute_subtree_counts, select_top, OutputConfig, SubtreeCounts};
+use super::{
+    child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
+    scan_root_for_wire, select_top, OutputConfig, SubtreeCounts, WIRE_VERSION,
+};
 use crate::category::Category;
 use crate::entry::Entry;
-use crate::scanner::HardlinkPolicy;
-
-/// Bumped when the JSON wire format makes a non-additive change. Pure
-/// field additions don't bump this — only rename / removal / semantic
-/// shifts do. v0.1.0 .. v0.1.3 emitted an unwrapped tree (no `meta` /
-/// `tree` split); v0.1.4 wraps it.
-const WIRE_VERSION: u32 = 2;
 
 #[derive(Serialize)]
 struct JsonRoot<'a> {
@@ -25,13 +21,7 @@ struct JsonRoot<'a> {
 struct Meta<'a> {
     wire_version: u32,
     duvis_version: &'static str,
-    /// Absolute, canonicalized scan root. Always `/`-separated even on
-    /// Windows so consumers don't have to special-case path joining.
     scan_root: String,
-    /// `count-once` (default, dedupes by inode) or `count-each`.
-    /// Mirrors the `--hardlinks` flag value so an agent piping the JSON
-    /// elsewhere can tell whether per-path sizes already account for
-    /// shared inodes.
     hardlinks: &'a str,
     items_scanned: u64,
     items_skipped: u64,
@@ -66,33 +56,6 @@ struct JsonOutput {
     truncated_count: u64,
     #[serde(skip_serializing_if = "is_zero_u64")]
     truncated_size: u64,
-}
-
-fn is_zero_u64(n: &u64) -> bool {
-    *n == 0
-}
-
-fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
-    match p {
-        HardlinkPolicy::CountOnce => "count-once",
-        HardlinkPolicy::CountEach => "count-each",
-    }
-}
-
-/// Path from scan root. Root is `"."`; immediate children are just their
-/// name; deeper paths are `parent/child`. Components are joined with `/`
-/// regardless of OS so the wire shape is stable. Segments themselves are
-/// passed through verbatim — `\` is a legitimate filename character on
-/// Unix and we won't corrupt those names by treating it as a separator.
-/// Windows `file_name()` strips separators upstream, so an Entry.name
-/// containing `\` here can only be a real filename, not a path fragment.
-/// `serde_json` JSON-escapes `\` as `\\` on the wire automatically.
-fn child_relative_path(parent: &str, name: &str) -> String {
-    if parent == "." {
-        name.to_string()
-    } else {
-        format!("{parent}/{name}")
-    }
 }
 
 /// Build the JSON view, looking up precomputed counts in `counts` so
@@ -160,7 +123,7 @@ pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Resu
         meta: Meta {
             wire_version: WIRE_VERSION,
             duvis_version: env!("CARGO_PKG_VERSION"),
-            scan_root: config.scan_root.display().to_string().replace('\\', "/"),
+            scan_root: scan_root_for_wire(config.scan_root),
             hardlinks: hardlinks_label(config.hardlinks),
             items_scanned: config.counts.scanned(),
             items_skipped: config.counts.skipped(),
@@ -177,6 +140,7 @@ mod tests {
     use super::*;
     use crate::category::Category;
     use crate::entry::Entry;
+    use crate::scanner::HardlinkPolicy;
     use std::path::PathBuf;
     use std::sync::atomic::Ordering;
 
