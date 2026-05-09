@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778297977949,
+  "lastUpdate": 1778315663526,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -900,6 +900,51 @@ window.BENCHMARK_DATA = {
             "range": "±10.4",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 526.75ms, Q3: 537.15ms\nMin: 524.18ms, Max: 552.23ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "e2a9724e6db366adca979f94d9f3162b6ac74101",
+          "message": "Merge pull request #2 from yamadashy/fix/v0.1.3-codex-review\n\nfix(v0.1.3): address Codex review on extended categories + hardlink work",
+          "timestamp": "2026-05-09T17:31:46+09:00",
+          "tree_id": "7c39c045f45b43a7fddf9cb84816c5d191d5d8f1",
+          "url": "https://github.com/yamadashy/duvis/commit/e2a9724e6db366adca979f94d9f3162b6ac74101"
+        },
+        "date": 1778315662669,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 63.21,
+            "range": "±16.73",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 55.59ms, Q3: 72.32ms\nMin: 51.69ms, Max: 97.25ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.63,
+            "range": "±1.06",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 56.11ms, Q3: 57.17ms\nMin: 55.71ms, Max: 59.73ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 523.84,
+            "range": "±99.9",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 516.25ms, Q3: 616.15ms\nMin: 511.27ms, Max: 842.8ms"
           }
         ]
       }
