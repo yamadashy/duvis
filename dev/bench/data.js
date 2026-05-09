@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778294665116,
+  "lastUpdate": 1778296660131,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -810,6 +810,51 @@ window.BENCHMARK_DATA = {
             "range": "±21.06",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 532.95ms, Q3: 554.01ms\nMin: 526.77ms, Max: 630.23ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "c3de23dd07da999a46edd13fb96010a8614c2cde",
+          "message": "fix(scanner): dedupe hardlinked files by inode (count-once policy)\n\nBefore, a 1 GB file with two hardlinks contributed 2 GB to the total.\nduvis now matches `du`'s default and counts each (dev, inode) once: the\nfirst walker to claim the inode reports the bytes, later links report 0.\n\nA new --hardlinks <count-once|count-each> flag exposes the knob.\ncount-once is the default; count-each restores the legacy behavior.\n\nImplementation:\n- Pull a ScanCtx through scan_recursive carrying the policy and a shared\n  Mutex<HashSet<(dev, ino)>>. Insertions only happen for regular files\n  with nlink > 1, so the lock is rarely touched in typical trees.\n- Symlinks/FIFOs/sockets are excluded from dedup — their footprint is\n  trivial and reporting \"0 B\" for them would be more surprising than\n  helpful.\n- Windows keeps the previous apparent-size behavior; the std Metadata\n  API can't surface a portable file id.\n\nNote: the public Rust API (scan, scan_with_progress, ui::serve) gained\na HardlinkPolicy parameter. Allowed under 0.x SemVer; CLI is the\nprimary surface.\n\nBumps version to 0.1.3.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-09T12:14:58+09:00",
+          "tree_id": "13ddf7feac994eeb301781e50f0e23bfbf28166d",
+          "url": "https://github.com/yamadashy/duvis/commit/c3de23dd07da999a46edd13fb96010a8614c2cde"
+        },
+        "date": 1778296659816,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 73.85,
+            "range": "±11.28",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 68.89ms, Q3: 80.17ms\nMin: 64.35ms, Max: 93.91ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 54.34,
+            "range": "±0.55",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 54.01ms, Q3: 54.56ms\nMin: 53.65ms, Max: 56.2ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 638.05,
+            "range": "±9.45",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 632.02ms, Q3: 641.47ms\nMin: 607.8ms, Max: 697.81ms"
           }
         ]
       }
