@@ -33,7 +33,9 @@
 // the command itself, it probably doesn't belong here.
 // =============================================================================
 
+use crate::category::Category;
 use crate::entry::SortOrder;
+use crate::output::filter::EntryType;
 use crate::scanner::HardlinkPolicy;
 use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
@@ -162,6 +164,49 @@ pub struct Cli {
         help_heading = "Display Options"
     )]
     pub hardlinks: HardlinkPolicy,
+
+    // ----- Filters ----------------------------------------------------------
+    /// Restrict displayed entries to one or more categories. Repeatable
+    /// or comma-separated: `--category cache,build` or
+    /// `--category cache --category build`. AND-combined with other
+    /// filters. Totals (parent dir size, scan counts) are unaffected —
+    /// only what's shown is filtered.
+    #[arg(
+        long,
+        value_delimiter = ',',
+        value_name = "CATEGORY",
+        help_heading = "Filters"
+    )]
+    pub category: Vec<Category>,
+
+    /// Restrict displayed entries by type: `file` or `dir`.
+    #[arg(long, value_name = "file|dir", help_heading = "Filters")]
+    pub r#type: Option<EntryType>,
+
+    /// Show only entries whose disk usage is at least this size.
+    /// 1024-based, case-insensitive: `100M`, `1.5G`, `50KiB`, `1024`
+    /// (bare integer = bytes).
+    #[arg(long, value_name = "SIZE", help_heading = "Filters")]
+    pub min_size: Option<String>,
+
+    /// Show only entries whose name matches one of these glob patterns.
+    /// Repeatable; multiple patterns are OR-combined among themselves
+    /// and AND-combined with other filters: `--name "*.log" --name "*.tmp"`.
+    /// Quote in the shell to keep the glob from being expanded by zsh / bash.
+    #[arg(long, value_name = "GLOB", help_heading = "Filters")]
+    pub name: Vec<String>,
+
+    /// Show only entries modified within the past <DURATION>. Suffix:
+    /// `d` (days, default), `w` (7d), `m` (30d), `y` (365d). e.g.
+    /// `--newer-than 7d` or `--newer-than 2w`.
+    #[arg(long, value_name = "DURATION", help_heading = "Filters")]
+    pub newer_than: Option<String>,
+
+    /// Show only entries modified more than <DURATION> ago. Same suffix
+    /// rules as --newer-than. Combine for a window:
+    /// `--newer-than 1y --older-than 30d` = 30 days .. 1 year ago.
+    #[arg(long, value_name = "DURATION", help_heading = "Filters")]
+    pub older_than: Option<String>,
 
     // ----- UI Server --------------------------------------------------------
     /// Port for the --ui HTTP server (default 7515). Falls back to a free

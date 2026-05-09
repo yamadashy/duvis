@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
 
+use super::filter::Filter;
 use super::format::format_size;
+use super::OutputConfig;
 use crate::category::Category;
 use crate::entry::Entry;
 
@@ -10,11 +12,16 @@ struct CategoryStats {
     count: u64,
 }
 
-pub fn write(entry: &Entry, out: &mut impl Write) -> io::Result<()> {
+pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::Result<()> {
     let mut stats: HashMap<Category, CategoryStats> = HashMap::new();
-    collect_stats(entry, &mut stats);
+    collect_stats(entry, config.filter, &mut stats);
 
-    writeln!(out, "Total: {}", format_size(entry.size))?;
+    // Total reflects what's actually being summarized — i.e. the
+    // filtered subtree. Unfiltered total stays available via meta in
+    // the structured outputs; the analyze view is a single-glance
+    // summary so we don't bother showing both.
+    let total: u64 = stats.values().map(|s| s.size).sum();
+    writeln!(out, "Total: {}", format_size(total))?;
     writeln!(out)?;
     writeln!(out, "Category Summary:")?;
 
@@ -28,7 +35,7 @@ pub fn write(entry: &Entry, out: &mut impl Write) -> io::Result<()> {
     });
 
     for (category, stat) in &sorted {
-        let pct = (stat.size * 100).checked_div(entry.size).unwrap_or(0);
+        let pct = (stat.size * 100).checked_div(total).unwrap_or(0);
         writeln!(
             out,
             "  {:<8} {:>10}  {:>3}%  {} items",
@@ -41,8 +48,25 @@ pub fn write(entry: &Entry, out: &mut impl Write) -> io::Result<()> {
     Ok(())
 }
 
-fn collect_stats(entry: &Entry, stats: &mut HashMap<Category, CategoryStats>) {
+fn collect_stats(entry: &Entry, filter: &Filter, stats: &mut HashMap<Category, CategoryStats>) {
+    let matches = filter.is_empty() || filter.matches(entry);
+
     if !entry.is_dir() {
+        if matches {
+            let stat = stats
+                .entry(entry.category)
+                .or_insert(CategoryStats { size: 0, count: 0 });
+            stat.size += entry.size;
+            stat.count += 1;
+        }
+        return;
+    }
+
+    // For directories with a non-Other category that themselves match,
+    // bucket the whole subtree under that category. When a filter is
+    // active and the dir doesn't match its own filter, fall through to
+    // the recursive case so per-file matches inside still surface.
+    if entry.category != Category::Other && matches {
         let stat = stats
             .entry(entry.category)
             .or_insert(CategoryStats { size: 0, count: 0 });
@@ -51,20 +75,11 @@ fn collect_stats(entry: &Entry, stats: &mut HashMap<Category, CategoryStats>) {
         return;
     }
 
-    // For directories with a non-Other category, count the whole dir as that category
-    if entry.category != Category::Other {
-        let stat = stats
-            .entry(entry.category)
-            .or_insert(CategoryStats { size: 0, count: 0 });
-        stat.size += entry.size;
-        stat.count += 1;
-        return;
-    }
-
-    // For Other directories, recurse into children
+    // For Other directories (or filtered-out non-Other dirs), recurse
+    // into children to look for matches.
     if let Some(children) = entry.children() {
         for child in children {
-            collect_stats(child, stats);
+            collect_stats(child, filter, stats);
         }
     }
 }

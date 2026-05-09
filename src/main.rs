@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use duvis::cli::Cli;
+use duvis::output::filter::{Filter, FilterInputs};
 use duvis::output::largest::LargestFormat;
 use duvis::output::{self, OutputConfig, OutputMode};
 use duvis::scanner;
@@ -49,12 +50,23 @@ fn main() -> Result<()> {
 
     let (mut tree, counts) = scanner::scan(&path, cli.hardlinks)?;
     tree.sort(&cli.sort, cli.reverse);
+
+    let filter = Filter::from_inputs(FilterInputs {
+        categories: cli.category.clone(),
+        type_: cli.r#type,
+        min_size: cli.min_size.clone(),
+        names: cli.name.clone(),
+        newer_than: cli.newer_than.clone(),
+        older_than: cli.older_than.clone(),
+    })?;
+
     let config = OutputConfig {
         depth: cli.depth,
         top: cli.top,
         scan_root: &path,
         counts: &counts,
         hardlinks: cli.hardlinks,
+        filter: &filter,
     };
     let mode = if let Some(n) = cli.largest {
         // --largest is a view, mutually exclusive with --analyze and --ui

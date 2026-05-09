@@ -13,10 +13,11 @@ use std::io::Write;
 use anyhow::Result;
 use serde::Serialize;
 
+use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
     child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
-    scan_root_for_wire, select_top, OutputConfig, SubtreeCounts, WIRE_VERSION,
+    scan_root_for_wire, select_top_refs, OutputConfig, SubtreeCounts, WIRE_VERSION,
 };
 use crate::category::Category;
 use crate::entry::Entry;
@@ -73,32 +74,51 @@ fn write_meta(out: &mut impl Write, config: &OutputConfig) -> Result<()> {
     Ok(())
 }
 
+/// Constants threaded through the recursion. Bundling them keeps the
+/// `write_entry` signature short enough that clippy's
+/// `too_many_arguments` lint stays quiet; behavior is unchanged.
+struct WriteCtx<'a> {
+    max_depth: Option<usize>,
+    top: Option<usize>,
+    counts: &'a SubtreeCounts,
+    visible: Option<&'a SubtreeMatch>,
+}
+
 fn write_entry(
     entry: &Entry,
     relative_path: String,
     depth: u32,
-    max_depth: Option<usize>,
-    top: Option<usize>,
-    counts: &SubtreeCounts,
+    ctx: &WriteCtx<'_>,
     out: &mut impl Write,
 ) -> Result<()> {
     // Counts always reflect the *full* scanned subtree at this entry, not
     // the truncated view. Agents need this so they can detect "we only
     // see N of M children" even when --depth or --top is in play.
-    let (file_count, dir_count_with_self) = counts
+    let (file_count, dir_count_with_self) = ctx
+        .counts
         .get(&(entry as *const Entry))
         .copied()
         .unwrap_or((0, 0));
     let dir_count = dir_count_with_self.saturating_sub(if entry.is_dir() { 1 } else { 0 });
 
-    let render_children = !matches!(max_depth, Some(max) if depth as usize >= max);
+    let render_children = !matches!(ctx.max_depth, Some(max) if depth as usize >= max);
 
     let mut truncated_count: u64 = 0;
     let mut truncated_size: u64 = 0;
     let mut to_render: Vec<&Entry> = Vec::new();
     if let Some(children) = entry.children() {
         if render_children {
-            let (kept, dropped_count, dropped_size) = select_top(children, top);
+            // Filter first, then --top. An active filter narrows the
+            // pool so `truncated_*` reports drops within the surviving
+            // (visible) set.
+            let filtered: Vec<&Entry> = match ctx.visible {
+                None => children.iter().collect(),
+                Some(map) => children
+                    .iter()
+                    .filter(|c| subtree_visible(c, map))
+                    .collect(),
+            };
+            let (kept, dropped_count, dropped_size) = select_top_refs(&filtered, ctx.top);
             truncated_count = dropped_count as u64;
             truncated_size = dropped_size;
             to_render = kept;
@@ -124,7 +144,7 @@ fn write_entry(
 
     for child in to_render {
         let child_path = child_relative_path(&relative_path, &child.name);
-        write_entry(child, child_path, depth + 1, max_depth, top, counts, out)?;
+        write_entry(child, child_path, depth + 1, ctx, out)?;
     }
     Ok(())
 }
@@ -132,15 +152,18 @@ fn write_entry(
 pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Result<()> {
     write_meta(out, config)?;
     let counts = precompute_subtree_counts(entry);
-    write_entry(
-        entry,
-        ".".to_string(),
-        0,
-        config.depth,
-        config.top,
-        &counts,
-        out,
-    )?;
+    let visible_map = if config.filter.is_empty() {
+        None
+    } else {
+        Some(precompute_subtree_match(entry, config.filter))
+    };
+    let ctx = WriteCtx {
+        max_depth: config.depth,
+        top: config.top,
+        counts: &counts,
+        visible: visible_map.as_ref(),
+    };
+    write_entry(entry, ".".to_string(), 0, &ctx, out)?;
     Ok(())
 }
 
@@ -173,12 +196,14 @@ mod tests {
     fn first_line_is_meta_then_dfs_pre_order_entries() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
+        let filter = crate::output::filter::Filter::default();
         let cfg = OutputConfig {
             depth: None,
             top: None,
             scan_root: &scan_root,
             counts: &counts,
             hardlinks: HardlinkPolicy::CountOnce,
+            filter: &filter,
         };
         let tree = dir(
             "proj",
@@ -204,12 +229,14 @@ mod tests {
     fn each_entry_carries_full_subtree_counts() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
+        let filter = crate::output::filter::Filter::default();
         let cfg = OutputConfig {
             depth: None,
             top: None,
             scan_root: &scan_root,
             counts: &counts,
             hardlinks: HardlinkPolicy::CountOnce,
+            filter: &filter,
         };
         let tree = dir(
             "proj",

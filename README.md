@@ -93,7 +93,22 @@ duvis ~/projects --ui
 | `--reverse` | Reverse sort order |
 | `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
 
-`--json` / `--ndjson` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--analyze` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output.
+#### Filters
+
+All filters are AND-combined and applied at the display layer — totals (parent
+directory size, scan counts in `meta`) always reflect the full scanned tree;
+only what's *shown* is filtered.
+
+| Flag | Description |
+| --- | --- |
+| `--category <CAT>` | Restrict to one or more categories. Repeatable / CSV: `--category cache,build`. |
+| `--type <file\|dir>` | Restrict by entry type. |
+| `--min-size <SIZE>` | Show only entries at least this size. 1024-based: `100M`, `1.5G`, `50KiB`, `1024` (bare = bytes). |
+| `--name <GLOB>` | Restrict to names matching one or more globs. Repeatable; multiple are OR-combined: `--name "*.log" --name "*.tmp"`. |
+| `--newer-than <DURATION>` | Modified within the past `Nd` / `Nw` / `Nm` / `Ny` (m=30d, y=365d). |
+| `--older-than <DURATION>` | Modified more than `<DURATION>` ago. Combine with `--newer-than` for a window. |
+
+`--json` / `--ndjson` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--analyze` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output. Filters compose with every view.
 
 ## Output examples
 

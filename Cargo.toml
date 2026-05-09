@@ -37,6 +37,10 @@ rayon = "1"
 axum = "0.8"
 tokio = { version = "1", features = ["rt-multi-thread", "macros"] }
 open = "5"
+# Compiled glob matchers for `--name` filters. `GlobSet` lets us test a
+# filename against several patterns in one walk-step without rebuilding
+# the matcher per entry.
+globset = "0.4"
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

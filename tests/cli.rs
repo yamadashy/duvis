@@ -267,3 +267,124 @@ fn top_n_limits_children() {
         "expected overflow line, got:\n{stdout}"
     );
 }
+
+// =========================================================================
+// Filters (--category / --type / --min-size / --name / mtime)
+// =========================================================================
+
+#[test]
+fn filter_category_narrows_largest_to_matching_entries() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &["--ndjson", "--largest", "20", "--category", "cache,build"],
+    );
+    let lines: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    let entries: Vec<&serde_json::Value> = lines.iter().filter(|l| l["type"] == "entry").collect();
+    assert!(!entries.is_empty(), "expected some matches");
+    for e in &entries {
+        let cat = e["category"].as_str().unwrap();
+        assert!(
+            cat == "cache" || cat == "build",
+            "non-matching category leaked through: {cat}"
+        );
+    }
+}
+
+#[test]
+fn filter_type_file_excludes_directories() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &["--ndjson", "--largest", "20", "--type", "file"],
+    );
+    let entries: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .filter(|l: &serde_json::Value| l["type"] == "entry")
+        .collect();
+    assert!(!entries.is_empty(), "expected some files");
+    for e in &entries {
+        assert_eq!(e["is_dir"], false, "dir leaked through --type file");
+    }
+}
+
+#[test]
+fn filter_min_size_drops_small_entries() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &["--ndjson", "--largest", "20", "--min-size", "50K"],
+    );
+    let entries: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .filter(|l: &serde_json::Value| l["type"] == "entry")
+        .collect();
+    assert!(!entries.is_empty());
+    for e in &entries {
+        let size = e["size"].as_u64().unwrap();
+        assert!(size >= 50 * 1024, "entry under 50K leaked: {e}");
+    }
+}
+
+#[test]
+fn filter_name_glob_matches_only_log_files() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &[
+            "--ndjson",
+            "--largest",
+            "20",
+            "--name",
+            "*.log",
+            "--type",
+            "file",
+        ],
+    );
+    let entries: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .filter(|l: &serde_json::Value| l["type"] == "entry")
+        .collect();
+    assert!(!entries.is_empty(), "expected at least the *.log fixture");
+    for e in &entries {
+        let name = e["name"].as_str().unwrap();
+        assert!(name.ends_with(".log"), "non-log file leaked: {name}");
+    }
+}
+
+#[test]
+fn filter_invalid_glob_is_rejected_with_error() {
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--name", "[unclosed", "."])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn filter_invalid_size_is_rejected_with_error() {
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--min-size", "not-a-size", "."])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn filter_invalid_duration_is_rejected_with_error() {
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--newer-than", "7h", "."])
+        .assert()
+        .failure();
+}

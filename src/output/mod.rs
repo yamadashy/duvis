@@ -1,4 +1,5 @@
 pub mod analyze;
+pub mod filter;
 mod format;
 pub mod json;
 pub mod largest;
@@ -27,6 +28,11 @@ pub struct OutputConfig<'a> {
     /// so consumers can tell whether a per-path size already accounts for
     /// shared inodes or not.
     pub hardlinks: HardlinkPolicy,
+    /// Display-time predicate. `Filter::is_empty()` short-circuits the
+    /// per-entry match check in renderers that would otherwise pay for
+    /// it. Totals (parent dir size, scan counts) are unaffected — only
+    /// what's *shown* is filtered.
+    pub filter: &'a filter::Filter,
 }
 
 /// Pick the largest `n` children by size while preserving their relative order
@@ -37,34 +43,42 @@ pub struct OutputConfig<'a> {
 /// `--top` advertises "by size" (per --help and README), but the children
 /// are presented in --sort order, so we must split selection from display.
 pub(crate) fn select_top(children: &[Entry], top: Option<usize>) -> (Vec<&Entry>, usize, u64) {
+    let refs: Vec<&Entry> = children.iter().collect();
+    select_top_refs(&refs, top)
+}
+
+/// Same as [`select_top`] but operates on an already-borrowed slice
+/// (e.g. after a filter pass produced a `Vec<&Entry>`). Avoids
+/// reconstructing the underlying `Vec<Entry>` just to call select_top.
+pub(crate) fn select_top_refs<'a>(
+    refs: &[&'a Entry],
+    top: Option<usize>,
+) -> (Vec<&'a Entry>, usize, u64) {
     match top {
-        None => (children.iter().collect(), 0, 0),
-        Some(n) if n >= children.len() => (children.iter().collect(), 0, 0),
+        None => (refs.to_vec(), 0, 0),
+        Some(n) if n >= refs.len() => (refs.to_vec(), 0, 0),
         Some(n) => {
             // Indices of the n largest by size. Tie-break by original index to
             // be deterministic when sizes are equal.
-            let mut by_size: Vec<(usize, u64)> = children
-                .iter()
-                .enumerate()
-                .map(|(i, e)| (i, e.size))
-                .collect();
+            let mut by_size: Vec<(usize, u64)> =
+                refs.iter().enumerate().map(|(i, e)| (i, e.size)).collect();
             by_size.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
             by_size.truncate(n);
             let keep: std::collections::BTreeSet<usize> = by_size.iter().map(|&(i, _)| i).collect();
 
-            let kept: Vec<&Entry> = children
+            let kept: Vec<&Entry> = refs
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| keep.contains(i))
-                .map(|(_, e)| e)
+                .map(|(_, e)| *e)
                 .collect();
-            let dropped_size: u64 = children
+            let dropped_size: u64 = refs
                 .iter()
                 .enumerate()
                 .filter(|(i, _)| !keep.contains(i))
                 .map(|(_, e)| e.size)
                 .sum();
-            let dropped_count = children.len() - kept.len();
+            let dropped_count = refs.len() - kept.len();
             (kept, dropped_count, dropped_size)
         }
     }
@@ -177,7 +191,7 @@ pub fn render(
         OutputMode::Tree => tree::write(entry, config, out)?,
         OutputMode::Json => json::write(entry, config, out)?,
         OutputMode::Ndjson => ndjson::write(entry, config, out)?,
-        OutputMode::Analyze => analyze::write(entry, out)?,
+        OutputMode::Analyze => analyze::write(entry, config, out)?,
         OutputMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
     }
     Ok(())

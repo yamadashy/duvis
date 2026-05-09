@@ -1,23 +1,51 @@
 use std::io::{self, Write};
 
+use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
-use super::{select_top, OutputConfig};
+use super::{select_top, select_top_refs, OutputConfig};
 use crate::category::Category;
 use crate::entry::Entry;
 
 pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::Result<()> {
     writeln!(out, "{} ({})", entry.name, format_size(entry.size))?;
 
+    // Pre-compute "subtree contains a filter match" once. Empty filter
+    // → the lookup is never consulted (we short-circuit via
+    // `filter.is_empty()` below) so the precompute is essentially free.
+    let visible = if config.filter.is_empty() {
+        SubtreeMatch::default()
+    } else {
+        precompute_subtree_match(entry, config.filter)
+    };
+
     if let Some(children) = entry.children() {
-        let (items, dropped_count, dropped_size) = select_top(children, config.top);
+        let (items, dropped_count, dropped_size) = visible_children(children, config, &visible);
         let len = items.len();
         for (i, child) in items.iter().enumerate() {
             let is_last = i == len - 1;
-            write_entry(child, "", is_last, config, 1, out)?;
+            write_entry(child, "", is_last, config, &visible, 1, out)?;
         }
         write_overflow(dropped_count, dropped_size, "    ", out)?;
     }
     Ok(())
+}
+
+/// Apply `--top` and the optional filter together. Filter is applied
+/// first so `--top N` selects N out of the *visible* set (matches +
+/// filter-relevant ancestors), not N out of the raw children.
+fn visible_children<'a>(
+    children: &'a [Entry],
+    config: &OutputConfig,
+    visible: &SubtreeMatch,
+) -> (Vec<&'a Entry>, usize, u64) {
+    if config.filter.is_empty() {
+        return select_top(children, config.top);
+    }
+    let kept_by_filter: Vec<&Entry> = children
+        .iter()
+        .filter(|c| subtree_visible(c, visible))
+        .collect();
+    select_top_refs(&kept_by_filter, config.top)
 }
 
 fn write_entry(
@@ -25,6 +53,7 @@ fn write_entry(
     prefix: &str,
     is_last: bool,
     config: &OutputConfig,
+    visible: &SubtreeMatch,
     current_depth: usize,
     out: &mut impl Write,
 ) -> io::Result<()> {
@@ -50,7 +79,7 @@ fn write_entry(
 
     if let Some(children) = entry.children() {
         let child_prefix = format!("{}{}", prefix, if is_last { "    " } else { "│   " });
-        let (items, dropped_count, dropped_size) = select_top(children, config.top);
+        let (items, dropped_count, dropped_size) = visible_children(children, config, visible);
         let len = items.len();
         for (i, child) in items.iter().enumerate() {
             let child_is_last = i == len - 1;
@@ -59,6 +88,7 @@ fn write_entry(
                 &child_prefix,
                 child_is_last,
                 config,
+                visible,
                 current_depth + 1,
                 out,
             )?;
