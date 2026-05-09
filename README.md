@@ -55,10 +55,10 @@ cargo install --path .
 duvis
 
 # Limit depth and show top N entries
-duvis ~/projects --depth 2 --top 10
+duvis ~/projects --max-depth 2 --top 10
 
 # Category-aware summary (cache / build / log / media / vcs / ide / other)
-duvis ~/projects --analyze
+duvis ~/projects --summary
 
 # Structured JSON output (for AI agents and scripts)
 duvis ~/projects --json
@@ -81,19 +81,34 @@ duvis ~/projects --ui
 
 | Flag | Description |
 | --- | --- |
-| `-d, --depth <N>` | Maximum depth to display |
+| `-d, --max-depth <N>` | Maximum depth to display |
 | `-n, --top <N>` | Show only the top N entries by size |
 | `--json` | Output as a single JSON document with `meta` + `tree` |
 | `--ndjson` | Stream entries as newline-delimited JSON (one record per line) |
 | `--largest <N>` | Flat list of the N largest entries (files + dirs) ordered by size. Combines with `--json` / `--ndjson`. |
-| `--analyze` | Show a per-category size summary |
+| `--summary` | Show a per-category size summary |
 | `--ui` | Open browser UI with treemap visualization |
 | `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
 | `--sort <size\|name>` | Sort order (default: `size`) |
 | `--reverse` | Reverse sort order |
 | `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
 
-`--json` / `--ndjson` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--analyze` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output.
+#### Filters
+
+All filters are AND-combined and applied at the display layer — totals (parent
+directory size, scan counts in `meta`) always reflect the full scanned tree;
+only what's *shown* is filtered.
+
+| Flag | Description |
+| --- | --- |
+| `--category <CAT>` | Restrict to one or more categories. Repeatable / CSV: `--category cache,build`. |
+| `--type <file\|dir>` | Restrict by entry type. |
+| `--min-size <SIZE>` | Show only entries at least this size. 1024-based: `100M`, `1.5G`, `50KiB`, `1024` (bare = bytes). |
+| `--name <GLOB>` | Restrict to **basenames** matching one or more globs. Repeatable; multiple are OR-combined: `--name "*.log" --name "*.tmp"`. |
+| `--changed-within <DURATION>` | Modified within the past `Nd` / `Nw` / `Nm` / `Ny` (m=30d, y=365d). |
+| `--changed-before <DURATION>` | Modified more than `<DURATION>` ago. Combine with `--changed-within` for a window. |
+
+`--json` / `--ndjson` / `--summary` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--summary` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output. Filters compose with every view.
 
 ## Output examples
 
@@ -107,7 +122,7 @@ project (438.9 MB)
 └── Cargo.toml        418 B
 ```
 
-### Analyze
+### Summary
 
 ```
 Total: 438.9 MB
@@ -165,7 +180,7 @@ With `--json --largest`, the response is `{meta, largest: [...]}` (no `tree` fie
 
 When `--top N` drops some children, the parent gets `truncated_count` and `truncated_size`
 fields so consumers can tell how much was hidden. `file_count` / `dir_count` always reflect
-the *full* scanned subtree — they don't change with `--top` or `--depth`.
+the *full* scanned subtree — they don't change with `--top` or `--max-depth`.
 
 ### NDJSON
 

@@ -14,7 +14,7 @@ use tempfile::TempDir;
 ///
 /// File sizes are deliberately spread across orders of magnitude so the
 /// category ranking is the same on Unix (which rounds to FS block size via
-/// `st_blocks * 512`) and Windows (apparent size). Otherwise the analyze
+/// `st_blocks * 512`) and Windows (apparent size). Otherwise the summary
 /// snapshot order would diverge between platforms.
 fn build_fixture() -> TempDir {
     let dir = tempfile::Builder::new()
@@ -67,7 +67,7 @@ fn run_duvis(fixture: &Path, args: &[&str]) -> String {
 }
 
 /// Settings that strip sources of cross-machine flakiness:
-/// * the random tempdir basename in the first line of tree/analyze output;
+/// * the random tempdir basename in the first line of tree/summary output;
 /// * size strings (vary by FS block size between Unix and Windows);
 /// * percentages (vary because the totals depend on which sizes round up).
 ///
@@ -96,11 +96,11 @@ fn tree_format_default() {
 }
 
 #[test]
-fn analyze_format() {
+fn summary_format() {
     let fixture = build_fixture();
-    let stdout = run_duvis(fixture.path(), &["--analyze"]);
+    let stdout = run_duvis(fixture.path(), &["--summary"]);
     redacted_settings(&fixture_basename(fixture.path())).bind(|| {
-        insta::assert_snapshot!("analyze_default", stdout);
+        insta::assert_snapshot!("summary_default", stdout);
     });
 }
 
@@ -171,10 +171,10 @@ fn ndjson_emits_meta_then_pre_order_entries() {
 
 #[test]
 fn conflicting_format_flags_are_rejected() {
-    // --json / --ndjson / --analyze / --ui are exclusive via clap ArgGroup.
+    // --json / --ndjson / --summary / --ui are exclusive via clap ArgGroup.
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--json", "--analyze", "."])
+        .args(["--json", "--summary", "."])
         .assert()
         .failure();
     Command::cargo_bin("duvis")
@@ -184,13 +184,13 @@ fn conflicting_format_flags_are_rejected() {
         .failure();
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--ndjson", "--analyze", "."])
+        .args(["--ndjson", "--summary", "."])
         .assert()
         .failure();
-    // --largest conflicts with --analyze and --ui (different views).
+    // --largest conflicts with --summary and --ui (different views).
     Command::cargo_bin("duvis")
         .unwrap()
-        .args(["--largest", "5", "--analyze", "."])
+        .args(["--largest", "5", "--summary", "."])
         .assert()
         .failure();
     Command::cargo_bin("duvis")
@@ -266,4 +266,162 @@ fn top_n_limits_children() {
         stdout.contains("more"),
         "expected overflow line, got:\n{stdout}"
     );
+}
+
+// =========================================================================
+// Filters (--category / --type / --min-size / --name / mtime)
+// =========================================================================
+
+#[test]
+fn filter_category_narrows_largest_to_matching_entries() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &["--ndjson", "--largest", "20", "--category", "cache,build"],
+    );
+    let lines: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .collect();
+    let entries: Vec<&serde_json::Value> = lines.iter().filter(|l| l["type"] == "entry").collect();
+    assert!(!entries.is_empty(), "expected some matches");
+    for e in &entries {
+        let cat = e["category"].as_str().unwrap();
+        assert!(
+            cat == "cache" || cat == "build",
+            "non-matching category leaked through: {cat}"
+        );
+    }
+}
+
+#[test]
+fn filter_type_file_excludes_directories() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &["--ndjson", "--largest", "20", "--type", "file"],
+    );
+    let entries: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .filter(|l: &serde_json::Value| l["type"] == "entry")
+        .collect();
+    assert!(!entries.is_empty(), "expected some files");
+    for e in &entries {
+        assert_eq!(e["is_dir"], false, "dir leaked through --type file");
+    }
+}
+
+#[test]
+fn filter_min_size_drops_small_entries() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &["--ndjson", "--largest", "20", "--min-size", "50K"],
+    );
+    let entries: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .filter(|l: &serde_json::Value| l["type"] == "entry")
+        .collect();
+    assert!(!entries.is_empty());
+    for e in &entries {
+        let size = e["size"].as_u64().unwrap();
+        assert!(size >= 50 * 1024, "entry under 50K leaked: {e}");
+    }
+}
+
+#[test]
+fn filter_name_glob_matches_only_log_files() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(
+        fixture.path(),
+        &[
+            "--ndjson",
+            "--largest",
+            "20",
+            "--name",
+            "*.log",
+            "--type",
+            "file",
+        ],
+    );
+    let entries: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).unwrap())
+        .filter(|l: &serde_json::Value| l["type"] == "entry")
+        .collect();
+    assert!(!entries.is_empty(), "expected at least the *.log fixture");
+    for e in &entries {
+        let name = e["name"].as_str().unwrap();
+        assert!(name.ends_with(".log"), "non-log file leaked: {name}");
+    }
+}
+
+#[test]
+fn filter_invalid_glob_is_rejected_with_error() {
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--name", "[unclosed", "."])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn filter_invalid_size_is_rejected_with_error() {
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--min-size", "not-a-size", "."])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn filter_invalid_duration_is_rejected_with_error() {
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--changed-within", "7h", "."])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn filter_largest_with_no_matches_reports_no_matching_entries() {
+    let dir = build_fixture();
+    // No `.xyz` files exist anywhere in the fixture.
+    let assert = Command::cargo_bin("duvis")
+        .unwrap()
+        .args([
+            "--largest",
+            "5",
+            "--name",
+            "*.xyz",
+            dir.path().to_str().unwrap(),
+        ])
+        .assert()
+        .success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(
+        stdout.contains("no entries match"),
+        "expected 'no entries match' message, got: {stdout}"
+    );
+    assert!(
+        !stdout.contains("scan tree is empty"),
+        "scanned tree was non-empty; should not claim it was: {stdout}"
+    );
+}
+
+#[test]
+fn filter_ui_combo_is_rejected_with_error() {
+    // `--ui` and filter flags conflict: the browser has its own filter
+    // controls, and silently ignoring CLI filters would be a foot-gun.
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--ui", "--min-size", "1M", "."])
+        .assert()
+        .failure();
 }

@@ -7,7 +7,7 @@
 //!   query, not a hierarchical view)
 //! - `--ndjson` → meta line + one `entry` line per result
 //!
-//! Mutually exclusive with `--analyze` and `--ui` (different views), but
+//! Mutually exclusive with `--summary` and `--ui` (different views), but
 //! orthogonal to `--json` / `--ndjson` (formats).
 
 use std::io::{self, Write};
@@ -106,7 +106,13 @@ pub fn write(
 ) -> Result<()> {
     let mut rows: Vec<Row<'_>> = Vec::new();
     collect_all(entry, ".".to_string(), 0, &mut rows);
+    // `total_entries` reports how big the unfiltered candidate pool was
+    // so an agent can tell whether `--largest 10` ran out of matches
+    // even when filters are wide.
     let total_entries = rows.len() as u64;
+    if !config.filter.is_empty() {
+        rows.retain(|r| config.filter.matches(r.entry));
+    }
     select_largest(&mut rows, n);
 
     match format {
@@ -139,7 +145,11 @@ fn write_text(
     writeln!(out)?;
 
     if rows.is_empty() {
-        writeln!(out, "(scan tree is empty)")?;
+        if total_entries == 0 {
+            writeln!(out, "(scan tree is empty)")?;
+        } else {
+            writeln!(out, "(no entries match the active filters)")?;
+        }
         return Ok(());
     }
 
@@ -385,13 +395,18 @@ mod tests {
         )
     }
 
-    fn cfg<'a>(scan_root: &'a PathBuf, counts: &'a ScanCounts) -> OutputConfig<'a> {
+    fn cfg<'a>(
+        scan_root: &'a PathBuf,
+        counts: &'a ScanCounts,
+        filter: &'a crate::output::filter::Filter,
+    ) -> OutputConfig<'a> {
         OutputConfig {
-            depth: None,
+            max_depth: None,
             top: None,
             scan_root,
             counts,
             hardlinks: HardlinkPolicy::CountOnce,
+            filter,
         }
     }
 
@@ -461,7 +476,8 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let cfg = cfg(&scan_root, &counts);
+        let filter = crate::output::filter::Filter::default();
+        let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 3, LargestFormat::Text, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
@@ -479,7 +495,8 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let cfg = cfg(&scan_root, &counts);
+        let filter = crate::output::filter::Filter::default();
+        let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 2, LargestFormat::Json, &mut buf).unwrap();
         let v: serde_json::Value = serde_json::from_slice(&buf).unwrap();
@@ -499,7 +516,8 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let cfg = cfg(&scan_root, &counts);
+        let filter = crate::output::filter::Filter::default();
+        let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 3, LargestFormat::Ndjson, &mut buf).unwrap();
         let lines: Vec<serde_json::Value> = std::str::from_utf8(&buf)

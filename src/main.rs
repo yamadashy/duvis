@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use duvis::cli::Cli;
+use duvis::output::filter::{Filter, FilterInputs};
 use duvis::output::largest::LargestFormat;
 use duvis::output::{self, OutputConfig, OutputMode};
 use duvis::scanner;
@@ -33,6 +34,19 @@ fn main() -> Result<()> {
 
     let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
 
+    // Parse filter inputs *before* scanning. A typo in --min-size or
+    // --changed-within should fail in milliseconds, not after a multi-minute
+    // walk of a huge tree. Also runs before scanner::scan's path-existence
+    // check so the user sees the most actionable error first.
+    let filter = Filter::from_inputs(FilterInputs {
+        categories: cli.category.clone(),
+        type_: cli.r#type,
+        min_size: cli.min_size.clone(),
+        names: cli.name.clone(),
+        changed_within: cli.changed_within.clone(),
+        changed_before: cli.changed_before.clone(),
+    })?;
+
     if cli.ui {
         // The UI server runs the scan in a background task so the browser can
         // pop up immediately and show "Scanning..." while we wait.
@@ -49,15 +63,17 @@ fn main() -> Result<()> {
 
     let (mut tree, counts) = scanner::scan(&path, cli.hardlinks)?;
     tree.sort(&cli.sort, cli.reverse);
+
     let config = OutputConfig {
-        depth: cli.depth,
+        max_depth: cli.max_depth,
         top: cli.top,
         scan_root: &path,
         counts: &counts,
         hardlinks: cli.hardlinks,
+        filter: &filter,
     };
     let mode = if let Some(n) = cli.largest {
-        // --largest is a view, mutually exclusive with --analyze and --ui
+        // --largest is a view, mutually exclusive with --summary and --ui
         // (clap enforces). Format follows the (orthogonal) format flag.
         let format = if cli.json {
             LargestFormat::Json
@@ -71,8 +87,8 @@ fn main() -> Result<()> {
         OutputMode::Json
     } else if cli.ndjson {
         OutputMode::Ndjson
-    } else if cli.analyze {
-        OutputMode::Analyze
+    } else if cli.summary {
+        OutputMode::Summary
     } else {
         OutputMode::Tree
     };

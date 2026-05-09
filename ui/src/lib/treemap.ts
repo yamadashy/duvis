@@ -120,7 +120,7 @@ export function aggregate(root: TreeNode, staleDays: number): CategoryAggregates
   let fileCount = 0;
   let stale = 0;
 
-  // Mirror src/output/analyze.rs: when a directory carries a non-Other
+  // Mirror src/output/summary.rs: when a directory carries a non-Other
   // category (propagated from its children), count the whole subtree under
   // that category and stop recursing. Otherwise descend into the children.
   function visit(n: TreeNode) {

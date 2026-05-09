@@ -1,8 +1,9 @@
-pub mod analyze;
+pub mod filter;
 mod format;
 pub mod json;
 pub mod largest;
 pub mod ndjson;
+pub mod summary;
 pub mod tree;
 
 use std::collections::HashMap;
@@ -13,7 +14,7 @@ use crate::entry::Entry;
 use crate::scanner::{HardlinkPolicy, ScanCounts};
 
 pub struct OutputConfig<'a> {
-    pub depth: Option<usize>,
+    pub max_depth: Option<usize>,
     pub top: Option<usize>,
     /// Absolute, canonicalized scan root. Surfaced via `meta.scan_root` in
     /// JSON / NDJSON so an agent that pipes the output elsewhere can still
@@ -27,6 +28,11 @@ pub struct OutputConfig<'a> {
     /// so consumers can tell whether a per-path size already accounts for
     /// shared inodes or not.
     pub hardlinks: HardlinkPolicy,
+    /// Display-time predicate. `Filter::is_empty()` short-circuits the
+    /// per-entry match check in renderers that would otherwise pay for
+    /// it. Totals (parent dir size, scan counts) are unaffected — only
+    /// what's *shown* is filtered.
+    pub filter: &'a filter::Filter,
 }
 
 /// Pick the largest `n` children by size while preserving their relative order
@@ -37,34 +43,41 @@ pub struct OutputConfig<'a> {
 /// `--top` advertises "by size" (per --help and README), but the children
 /// are presented in --sort order, so we must split selection from display.
 pub(crate) fn select_top(children: &[Entry], top: Option<usize>) -> (Vec<&Entry>, usize, u64) {
+    let refs: Vec<&Entry> = children.iter().collect();
+    select_top_refs(&refs, top)
+}
+
+/// Same as [`select_top`] but operates on an already-borrowed slice
+/// (e.g. after a filter pass produced a `Vec<&Entry>`). Avoids
+/// reconstructing the underlying `Vec<Entry>` just to call select_top.
+pub(crate) fn select_top_refs<'a>(
+    refs: &[&'a Entry],
+    top: Option<usize>,
+) -> (Vec<&'a Entry>, usize, u64) {
     match top {
-        None => (children.iter().collect(), 0, 0),
-        Some(n) if n >= children.len() => (children.iter().collect(), 0, 0),
+        None => (refs.to_vec(), 0, 0),
+        Some(n) if n >= refs.len() => (refs.to_vec(), 0, 0),
         Some(n) => {
             // Indices of the n largest by size. Tie-break by original index to
             // be deterministic when sizes are equal.
-            let mut by_size: Vec<(usize, u64)> = children
-                .iter()
-                .enumerate()
-                .map(|(i, e)| (i, e.size))
-                .collect();
+            let mut by_size: Vec<(usize, u64)> =
+                refs.iter().enumerate().map(|(i, e)| (i, e.size)).collect();
             by_size.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
             by_size.truncate(n);
             let keep: std::collections::BTreeSet<usize> = by_size.iter().map(|&(i, _)| i).collect();
 
-            let kept: Vec<&Entry> = children
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| keep.contains(i))
-                .map(|(_, e)| e)
-                .collect();
-            let dropped_size: u64 = children
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| !keep.contains(i))
-                .map(|(_, e)| e.size)
-                .sum();
-            let dropped_count = children.len() - kept.len();
+            // Single pass: partition into kept refs vs accumulated
+            // dropped size, instead of iterating refs twice.
+            let mut kept: Vec<&Entry> = Vec::with_capacity(keep.len());
+            let mut dropped_size: u64 = 0;
+            for (i, e) in refs.iter().enumerate() {
+                if keep.contains(&i) {
+                    kept.push(*e);
+                } else {
+                    dropped_size += e.size;
+                }
+            }
+            let dropped_count = refs.len() - kept.len();
             (kept, dropped_count, dropped_size)
         }
     }
@@ -78,7 +91,7 @@ pub enum OutputMode {
     Tree,
     Json,
     Ndjson,
-    Analyze,
+    Summary,
     /// Flat list of the N largest entries. The format (text / JSON /
     /// NDJSON) is decided by which format flag was passed alongside
     /// `--largest` — see [`largest::LargestFormat`].
@@ -177,7 +190,7 @@ pub fn render(
         OutputMode::Tree => tree::write(entry, config, out)?,
         OutputMode::Json => json::write(entry, config, out)?,
         OutputMode::Ndjson => ndjson::write(entry, config, out)?,
-        OutputMode::Analyze => analyze::write(entry, out)?,
+        OutputMode::Summary => summary::write(entry, config, out)?,
         OutputMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
     }
     Ok(())

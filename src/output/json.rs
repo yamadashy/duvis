@@ -3,10 +3,11 @@ use std::io::Write;
 use anyhow::Result;
 use serde::Serialize;
 
+use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
     child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
-    scan_root_for_wire, select_top, OutputConfig, SubtreeCounts, WIRE_VERSION,
+    scan_root_for_wire, select_top_refs, OutputConfig, SubtreeCounts, WIRE_VERSION,
 };
 use crate::category::Category;
 use crate::entry::Entry;
@@ -41,7 +42,7 @@ struct JsonOutput {
     #[serde(skip_serializing_if = "Option::is_none")]
     modified_days_ago: Option<u64>,
     /// Total regular files in this subtree (recursive). Constant for a
-    /// given Entry — does *not* change with `--top` / `--depth` since
+    /// given Entry — does *not* change with `--top` / `--max-depth` since
     /// those only affect what we emit, not what was measured.
     file_count: u64,
     /// Total directories in this subtree, excluding self.
@@ -59,7 +60,9 @@ struct JsonOutput {
 }
 
 /// Build the JSON view, looking up precomputed counts in `counts` so
-/// each entry is touched O(1) times.
+/// each entry is touched O(1) times. When a filter is active, children
+/// outside the visible set (no self-match and no descendant match) are
+/// skipped.
 fn build(
     entry: &Entry,
     relative_path: String,
@@ -67,6 +70,7 @@ fn build(
     max_depth: Option<usize>,
     top: Option<usize>,
     counts: &SubtreeCounts,
+    visible: Option<&SubtreeMatch>,
 ) -> JsonOutput {
     let render_children = !matches!(max_depth, Some(max) if depth as usize >= max);
 
@@ -76,14 +80,32 @@ fn build(
 
     if let Some(children) = entry.children() {
         if render_children {
-            let (kept, dropped_count, dropped_size) = select_top(children, top);
+            // Filter survives → --top, so an active filter narrows the
+            // pool first and `truncated_*` reports drops *within* the
+            // surviving set.
+            let filtered: Vec<&Entry> = match visible {
+                None => children.iter().collect(),
+                Some(map) => children
+                    .iter()
+                    .filter(|c| subtree_visible(c, map))
+                    .collect(),
+            };
+            let (kept, dropped_count, dropped_size) = select_top_refs(&filtered, top);
             truncated_count = dropped_count as u64;
             truncated_size = dropped_size;
 
             let mut rendered = Vec::with_capacity(kept.len());
             for child in kept {
                 let child_path = child_relative_path(&relative_path, &child.name);
-                rendered.push(build(child, child_path, depth + 1, max_depth, top, counts));
+                rendered.push(build(
+                    child,
+                    child_path,
+                    depth + 1,
+                    max_depth,
+                    top,
+                    counts,
+                    visible,
+                ));
             }
             children_out = Some(rendered);
         }
@@ -118,7 +140,20 @@ fn build(
 
 pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Result<()> {
     let counts = precompute_subtree_counts(entry);
-    let tree = build(entry, ".".to_string(), 0, config.depth, config.top, &counts);
+    let visible_map = if config.filter.is_empty() {
+        None
+    } else {
+        Some(precompute_subtree_match(entry, config.filter))
+    };
+    let tree = build(
+        entry,
+        ".".to_string(),
+        0,
+        config.max_depth,
+        config.top,
+        &counts,
+        visible_map.as_ref(),
+    );
     let root = JsonRoot {
         meta: Meta {
             wire_version: WIRE_VERSION,
@@ -140,6 +175,7 @@ mod tests {
     use super::*;
     use crate::category::Category;
     use crate::entry::Entry;
+    use crate::output::filter::Filter;
     use crate::scanner::HardlinkPolicy;
     use std::path::PathBuf;
     use std::sync::atomic::Ordering;
@@ -155,13 +191,15 @@ mod tests {
     fn fake_config<'a>(
         scan_root: &'a PathBuf,
         counts: &'a crate::scanner::ScanCounts,
+        filter: &'a Filter,
     ) -> OutputConfig<'a> {
         OutputConfig {
-            depth: None,
+            max_depth: None,
             top: None,
             scan_root,
             counts,
             hardlinks: HardlinkPolicy::CountOnce,
+            filter,
         }
     }
 
@@ -170,7 +208,8 @@ mod tests {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
         counts.items_scanned.store(42, Ordering::Relaxed);
-        let cfg = fake_config(&scan_root, &counts);
+        let filter = Filter::default();
+        let cfg = fake_config(&scan_root, &counts, &filter);
         let tree = dir("proj", vec![file("a.txt", 10)]);
         let mut buf = Vec::new();
         write(&tree, &cfg, &mut buf).unwrap();
@@ -185,7 +224,8 @@ mod tests {
     fn relative_path_root_is_dot_and_descendants_use_forward_slashes() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
-        let cfg = fake_config(&scan_root, &counts);
+        let filter = Filter::default();
+        let cfg = fake_config(&scan_root, &counts, &filter);
         let tree = dir(
             "proj",
             vec![dir("src", vec![file("main.rs", 5)]), file("readme.md", 3)],
@@ -211,7 +251,8 @@ mod tests {
     fn file_and_dir_counts_aggregate_recursively() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
-        let cfg = fake_config(&scan_root, &counts);
+        let filter = Filter::default();
+        let cfg = fake_config(&scan_root, &counts, &filter);
         // proj/  (1 dir self + 1 dir src) → dir_count = 1 ; file_count = 3
         //   src/
         //     a.txt
@@ -235,12 +276,14 @@ mod tests {
     fn truncated_counts_reflect_top_drops() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
+        let filter = Filter::default();
         let cfg = OutputConfig {
-            depth: None,
+            max_depth: None,
             top: Some(1),
             scan_root: &scan_root,
             counts: &counts,
             hardlinks: HardlinkPolicy::CountOnce,
+            filter: &filter,
         };
         // 3 files, --top 1 keeps the largest, 2 are dropped.
         let tree = dir(
