@@ -1,6 +1,6 @@
 [package]
 name = "duvis"
-version = "0.1.3"
+version = "0.1.4"
 edition = "2021"
 description = "Disk usage visualizer for both AI and humans"
 repository = "https://github.com/yamadashy/duvis"
