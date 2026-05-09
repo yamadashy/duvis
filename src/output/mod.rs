@@ -4,6 +4,7 @@ pub mod json;
 pub mod ndjson;
 pub mod tree;
 
+use std::collections::HashMap;
 use std::io::Write;
 use std::path::Path;
 
@@ -77,6 +78,37 @@ pub enum OutputMode {
     Json,
     Ndjson,
     Analyze,
+}
+
+/// Precomputed `(file_count, dir_count_including_self)` for every entry
+/// in a scanned tree, keyed by entry pointer. JSON / NDJSON renderers
+/// look up here instead of recomputing per visit, which would otherwise
+/// be O(N²) on deep trees because every node would re-walk its full
+/// subtree. Pointers are stable for the duration of a render call since
+/// the tree is held by main and never moved.
+pub(crate) type SubtreeCounts = HashMap<*const Entry, (u64, u64)>;
+
+/// Walk the tree once bottom-up and record per-entry subtree counts.
+/// `(file_count, dir_count_including_self)` so a parent can sum a
+/// child's counts directly into its own without per-child branching.
+pub(crate) fn precompute_subtree_counts(entry: &Entry) -> SubtreeCounts {
+    let mut map: SubtreeCounts = HashMap::new();
+    walk_counts(entry, &mut map);
+    map
+}
+
+fn walk_counts(entry: &Entry, map: &mut SubtreeCounts) -> (u64, u64) {
+    let mut files = if entry.is_dir() { 0 } else { 1 };
+    let mut dirs = if entry.is_dir() { 1 } else { 0 };
+    if let Some(children) = entry.children() {
+        for child in children {
+            let (cfc, cdc) = walk_counts(child, map);
+            files += cfc;
+            dirs += cdc;
+        }
+    }
+    map.insert(entry as *const Entry, (files, dirs));
+    (files, dirs)
 }
 
 /// Dispatch to the appropriate output backend. Each backend takes a

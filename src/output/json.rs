@@ -4,7 +4,7 @@ use anyhow::Result;
 use serde::Serialize;
 
 use super::format::format_size;
-use super::{select_top, OutputConfig};
+use super::{precompute_subtree_counts, select_top, OutputConfig, SubtreeCounts};
 use crate::category::Category;
 use crate::entry::Entry;
 use crate::scanner::HardlinkPolicy;
@@ -81,45 +81,35 @@ fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
 
 /// `/`-normalized path from scan root. Root is `"."`; immediate children
 /// are just their name; deeper paths are `parent/child`. Always forward
-/// slashes regardless of OS so the wire shape is stable.
+/// slashes regardless of OS or filenames containing literal `\` (Linux
+/// allows them, Windows file_name() should never produce them but
+/// fallback paths can).
 fn child_relative_path(parent: &str, name: &str) -> String {
+    let normalized = name.replace('\\', "/");
     if parent == "." {
-        name.to_string()
+        normalized
     } else {
-        format!("{parent}/{name}")
+        format!("{parent}/{normalized}")
     }
 }
 
-/// Build the JSON view bottom-up so `file_count`/`dir_count` can be
-/// summed in a single pass. Returns the rendered subtree plus the
-/// (file_count, dir_count) totals for it (including self for dirs and
-/// counting itself as 1 file at the leaf level).
+/// Build the JSON view, looking up precomputed counts in `counts` so
+/// each entry is touched O(1) times.
 fn build(
     entry: &Entry,
     relative_path: String,
     depth: u32,
     max_depth: Option<usize>,
     top: Option<usize>,
-) -> (JsonOutput, u64, u64) {
+    counts: &SubtreeCounts,
+) -> JsonOutput {
     let render_children = !matches!(max_depth, Some(max) if depth as usize >= max);
 
     let mut children_out: Option<Vec<JsonOutput>> = None;
-    let mut subtree_file_count: u64 = 0;
-    let mut subtree_dir_count: u64 = 0;
     let mut truncated_count: u64 = 0;
     let mut truncated_size: u64 = 0;
 
     if let Some(children) = entry.children() {
-        // Counts always reflect the full scanned subtree, even when we
-        // don't render the children (depth limit) or drop some of them
-        // (--top). This is what lets an agent tell "you only see 5 of
-        // 200 children".
-        for child in children {
-            let (_, fc, dc) = subtree_counts(child);
-            subtree_file_count += fc;
-            subtree_dir_count += dc;
-        }
-
         if render_children {
             let (kept, dropped_count, dropped_size) = select_top(children, top);
             truncated_count = dropped_count as u64;
@@ -128,17 +118,23 @@ fn build(
             let mut rendered = Vec::with_capacity(kept.len());
             for child in kept {
                 let child_path = child_relative_path(&relative_path, &child.name);
-                let (json, _, _) = build(child, child_path, depth + 1, max_depth, top);
-                rendered.push(json);
+                rendered.push(build(child, child_path, depth + 1, max_depth, top, counts));
             }
             children_out = Some(rendered);
         }
     }
 
-    let self_file_count: u64 = if entry.is_dir() { 0 } else { 1 };
-    let self_dir_count: u64 = if entry.is_dir() { 1 } else { 0 };
+    // Counts always reflect the *full* scanned subtree, even when we
+    // don't render the children (depth limit) or drop some of them
+    // (--top). This is what lets an agent tell "you only see 5 of 200
+    // children".
+    let (file_count, dir_count_with_self) = counts
+        .get(&(entry as *const Entry))
+        .copied()
+        .unwrap_or((0, 0));
+    let dir_count = dir_count_with_self.saturating_sub(if entry.is_dir() { 1 } else { 0 });
 
-    let json = JsonOutput {
+    JsonOutput {
         name: entry.name.clone(),
         relative_path,
         depth,
@@ -147,42 +143,17 @@ fn build(
         is_dir: entry.is_dir(),
         category: entry.category,
         modified_days_ago: entry.modified_days_ago,
-        file_count: subtree_file_count + self_file_count,
-        dir_count: subtree_dir_count,
+        file_count,
+        dir_count,
         children: children_out,
         truncated_count,
         truncated_size,
-    };
-
-    (
-        json,
-        subtree_file_count + self_file_count,
-        subtree_dir_count + self_dir_count,
-    )
-}
-
-/// Count files / dirs in a subtree without rendering. Returns
-/// `(_, file_count, dir_count)` where the leading `()` keeps the shape
-/// symmetric with [`build`] for future refactoring.
-fn subtree_counts(entry: &Entry) -> ((), u64, u64) {
-    if !entry.is_dir() {
-        return ((), 1, 0);
     }
-    let mut files: u64 = 0;
-    let mut dirs: u64 = 0;
-    if let Some(children) = entry.children() {
-        for child in children {
-            let (_, fc, dc) = subtree_counts(child);
-            files += fc;
-            dirs += dc;
-        }
-    }
-    // Self counts as a directory for our parent's tally.
-    ((), files, dirs + 1)
 }
 
 pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Result<()> {
-    let (tree, _, _) = build(entry, ".".to_string(), 0, config.depth, config.top);
+    let counts = precompute_subtree_counts(entry);
+    let tree = build(entry, ".".to_string(), 0, config.depth, config.top, &counts);
     let root = JsonRoot {
         meta: Meta {
             wire_version: WIRE_VERSION,

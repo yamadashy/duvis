@@ -14,7 +14,7 @@ use anyhow::Result;
 use serde::Serialize;
 
 use super::format::format_size;
-use super::{select_top, OutputConfig};
+use super::{precompute_subtree_counts, select_top, OutputConfig, SubtreeCounts};
 use crate::category::Category;
 use crate::entry::Entry;
 use crate::scanner::HardlinkPolicy;
@@ -70,32 +70,14 @@ fn hardlinks_label(p: HardlinkPolicy) -> &'static str {
     }
 }
 
+/// `/`-normalized path. Mirrors json.rs::child_relative_path.
 fn child_relative_path(parent: &str, name: &str) -> String {
+    let normalized = name.replace('\\', "/");
     if parent == "." {
-        name.to_string()
+        normalized
     } else {
-        format!("{parent}/{name}")
+        format!("{parent}/{normalized}")
     }
-}
-
-/// (file_count, dir_count) of the full subtree at `entry` including
-/// `entry` itself. Mirrors the helper in `json.rs` but returns counts
-/// only — NDJSON renders inline so it doesn't need a parallel JSON tree
-/// in memory.
-fn subtree_counts(entry: &Entry) -> (u64, u64) {
-    if !entry.is_dir() {
-        return (1, 0);
-    }
-    let mut files: u64 = 0;
-    let mut dirs: u64 = 0;
-    if let Some(children) = entry.children() {
-        for child in children {
-            let (fc, dc) = subtree_counts(child);
-            files += fc;
-            dirs += dc;
-        }
-    }
-    (files, dirs + 1)
 }
 
 fn write_meta(out: &mut impl Write, config: &OutputConfig) -> Result<()> {
@@ -118,14 +100,17 @@ fn write_entry(
     depth: u32,
     max_depth: Option<usize>,
     top: Option<usize>,
+    counts: &SubtreeCounts,
     out: &mut impl Write,
 ) -> Result<()> {
     // Counts always reflect the *full* scanned subtree at this entry, not
     // the truncated view. Agents need this so they can detect "we only
     // see N of M children" even when --depth or --top is in play.
-    let (file_count_self, dir_count_self) = subtree_counts(entry);
-    let file_count = file_count_self;
-    let dir_count = dir_count_self.saturating_sub(if entry.is_dir() { 1 } else { 0 });
+    let (file_count, dir_count_with_self) = counts
+        .get(&(entry as *const Entry))
+        .copied()
+        .unwrap_or((0, 0));
+    let dir_count = dir_count_with_self.saturating_sub(if entry.is_dir() { 1 } else { 0 });
 
     let render_children = !matches!(max_depth, Some(max) if depth as usize >= max);
 
@@ -160,14 +145,23 @@ fn write_entry(
 
     for child in to_render {
         let child_path = child_relative_path(&relative_path, &child.name);
-        write_entry(child, child_path, depth + 1, max_depth, top, out)?;
+        write_entry(child, child_path, depth + 1, max_depth, top, counts, out)?;
     }
     Ok(())
 }
 
 pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Result<()> {
     write_meta(out, config)?;
-    write_entry(entry, ".".to_string(), 0, config.depth, config.top, out)?;
+    let counts = precompute_subtree_counts(entry);
+    write_entry(
+        entry,
+        ".".to_string(),
+        0,
+        config.depth,
+        config.top,
+        &counts,
+        out,
+    )?;
     Ok(())
 }
 
