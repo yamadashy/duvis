@@ -60,7 +60,7 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
       {extended.length > 0 ? (
         <Fragment>
           <div className="legend-divider" aria-hidden="true">
-            Extended
+            Extended categories
           </div>
           {extended.map(row)}
         </Fragment>
