@@ -1,15 +1,30 @@
 pub mod analyze;
 mod format;
 pub mod json;
+pub mod ndjson;
 pub mod tree;
 
 use std::io::Write;
+use std::path::Path;
 
 use crate::entry::Entry;
+use crate::scanner::{HardlinkPolicy, ScanCounts};
 
-pub struct OutputConfig {
+pub struct OutputConfig<'a> {
     pub depth: Option<usize>,
     pub top: Option<usize>,
+    /// Absolute, canonicalized scan root. Surfaced via `meta.scan_root` in
+    /// JSON / NDJSON so an agent that pipes the output elsewhere can still
+    /// reconstruct full paths from the per-entry `relative_path`.
+    pub scan_root: &'a Path,
+    /// Final scan counters. Forwarded into `meta` for the structured
+    /// outputs so callers can tell "we visited 1.2M items, 3 were skipped"
+    /// without parsing stderr.
+    pub counts: &'a ScanCounts,
+    /// Which hardlink dedup mode produced the sizes. Recorded in `meta`
+    /// so consumers can tell whether a per-path size already accounts for
+    /// shared inodes or not.
+    pub hardlinks: HardlinkPolicy,
 }
 
 /// Pick the largest `n` children by size while preserving their relative order
@@ -53,26 +68,32 @@ pub(crate) fn select_top(children: &[Entry], top: Option<usize>) -> (Vec<&Entry>
     }
 }
 
+/// Which structured / human output mode to render. Selected by clap's
+/// mutually-exclusive ArgGroup, so exactly one variant reaches the
+/// dispatcher.
+#[derive(Debug, Clone, Copy)]
+pub enum OutputMode {
+    Tree,
+    Json,
+    Ndjson,
+    Analyze,
+}
+
 /// Dispatch to the appropriate output backend. Each backend takes a
-/// `&mut impl Write` so tests can capture output into a buffer.
-///
-/// `--json` and `--analyze` are mutually exclusive (enforced by clap's
-/// ArgGroup); when neither is set we fall back to the human-friendly tree.
-/// `--ui` is dispatched by main.rs since it spins up an async server
-/// instead of writing to a stream.
+/// `&mut impl Write` so tests can capture output into a buffer. `--ui`
+/// is handled in main.rs since it spins up an async server instead of
+/// writing to a stream.
 pub fn render(
     entry: &Entry,
     config: &OutputConfig,
-    json: bool,
-    analyze: bool,
+    mode: OutputMode,
     out: &mut impl Write,
 ) -> anyhow::Result<()> {
-    if analyze {
-        analyze::write(entry, out)?;
-    } else if json {
-        json::write(entry, config, out)?;
-    } else {
-        tree::write(entry, config, out)?;
+    match mode {
+        OutputMode::Tree => tree::write(entry, config, out)?,
+        OutputMode::Json => json::write(entry, config, out)?,
+        OutputMode::Ndjson => ndjson::write(entry, config, out)?,
+        OutputMode::Analyze => analyze::write(entry, out)?,
     }
     Ok(())
 }

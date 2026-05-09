@@ -4,7 +4,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use duvis::cli::Cli;
-use duvis::output::{self, OutputConfig};
+use duvis::output::{self, OutputConfig, OutputMode};
 use duvis::scanner;
 
 fn main() -> Result<()> {
@@ -51,10 +51,22 @@ fn main() -> Result<()> {
     let config = OutputConfig {
         depth: cli.depth,
         top: cli.top,
+        scan_root: &path,
+        counts: &counts,
+        hardlinks: cli.hardlinks,
+    };
+    let mode = if cli.json {
+        OutputMode::Json
+    } else if cli.ndjson {
+        OutputMode::Ndjson
+    } else if cli.analyze {
+        OutputMode::Analyze
+    } else {
+        OutputMode::Tree
     };
     let stdout = io::stdout();
     let mut out = stdout.lock();
-    output::render(&tree, &config, cli.json, cli.analyze, &mut out)?;
+    output::render(&tree, &config, mode, &mut out)?;
     out.flush()?;
 
     let skipped = counts.skipped();

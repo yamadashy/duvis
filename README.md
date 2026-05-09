@@ -63,6 +63,9 @@ duvis ~/projects --analyze
 # Structured JSON output (for AI agents and scripts)
 duvis ~/projects --json
 
+# Streaming NDJSON (one record per line, jq / DB / agent friendly)
+duvis ~/projects --ndjson | jq -c 'select(.type == "entry" and .size > 1000000)'
+
 # Open browser UI with an interactive treemap
 duvis ~/projects --ui
 ```
@@ -73,7 +76,8 @@ duvis ~/projects --ui
 | --- | --- |
 | `-d, --depth <N>` | Maximum depth to display |
 | `-n, --top <N>` | Show only the top N entries by size |
-| `--json` | Output as JSON |
+| `--json` | Output as a single JSON document with `meta` + `tree` |
+| `--ndjson` | Stream entries as newline-delimited JSON (one record per line) |
 | `--analyze` | Show a per-category size summary |
 | `--ui` | Open browser UI with treemap visualization |
 | `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
@@ -81,7 +85,7 @@ duvis ~/projects --ui
 | `--reverse` | Reverse sort order |
 | `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
 
-`--json` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown.
+`--json` / `--ndjson` / `--analyze` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown.
 
 ## Output examples
 
@@ -108,17 +112,46 @@ Category Summary:
 
 ```json
 {
-  "name": "project",
-  "size": 460195536,
-  "size_human": "438.9 MB",
-  "is_dir": true,
-  "category": "build",
-  "modified_days_ago": 0,
-  "children": [
-    { "name": "target", "size": 460091645, "category": "build", ... }
-  ]
+  "meta": {
+    "wire_version": 2,
+    "duvis_version": "0.1.4",
+    "scan_root": "/Users/me/project",
+    "hardlinks": "count-once",
+    "items_scanned": 1234,
+    "items_skipped": 0
+  },
+  "tree": {
+    "name": "project",
+    "relative_path": ".",
+    "depth": 0,
+    "size": 460195536,
+    "size_human": "438.9 MB",
+    "is_dir": true,
+    "category": "build",
+    "modified_days_ago": 0,
+    "file_count": 412,
+    "dir_count": 38,
+    "children": [
+      { "name": "target", "relative_path": "target", "size": 460091645, "category": "build", ... }
+    ]
+  }
 }
 ```
+
+When `--top N` drops some children, the parent gets `truncated_count` and `truncated_size`
+fields so consumers can tell how much was hidden. `file_count` / `dir_count` always reflect
+the *full* scanned subtree — they don't change with `--top` or `--depth`.
+
+### NDJSON
+
+```jsonl
+{"type":"meta","wire_version":2,"duvis_version":"0.1.4","scan_root":"/Users/me/project",...}
+{"type":"entry","name":"project","relative_path":".","depth":0,"size":460195536,...}
+{"type":"entry","name":"target","relative_path":"target","depth":1,"size":460091645,...}
+```
+
+One JSON object per line, in DFS pre-order (parent before its children). Designed for
+streaming pipelines: `duvis ~/projects --ndjson | jq -c 'select(.size > 1e8)'`.
 
 ## Categories
 
