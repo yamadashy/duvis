@@ -1,0 +1,45 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "config:recommended",
+  ],
+  "schedule": ["before 9am on saturday"],
+  "rangeStrategy": "bump",
+  "dependencyDashboard": false,
+  "labels": ["dependencies", "renovate"],
+  "packageRules": [
+    {
+      matchDepTypes: ['peerDependencies'],
+      enabled: false,
+    },
+    // Rust crates (Cargo.toml + Cargo.lock)
+    {
+      matchManagers: ['cargo'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'cargo non-major dependencies',
+    },
+    {
+      matchManagers: ['cargo'],
+      matchUpdateTypes: ['major'],
+      groupName: 'cargo major dependencies',
+    },
+    // Browser UI (Vite + React, lives under ui/)
+    {
+      matchFileNames: ['ui/package.json'],
+      matchUpdateTypes: ['minor', 'patch'],
+      groupName: 'ui non-major dependencies',
+    },
+    {
+      matchFileNames: ['ui/package.json'],
+      matchUpdateTypes: ['major'],
+      groupName: 'ui major dependencies',
+    },
+    // GitHub Actions (.github/workflows/*.yml). Group everything because
+    // these updates are usually low-risk and noisy when split.
+    {
+      matchManagers: ['github-actions'],
+      groupName: 'github-actions',
+    },
+  ],
+  "minimumReleaseAge": "7 days",
+}
