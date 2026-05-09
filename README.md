@@ -121,7 +121,14 @@ Category Summary:
 
 ## Categories
 
-`duvis` classifies entries into seven categories so you can quickly see what kind of data is filling your disk:
+`duvis` classifies entries into a small **core** vocabulary that always
+appears in the legend, plus a handful of **extended** categories that show
+up only when something matches them. Core stays compact for typical
+project trees; extended pops into view when relevant (e.g. a `model_cache`
+row appears on an AI dev machine, an `installer` row appears in
+`~/Downloads`).
+
+### Core
 
 - `cache` — package and tool caches (`node_modules/`, `.cache/`, `__pycache__/`, `.cargo/`, ...)
 - `build` — build artifacts (`target/`, `dist/`, `build/`, `.next/`, ...)
@@ -130,6 +137,14 @@ Category Summary:
 - `vcs` — version control metadata (`.git/`, ...)
 - `ide` — IDE/editor metadata (`.idea/`, `.vscode/`, ...)
 - `other` — everything else
+
+### Extended (shown only when present)
+
+- `archive` — compressed bundles (`*.zip`, `*.tar.gz`, `*.7z`, `*.zst`, ...)
+- `installer` — install packages (`*.dmg`, `*.pkg`, `*.exe`, `*.deb`, `*.AppImage`, ...)
+- `vm_image` — virtual machine disk images (`*.vdi`, `*.vmdk`, `*.qcow2`, OrbStack's `data.img.raw`, ...)
+- `model_cache` — local AI model stores (`.ollama/`, `.lmstudio/`, `.huggingface/`)
+- `backup` — backups (Time Machine, `*.bak`, `*.backup`, `*.old`)
 
 Categories are assigned by directory or file name. Once a directory is classified
 as anything other than `other`, **everything inside it inherits that category** —
