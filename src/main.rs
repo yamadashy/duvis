@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use duvis::cli::Cli;
+use duvis::output::largest::LargestFormat;
 use duvis::output::{self, OutputConfig, OutputMode};
 use duvis::scanner;
 
@@ -55,7 +56,18 @@ fn main() -> Result<()> {
         counts: &counts,
         hardlinks: cli.hardlinks,
     };
-    let mode = if cli.json {
+    let mode = if let Some(n) = cli.largest {
+        // --largest is a view, mutually exclusive with --analyze and --ui
+        // (clap enforces). Format follows the (orthogonal) format flag.
+        let format = if cli.json {
+            LargestFormat::Json
+        } else if cli.ndjson {
+            LargestFormat::Ndjson
+        } else {
+            LargestFormat::Text
+        };
+        OutputMode::Largest { n, format }
+    } else if cli.json {
         OutputMode::Json
     } else if cli.ndjson {
         OutputMode::Ndjson

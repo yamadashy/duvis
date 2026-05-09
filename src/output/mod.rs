@@ -1,6 +1,7 @@
 pub mod analyze;
 mod format;
 pub mod json;
+pub mod largest;
 pub mod ndjson;
 pub mod tree;
 
@@ -70,14 +71,21 @@ pub(crate) fn select_top(children: &[Entry], top: Option<usize>) -> (Vec<&Entry>
 }
 
 /// Which structured / human output mode to render. Selected by clap's
-/// mutually-exclusive ArgGroup, so exactly one variant reaches the
-/// dispatcher.
+/// mutually-exclusive ArgGroup + per-flag conflicts, so exactly one
+/// variant reaches the dispatcher.
 #[derive(Debug, Clone, Copy)]
 pub enum OutputMode {
     Tree,
     Json,
     Ndjson,
     Analyze,
+    /// Flat list of the N largest entries. The format (text / JSON /
+    /// NDJSON) is decided by which format flag was passed alongside
+    /// `--largest` — see [`largest::LargestFormat`].
+    Largest {
+        n: usize,
+        format: largest::LargestFormat,
+    },
 }
 
 /// Bumped when the structured (JSON / NDJSON) wire format makes a
@@ -170,6 +178,7 @@ pub fn render(
         OutputMode::Json => json::write(entry, config, out)?,
         OutputMode::Ndjson => ndjson::write(entry, config, out)?,
         OutputMode::Analyze => analyze::write(entry, out)?,
+        OutputMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
     }
     Ok(())
 }
