@@ -181,9 +181,13 @@ fn walk_match(entry: &Entry, filter: &Filter, map: &mut SubtreeMatch) -> bool {
 }
 
 /// Look up "should this entry contribute to the rendered view?" given
-/// a filter precompute result. The root is always considered visible
-/// (otherwise the user would see nothing for an "empty match" scan
-/// other than the meta block — already conveyed by zero results).
+/// a filter precompute result. Returns whether `entry` itself or any
+/// descendant matched according to the precomputed `SubtreeMatch`.
+/// Returns `false` for entries not present in the map (e.g. when
+/// `precompute_subtree_match` was rooted elsewhere). Renderers are
+/// responsible for emitting the scan-root header / `meta` block
+/// regardless of this value, so an "empty match" scan still produces a
+/// coherent (zero-result) document.
 pub fn subtree_visible(entry: &Entry, map: &SubtreeMatch) -> bool {
     map.get(&(entry as *const Entry)).copied().unwrap_or(false)
 }
