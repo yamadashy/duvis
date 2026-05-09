@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778315663526,
+  "lastUpdate": 1778318029955,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -945,6 +945,51 @@ window.BENCHMARK_DATA = {
             "range": "±99.9",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 516.25ms, Q3: 616.15ms\nMin: 511.27ms, Max: 842.8ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "8dfea0fee6064b71bc69c833dbfae707d68d487e",
+          "message": "Merge pull request #3 from yamadashy/chore/renovate-setup\n\nchore: add Renovate config",
+          "timestamp": "2026-05-09T18:11:49+09:00",
+          "tree_id": "347341a27cc743c2a5541becb690bd8d365dd6bf",
+          "url": "https://github.com/yamadashy/duvis/commit/8dfea0fee6064b71bc69c833dbfae707d68d487e"
+        },
+        "date": 1778318029171,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 71.05,
+            "range": "±36.09",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 51.04ms, Q3: 87.13ms\nMin: 46.21ms, Max: 116.05ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.9,
+            "range": "±0.69",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 56.5ms, Q3: 57.19ms\nMin: 56.2ms, Max: 58.77ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 449.04,
+            "range": "±4.89",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 447.82ms, Q3: 452.71ms\nMin: 446.11ms, Max: 485.48ms"
           }
         ]
       }
