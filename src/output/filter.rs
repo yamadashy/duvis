@@ -228,8 +228,11 @@ pub fn parse_size(s: &str) -> Result<u64> {
     // Range check before the cast: `f64 as u64` saturates silently to
     // u64::MAX on overflow, which would let `--min-size 99999P` quietly
     // become an effectively unmatchable filter instead of an error.
+    // Use `>=` because `u64::MAX as f64` rounds *up* to 2^64 (u64::MAX
+    // itself isn't representable in f64), so `> u64::MAX as f64` would
+    // miss values that round-trip to exactly 2^64 and then saturate.
     let bytes = (num * mult as f64).round();
-    if bytes > u64::MAX as f64 {
+    if bytes >= u64::MAX as f64 {
         return Err(anyhow!("size out of range (exceeds u64): '{s}'"));
     }
     Ok(bytes as u64)
@@ -321,6 +324,10 @@ mod tests {
         assert!(parse_size("1e20").is_err());
         // Same magnitude with a unit multiplier.
         assert!(parse_size("99999999999T").is_err());
+        // Boundary: u64::MAX is not representable in f64 (rounds up to 2^64),
+        // so the literal value must also be rejected — otherwise it would
+        // silently saturate via `as u64`.
+        assert!(parse_size("18446744073709551615").is_err());
     }
 
     #[test]
