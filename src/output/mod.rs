@@ -66,18 +66,17 @@ pub(crate) fn select_top_refs<'a>(
             by_size.truncate(n);
             let keep: std::collections::BTreeSet<usize> = by_size.iter().map(|&(i, _)| i).collect();
 
-            let kept: Vec<&Entry> = refs
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| keep.contains(i))
-                .map(|(_, e)| *e)
-                .collect();
-            let dropped_size: u64 = refs
-                .iter()
-                .enumerate()
-                .filter(|(i, _)| !keep.contains(i))
-                .map(|(_, e)| e.size)
-                .sum();
+            // Single pass: partition into kept refs vs accumulated
+            // dropped size, instead of iterating refs twice.
+            let mut kept: Vec<&Entry> = Vec::with_capacity(keep.len());
+            let mut dropped_size: u64 = 0;
+            for (i, e) in refs.iter().enumerate() {
+                if keep.contains(&i) {
+                    kept.push(*e);
+                } else {
+                    dropped_size += e.size;
+                }
+            }
             let dropped_count = refs.len() - kept.len();
             (kept, dropped_count, dropped_size)
         }
