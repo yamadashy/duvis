@@ -60,7 +60,12 @@ impl ScanCounts {
 /// the bytes, others report 0.
 struct ScanCtx<'a> {
     counts: &'a ScanCounts,
+    // Only the Unix `file_disk_usage` reads these — Windows can't surface
+    // a portable file id, so dedup is a no-op there. Suppress the
+    // dead_code warning rather than splitting the struct by cfg.
+    #[cfg_attr(not(unix), allow(dead_code))]
     hardlinks: HardlinkPolicy,
+    #[cfg_attr(not(unix), allow(dead_code))]
     seen_inodes: Mutex<HashSet<(u64, u64)>>,
 }
 
