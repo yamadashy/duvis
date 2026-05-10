@@ -254,6 +254,29 @@
   background: var(--bg-2);
   color: var(--fg);
 }
+.hint-tip-list {
+  list-style: none;
+  margin: 6px 0 4px 0;
+  padding: 0;
+}
+.hint-tip-list li {
+  margin: 3px 0;
+  padding-left: 10px;
+  position: relative;
+}
+.hint-tip-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--fg-faint);
+}
+.hint-tip-foot {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  color: var(--fg-faint);
+}
 .btn.primary {
   background: var(--accent);
   color: var(--accent-fg);

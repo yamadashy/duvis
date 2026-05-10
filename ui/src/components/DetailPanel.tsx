@@ -1,4 +1,4 @@
-import { Fragment, useEffect, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { categoryMeta, categoryVar } from "../lib/categories";
 import { humanSize, pct, relTime } from "../lib/format";
@@ -326,27 +326,58 @@ function CopyJsonButton({
   total: number;
 }) {
   const { state, run } = useCopyButton();
+  const isDir = !!node.children && node.children.length > 0;
   const text = JSON.stringify(buildEntryPayload(node, scanRoot, segments, total), null, 2);
   const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy JSON";
   return (
-    <button
-      type="button"
-      className="btn"
-      onClick={() => run(text)}
-      title="Copy this entry as JSON (without children)"
+    <HintWrap
+      tip={
+        <>
+          <strong>Copies a single-entry JSON record.</strong>
+          <br />
+          Fields included:
+          <ul className="hint-tip-list">
+            <li>
+              <code>name</code>, <code>absolute_path</code>,{" "}
+              <code>relative_path</code>, <code>scan_root</code>
+            </li>
+            <li>
+              <code>size</code>, <code>size_human</code>, <code>pct_of_root</code>
+            </li>
+            <li>
+              <code>category</code>, <code>is_dir</code>, <code>depth</code>
+            </li>
+            <li>
+              <code>modified_days_ago</code> {node.data.modified_days_ago === undefined ? "(N/A)" : null}
+            </li>
+            {isDir ? (
+              <li>
+                <code>child_count</code>, <code>file_count</code>,{" "}
+                <code>dir_count</code>
+              </li>
+            ) : null}
+          </ul>
+          <span className="hint-tip-foot">
+            Mirrors the CLI <code>--json</code> per-entry shape. The subtree
+            (<code>children</code>) is omitted.
+          </span>
+        </>
+      }
     >
-      <svg
-        viewBox="0 0 12 12"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        aria-hidden="true"
-      >
-        <path d="M4.5 2.5C3 2.5 2.5 3 2.5 4.5v3C2.5 9 3 9.5 4.5 9.5" />
-        <path d="M7.5 2.5C9 2.5 9.5 3 9.5 4.5v3c0 1.5-.5 2-2 2" />
-      </svg>
-      {label}
-    </button>
+      <button type="button" className="btn" onClick={() => run(text)}>
+        <svg
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <path d="M4.5 2.5C3 2.5 2.5 3 2.5 4.5v3C2.5 9 3 9.5 4.5 9.5" />
+          <path d="M7.5 2.5C9 2.5 9.5 3 9.5 4.5v3c0 1.5-.5 2-2 2" />
+        </svg>
+        {label}
+      </button>
+    </HintWrap>
   );
 }
 
@@ -389,16 +420,14 @@ function RevealButton({ segments }: { segments: readonly string[] }) {
   );
 }
 
-// Intentionally disabled. duvis never deletes anything — surfacing the
-// affordance (instead of omitting it) tells users where the boundary is
-// without us answering "why isn't there a delete button" repeatedly.
-//
-// The tooltip is rendered through a portal at document.body so it can't
-// be clipped by the detail panel's overflow, and positioned via fixed
-// coords from the button's bounding rect so it lifts above any treemap
-// stacking context. (`title` doesn't render reliably on disabled buttons
-// in Chrome/Safari, which is why we don't use it.)
-function TrashButton() {
+/** Hover/focus tooltip rendered through a portal at document.body so it
+ *  can't be clipped by the detail panel's overflow, and positioned via
+ *  fixed coords from the wrapper's bounding rect so it lifts above any
+ *  treemap stacking context. (`title` doesn't render reliably on
+ *  disabled buttons in Chrome/Safari, which is why we don't use it.)
+ *  Shared by TrashButton (explains why it's disabled) and CopyJsonButton
+ *  (previews the field list before clicking). */
+function HintWrap({ children, tip }: { children: ReactNode; tip: ReactNode }) {
   const wrapRef = useRef<HTMLSpanElement>(null);
   const [anchor, setAnchor] = useState<{ cx: number; top: number } | null>(null);
 
@@ -421,6 +450,39 @@ function TrashButton() {
       onFocus={show}
       onBlur={hide}
     >
+      {children}
+      {anchor
+        ? createPortal(
+            <div
+              className="hint-tip"
+              role="tooltip"
+              style={{ left: anchor.cx, top: anchor.top - 8 }}
+            >
+              {tip}
+            </div>,
+            document.body,
+          )
+        : null}
+    </span>
+  );
+}
+
+// Intentionally disabled. duvis never deletes anything — surfacing the
+// affordance (instead of omitting it) tells users where the boundary is
+// without us answering "why isn't there a delete button" repeatedly.
+function TrashButton() {
+  return (
+    <HintWrap
+      tip={
+        <>
+          <strong>duvis is read-only by design.</strong>
+          <br />
+          It visualizes disk usage but never deletes anything. To clean up,
+          move files to the Trash yourself via Finder, Explorer,{" "}
+          <code>rm</code>, or a tool like <code>trash</code> CLI.
+        </>
+      }
+    >
       <button type="button" className="btn" disabled aria-disabled="true">
         <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M2 3.5h8" strokeLinecap="round" />
@@ -429,23 +491,7 @@ function TrashButton() {
         </svg>
         Move to trash
       </button>
-      {anchor
-        ? createPortal(
-            <div
-              className="hint-tip"
-              role="tooltip"
-              style={{ left: anchor.cx, top: anchor.top - 8 }}
-            >
-              <strong>duvis is read-only by design.</strong>
-              <br />
-              It visualizes disk usage but never deletes anything. To clean up,
-              move files to the Trash yourself via Finder, Explorer,{" "}
-              <code>rm</code>, or a tool like <code>trash</code> CLI.
-            </div>,
-            document.body,
-          )
-        : null}
-    </span>
+    </HintWrap>
   );
 }
 
