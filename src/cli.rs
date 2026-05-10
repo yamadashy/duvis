@@ -1,66 +1,18 @@
-// =============================================================================
-// EDITING NOTE — `--help` for AI agents and humans
-// =============================================================================
-// duvis is used by AI agents as well as humans, so `--help` should give them
-// enough orientation to start driving the tool. But duvis is also strictly
-// read-only — an agent that wants to know a flag's exact behavior can just
-// TRY it. Running the command answers questions in milliseconds and can't
-// damage anything.
-//
-// So the goal here is "point them in the right direction" — not "pre-document
-// every edge case". We deliberately don't try to spell out:
-//   - exact JSON schema field semantics ("size" units, when "children" is
-//     omitted, etc.) — `duvis . --json` shows it instantly
-//   - which flag is ignored in which output mode — pass it and look
-//   - exact stderr / exit-code behavior — observable on a single run
-//
-// What IS worth stating in help:
-//   - the basic purpose of each flag
-//   - mutual exclusivity (so a wrong combination errors out clearly with
-//     a clap message instead of silently picking one mode)
-//   - the read-only stance (so an agent doesn't waste cycles looking for
-//     a delete option that intentionally doesn't exist)
-//
-// Mechanical conventions:
-//   - Single paragraph per `///` block (no blank lines) so `-h` and
-//     `--help` produce identical output.
-//   - Use `help_heading` to group related flags by purpose.
-//   - The `after_help` EXAMPLES block sticks to patterns an agent is most
-//     likely to reach for first; avoid `duvis .` as an example because
-//     the unbounded recursive output is a poor first impression.
-//
-// Rule of thumb: if a sentence's job could be done by the agent running
-// the command itself, it probably doesn't belong here.
-// =============================================================================
+// The actual `--help` text lives in `src/help.rs` as a hand-formatted block
+// (mirroring pdfvision's layout). clap's `override_help` swaps in that text
+// for both `-h` and `--help`. The `///` doc comments below are kept for
+// cargo doc / IDE tooltips but are not what users see at the CLI.
 
 use crate::category::Category;
 use crate::entry::SortOrder;
+use crate::help::HELP_TEXT;
 use crate::output::filter::EntryType;
 use crate::scanner::HardlinkPolicy;
 use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
 
 #[derive(Parser)]
-#[command(
-    name = "duvis",
-    version,
-    about = "duvis (/ˈduːvɪs/) is a fast, read-only disk usage analyzer for both AI agents and humans. \
-Default output is a colorized terminal tree; pass --summary for a per-category summary, --json for \
-structured output, or --ui for an interactive browser treemap. Strictly read-only — duvis never \
-deletes anything and never recommends what to delete.",
-    after_help = "EXAMPLES:
-  Tree view, depth-limited
-  $ duvis ~/projects --max-depth 2 --top 10
-
-  Per-category summary
-  $ duvis ~/projects --summary
-
-  Structured JSON for scripts and agents
-  $ duvis ~/projects --json | jq '.children[] | {name, size_human, category}'
-
-  Browser UI
-  $ duvis ~/projects --ui"
-)]
+#[command(name = "duvis", version, override_help = HELP_TEXT)]
 // Output formats are mutually exclusive; tree is the default when none of
 // --json / --ndjson / --summary / --ui is given.
 #[command(group(
