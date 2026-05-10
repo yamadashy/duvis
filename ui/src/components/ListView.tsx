@@ -2,7 +2,7 @@ import { useMemo } from "react";
 import { categoryMeta, categoryVar } from "../lib/categories";
 import { humanSize, pct, relTime } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
-import { isActive, nameMatchesSearch } from "../lib/treemap";
+import { isActive, nameMatchesSearch, normalizeSearchQuery } from "../lib/treemap";
 import type { Category, SortMode } from "../lib/types";
 import "./ListView.css";
 
@@ -38,8 +38,8 @@ export function ListView(props: ListViewProps) {
     props;
 
   const total = root.value ?? 0;
-  // Lower the query once per render rather than per-row.
-  const loweredQuery = useMemo(() => searchQuery.toLowerCase(), [searchQuery]);
+  // Normalize the query once per render rather than per-row.
+  const loweredQuery = useMemo(() => normalizeSearchQuery(searchQuery), [searchQuery]);
   // List view actively filters on search (rows scroll, so dimming is less
   // useful than in a fixed-area treemap). Category filter still dims so
   // the legend toggles stay consistent across views.

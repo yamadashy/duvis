@@ -5,6 +5,7 @@ import {
   isActive,
   layoutTreemap,
   nameMatchesSearch,
+  normalizeSearchQuery,
   PARENT_HEADER_MIN_HEIGHT_PX,
   type TreeNode,
 } from "../lib/treemap";
@@ -61,10 +62,10 @@ export function Treemap(props: TreemapProps) {
     leaves = out.leaves;
   }
 
-  // Lower the query once per render rather than per-cell. Treemap can
-  // render thousands of leaves; the previous helper toLowerCase'd the
-  // query inside the predicate, so the cost scaled with cell count.
-  const loweredQuery = useMemo(() => searchQuery.toLowerCase(), [searchQuery]);
+  // Normalize the query once per render rather than per-cell. Treemap
+  // can render thousands of leaves; the previous helper toLowerCase'd
+  // the query inside the predicate, so the cost scaled with cell count.
+  const loweredQuery = useMemo(() => normalizeSearchQuery(searchQuery), [searchQuery]);
 
   return (
     <div className="treemap-wrap" ref={wrapRef}>

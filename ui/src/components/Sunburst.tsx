@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
 import { humanSize } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
-import { buildSubtreeMatchSet, isActive } from "../lib/treemap";
+import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../lib/treemap";
 import type { Category, Entry } from "../lib/types";
 import "./Sunburst.css";
 
@@ -65,7 +65,7 @@ export function Sunburst(props: SunburstProps) {
   // Must sit above the early `if (!size)` return so the hook count stays
   // stable across the "measuring" → "ready" transition (React #310).
   const matchSet = useMemo(
-    () => buildSubtreeMatchSet(root, searchQuery.toLowerCase()),
+    () => buildSubtreeMatchSet(root, normalizeSearchQuery(searchQuery)),
     [root, searchQuery],
   );
 
