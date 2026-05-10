@@ -34,7 +34,7 @@ Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `medi
   <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
 </p>
 
-## Install
+## 📦 Install
 
 ```sh
 cargo install duvis
@@ -48,7 +48,7 @@ cd duvis
 cargo install --path .
 ```
 
-## Usage
+## 🚀 Usage
 
 ```sh
 # Tree view of the current directory
@@ -111,7 +111,7 @@ only what's *shown* is filtered.
 
 `--json` / `--ndjson` / `--summary` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--summary` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output. Filters compose with every view.
 
-## Output examples
+## 📊 Output examples
 
 ### Tree
 
@@ -194,7 +194,7 @@ the *full* scanned subtree — they don't change with `--top` or `--max-depth`.
 One JSON object per line, in DFS pre-order (parent before its children). Designed for
 streaming pipelines: `duvis ~/projects --ndjson | jq -c 'select(.size > 1e8)'`.
 
-## Categories
+## 🏷️ Categories
 
 `duvis` classifies entries into a small **core** vocabulary that always
 appears in the legend, plus a handful of **extended** categories that show
@@ -250,7 +250,7 @@ useful when an agent wants to consume the rule that fired, not just the
 category. `--explain-category` skips scanning entirely; the `PATH` argument
 is ignored when this flag is given.
 
-## How sizes are measured
+## 📏 How sizes are measured
 
 On Unix, `duvis` reports the bytes a file actually occupies on disk
 (`st_blocks × 512`, the same default as `du`). Sparse files like VM images —
@@ -265,7 +265,7 @@ its full size (matching tools that don't dedupe by inode).
 
 Windows falls back to apparent size for now and does not dedupe hardlinks.
 
-## Why port 7515?
+## 🔌 Why port 7515?
 
 In the spirit of [Vite's `5173`](https://vite.dev/) (`SITE`/`VITE` written
 with Roman numerals + leet — `V`=5, `I`=1, `T`=7, `E`=3), `duvis` defaults to
@@ -275,6 +275,6 @@ the IANA registry, far enough from the `8080`/`3000`/`5173` clash zones,
 and if it's still busy on your machine `duvis` quietly falls back to a free
 OS-assigned port.
 
-## License
+## 📜 License
 
 [MIT](./LICENSE) © Kazuki Yamada
