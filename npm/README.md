@@ -15,9 +15,9 @@ cargo install duvis
 ## Install (coming soon)
 
 ```sh
-npx @duvis/duvis ~/projects
+npx duvis ~/projects
 # or
-npm install -g @duvis/duvis
+npm install -g duvis
 ```
 
 The npm distribution will ship prebuilt binaries per platform — no Rust toolchain required.

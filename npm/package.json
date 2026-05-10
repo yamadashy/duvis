@@ -1,5 +1,5 @@
 {
-  "name": "@duvis/duvis",
+  "name": "duvis",
   "version": "0.0.1",
   "description": "Disk usage visualizer for both AI and humans — npm distribution coming soon. For now, install from crates.io with `cargo install duvis`.",
   "keywords": [
