@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { categoryMeta, categoryVar } from "../lib/categories";
 import { humanSize, pct, relTime } from "../lib/format";
@@ -11,13 +11,16 @@ interface DetailPanelProps {
   /** Path of names from data root to the current view root (rootPath in App state). */
   rootPath: readonly string[];
   rootName: string;
+  /** Absolute filesystem path the scan was rooted at. Used to assemble the
+   *  full path for Copy Path. */
+  scanRoot: string;
   onDrillIn: (node: TreeNode) => void;
   onSelect: (node: TreeNode) => void;
   onNavigateTo: (path: string[]) => void;
 }
 
 export function DetailPanel(props: DetailPanelProps) {
-  const { node, total, rootPath, rootName, onDrillIn, onSelect, onNavigateTo } = props;
+  const { node, total, rootPath, rootName, scanRoot, onDrillIn, onSelect, onNavigateTo } = props;
   const cat = node.data.category;
   const meta = categoryMeta(cat);
   const days = node.data.modified_days_ago;
@@ -135,11 +138,254 @@ export function DetailPanel(props: DetailPanelProps) {
 
       <div className="detail-section">
         <div className="action-row">
+          {/* Row 1: clipboard ops (cheap, agent-friendly).
+              Row 2: filesystem ops (Reveal opens an external app; Trash
+              is intentionally disabled — duvis is read-only). */}
+          <CopyPathButton scanRoot={scanRoot} segments={[...rootPath, ...inViewSegments]} />
+          <CopyJsonButton
+            node={node}
+            scanRoot={scanRoot}
+            segments={[...rootPath, ...inViewSegments]}
+            total={total}
+          />
           <RevealButton segments={[...rootPath, ...inViewSegments]} />
           <TrashButton />
         </div>
       </div>
     </aside>
+  );
+}
+
+/** Join the scan root with the segment path using the scan root's own
+ *  separator. We sniff `\` vs `/` from `scanRoot` so a Windows scan
+ *  reported as `C:\Users\me` gets backslashes, while a Unix scan stays
+ *  with forward slashes. */
+function joinPath(scanRoot: string, segments: readonly string[]): string {
+  if (segments.length === 0) return scanRoot;
+  const sep = scanRoot.includes("\\") && !scanRoot.includes("/") ? "\\" : "/";
+  const trimmed = scanRoot.endsWith(sep) ? scanRoot.slice(0, -1) : scanRoot;
+  return `${trimmed}${sep}${segments.join(sep)}`;
+}
+
+/** Wraps the async clipboard API in a transient ok/error state so the
+ *  button label can flash a confirmation. Falls back to the legacy
+ *  textarea + execCommand path on browsers without `navigator.clipboard`
+ *  (older Safari over plain http, etc.). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function useCopyButton() {
+  const [state, setState] = useState<"idle" | "ok" | "error">("idle");
+  // Hold the pending revert-to-idle timer in a ref so we can cancel it
+  // both on unmount and on rapid successive clicks (otherwise an earlier
+  // timer would race the newer state and snap the label back to "idle"
+  // mid-flash).
+  const timerRef = useRef<number | null>(null);
+  // The clipboard `await` can resolve after the user has navigated away
+  // (e.g. drilled into a different node, which unmounts this button).
+  // Skip the post-await `setState` in that case to avoid React's
+  // "update on unmounted component" warning.
+  const mountedRef = useRef(true);
+
+  useEffect(
+    () => () => {
+      mountedRef.current = false;
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    },
+    [],
+  );
+
+  async function run(text: string) {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
+    setState("idle");
+    const ok = await copyText(text);
+    if (!mountedRef.current) return;
+    setState(ok ? "ok" : "error");
+    timerRef.current = window.setTimeout(() => {
+      if (!mountedRef.current) return;
+      setState("idle");
+      timerRef.current = null;
+    }, ok ? 1200 : 2000);
+  }
+  return { state, run };
+}
+
+function CopyPathButton({
+  scanRoot,
+  segments,
+}: {
+  scanRoot: string;
+  segments: readonly string[];
+}) {
+  const { state, run } = useCopyButton();
+  const fullPath = joinPath(scanRoot, segments);
+  const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy path";
+  return (
+    <button
+      type="button"
+      className="btn"
+      onClick={() => run(fullPath)}
+      title={`Copy ${fullPath}`}
+    >
+      <svg
+        viewBox="0 0 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
+        <rect x="3.5" y="2.5" width="6" height="7.5" rx="1" />
+        <path d="M5.5 4.5h2M5.5 6.5h2M5.5 8.5h1.5" strokeLinecap="round" />
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+/** Build the clipboard payload for a single selected entry. Mirrors the
+ *  shape of the CLI's `--json` per-entry record (`relative_path`,
+ *  `size_human`, `file_count`, ...) plus the absolute path and the
+ *  `pct_of_root` that's always visible in the detail panel — so an agent
+ *  receiving a paste has everything needed to act (`du`, `rm`, jq) or
+ *  reason about scale (% of root) without a follow-up CLI call.
+ *
+ *  `children` is intentionally omitted: pasting a selected directory
+ *  shouldn't dump its whole subtree. The full tree is already available
+ *  via `duvis --json`. */
+function buildEntryPayload(
+  node: TreeNode,
+  scanRoot: string,
+  segments: readonly string[],
+  total: number,
+): Record<string, unknown> {
+  const isDir = !!node.children && node.children.length > 0;
+  const size = node.value ?? 0;
+
+  // Match `precompute_subtree_counts` in src/output/mod.rs: file leaves
+  // count themselves as 1 file / 0 dirs; directories count themselves as
+  // 1 dir, then accumulate descendants. Same semantics across the wire.
+  let fileCount = 0;
+  let dirCount = 0;
+  node.each((n) => {
+    const nIsLeaf = !n.children || n.children.length === 0;
+    if (nIsLeaf) fileCount += 1;
+    else dirCount += 1;
+  });
+
+  const payload: Record<string, unknown> = {
+    name: node.data.name,
+    relative_path: segments.length === 0 ? "." : segments.join("/"),
+    absolute_path: joinPath(scanRoot, segments),
+    scan_root: scanRoot,
+    is_dir: isDir,
+    category: node.data.category,
+    size,
+    size_human: humanSize(size),
+    pct_of_root: total > 0 ? Math.round((size / total) * 1000) / 10 : 0,
+    depth: node.depth,
+  };
+  if (node.data.modified_days_ago !== undefined) {
+    payload.modified_days_ago = node.data.modified_days_ago;
+  }
+  if (isDir) {
+    payload.child_count = node.children?.length ?? 0;
+    payload.file_count = fileCount;
+    payload.dir_count = dirCount;
+  }
+  return payload;
+}
+
+function CopyJsonButton({
+  node,
+  scanRoot,
+  segments,
+  total,
+}: {
+  node: TreeNode;
+  scanRoot: string;
+  segments: readonly string[];
+  total: number;
+}) {
+  const { state, run } = useCopyButton();
+  const isDir = !!node.children && node.children.length > 0;
+  const text = JSON.stringify(buildEntryPayload(node, scanRoot, segments, total), null, 2);
+  const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy JSON";
+  return (
+    <HintWrap
+      tip={
+        <>
+          <strong>Copies a single-entry JSON record.</strong>
+          <br />
+          Fields included:
+          <ul className="hint-tip-list">
+            <li>
+              <code>name</code>, <code>absolute_path</code>,{" "}
+              <code>relative_path</code>, <code>scan_root</code>
+            </li>
+            <li>
+              <code>size</code>, <code>size_human</code>, <code>pct_of_root</code>
+            </li>
+            <li>
+              <code>category</code>, <code>is_dir</code>, <code>depth</code>
+            </li>
+            <li>
+              <code>modified_days_ago</code> {node.data.modified_days_ago === undefined ? "(N/A)" : null}
+            </li>
+            {isDir ? (
+              <li>
+                <code>child_count</code>, <code>file_count</code>,{" "}
+                <code>dir_count</code>
+              </li>
+            ) : null}
+          </ul>
+          <span className="hint-tip-foot">
+            Mirrors the CLI <code>--json</code> per-entry shape. The subtree
+            (<code>children</code>) is omitted.
+          </span>
+        </>
+      }
+    >
+      <button type="button" className="btn" onClick={() => run(text)}>
+        <svg
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <path d="M4.5 2.5C3 2.5 2.5 3 2.5 4.5v3C2.5 9 3 9.5 4.5 9.5" />
+          <path d="M7.5 2.5C9 2.5 9.5 3 9.5 4.5v3c0 1.5-.5 2-2 2" />
+        </svg>
+        {label}
+      </button>
+    </HintWrap>
   );
 }
 
@@ -182,16 +428,14 @@ function RevealButton({ segments }: { segments: readonly string[] }) {
   );
 }
 
-// Intentionally disabled. duvis never deletes anything — surfacing the
-// affordance (instead of omitting it) tells users where the boundary is
-// without us answering "why isn't there a delete button" repeatedly.
-//
-// The tooltip is rendered through a portal at document.body so it can't
-// be clipped by the detail panel's overflow, and positioned via fixed
-// coords from the button's bounding rect so it lifts above any treemap
-// stacking context. (`title` doesn't render reliably on disabled buttons
-// in Chrome/Safari, which is why we don't use it.)
-function TrashButton() {
+/** Hover/focus tooltip rendered through a portal at document.body so it
+ *  can't be clipped by the detail panel's overflow, and positioned via
+ *  fixed coords from the wrapper's bounding rect so it lifts above any
+ *  treemap stacking context. (`title` doesn't render reliably on
+ *  disabled buttons in Chrome/Safari, which is why we don't use it.)
+ *  Shared by TrashButton (explains why it's disabled) and CopyJsonButton
+ *  (previews the field list before clicking). */
+function HintWrap({ children, tip }: { children: ReactNode; tip: ReactNode }) {
   const wrapRef = useRef<HTMLSpanElement>(null);
   const [anchor, setAnchor] = useState<{ cx: number; top: number } | null>(null);
 
@@ -214,6 +458,39 @@ function TrashButton() {
       onFocus={show}
       onBlur={hide}
     >
+      {children}
+      {anchor
+        ? createPortal(
+            <div
+              className="hint-tip"
+              role="tooltip"
+              style={{ left: anchor.cx, top: anchor.top - 8 }}
+            >
+              {tip}
+            </div>,
+            document.body,
+          )
+        : null}
+    </span>
+  );
+}
+
+// Intentionally disabled. duvis never deletes anything — surfacing the
+// affordance (instead of omitting it) tells users where the boundary is
+// without us answering "why isn't there a delete button" repeatedly.
+function TrashButton() {
+  return (
+    <HintWrap
+      tip={
+        <>
+          <strong>duvis is read-only by design.</strong>
+          <br />
+          It visualizes disk usage but never deletes anything. To clean up,
+          move files to the Trash yourself via Finder, Explorer,{" "}
+          <code>rm</code>, or a tool like <code>trash</code> CLI.
+        </>
+      }
+    >
       <button type="button" className="btn" disabled aria-disabled="true">
         <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
           <path d="M2 3.5h8" strokeLinecap="round" />
@@ -222,23 +499,7 @@ function TrashButton() {
         </svg>
         Move to trash
       </button>
-      {anchor
-        ? createPortal(
-            <div
-              className="hint-tip"
-              role="tooltip"
-              style={{ left: anchor.cx, top: anchor.top - 8 }}
-            >
-              <strong>duvis is read-only by design.</strong>
-              <br />
-              It visualizes disk usage but never deletes anything. To clean up,
-              move files to the Trash yourself via Finder, Explorer,{" "}
-              <code>rm</code>, or a tool like <code>trash</code> CLI.
-            </div>,
-            document.body,
-          )
-        : null}
-    </span>
+    </HintWrap>
   );
 }
 

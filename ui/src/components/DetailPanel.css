@@ -172,13 +172,18 @@
   color: var(--fg-mute);
 }
 
+/* Two-up grid: the detail panel is narrow, so a single-row flex of 4
+   buttons would either overflow or wrap each label onto multiple lines.
+   2 columns keep the labels readable at the default left-column width. */
 .action-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 6px 10px;
   border-radius: var(--r-2);
@@ -186,6 +191,8 @@
   border: 1px solid var(--line-2);
   background: var(--bg-2);
   color: var(--fg);
+  white-space: nowrap;
+  min-width: 0;
   transition: all 0.12s var(--ease);
 }
 .btn:hover:not(:disabled) {
@@ -202,7 +209,14 @@
    button's bounding rect, so it can't be clipped by the detail panel's
    overflow and isn't trapped behind any treemap stacking context. */
 .hint-wrap {
-  display: inline-flex;
+  /* `display: flex` (not inline-flex) so the wrapper stretches to fill
+     the grid cell in `.action-row` — otherwise the disabled trash button
+     ends up narrower than its peers. The inner button stretches via
+     `flex: 1`. */
+  display: flex;
+}
+.hint-wrap > .btn {
+  flex: 1;
 }
 .hint-tip {
   position: fixed;
@@ -239,6 +253,29 @@
   border-radius: 3px;
   background: var(--bg-2);
   color: var(--fg);
+}
+.hint-tip-list {
+  list-style: none;
+  margin: 6px 0 4px 0;
+  padding: 0;
+}
+.hint-tip-list li {
+  margin: 3px 0;
+  padding-left: 10px;
+  position: relative;
+}
+.hint-tip-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--fg-faint);
+}
+.hint-tip-foot {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  color: var(--fg-faint);
 }
 .btn.primary {
   background: var(--accent);

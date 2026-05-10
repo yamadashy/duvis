@@ -5,11 +5,21 @@ interface TopbarProps {
   rootName: string;
   rootSize: number;
   theme: "dark" | "light";
+  searchQuery: string;
+  onSearchChange: (q: string) => void;
   onToggleTheme: () => void;
   onRescan: () => void;
 }
 
-export function Topbar({ rootName, rootSize, theme, onToggleTheme, onRescan }: TopbarProps) {
+export function Topbar({
+  rootName,
+  rootSize,
+  theme,
+  searchQuery,
+  onSearchChange,
+  onToggleTheme,
+  onRescan,
+}: TopbarProps) {
   return (
     <div className="topbar">
       <div className="brand">
@@ -37,6 +47,39 @@ export function Topbar({ rootName, rootSize, theme, onToggleTheme, onRescan }: T
           <span className="tm-stat-key">total</span>
           {humanSize(rootSize)}
         </span>
+      </div>
+
+      <div className="topbar-search">
+        <svg
+          className="topbar-search-icon"
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
+          <circle cx="5" cy="5" r="3.2" />
+          <path d="M7.5 7.5L10 10" strokeLinecap="round" />
+        </svg>
+        <input
+          type="search"
+          className="topbar-search-input"
+          placeholder="Search names…"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          aria-label="Search entries by name"
+        />
+        {searchQuery ? (
+          <button
+            type="button"
+            className="topbar-search-clear"
+            onClick={() => onSearchChange("")}
+            title="Clear search"
+            aria-label="Clear search"
+          >
+            ×
+          </button>
+        ) : null}
       </div>
 
       <div className="toolbar">

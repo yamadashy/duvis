@@ -1,10 +1,10 @@
 import { hierarchy, type HierarchyRectangularNode, partition } from "d3-hierarchy";
 import { arc as d3arc } from "d3-shape";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
 import { humanSize } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
-import { isActive } from "../lib/treemap";
+import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../lib/treemap";
 import type { Category, Entry } from "../lib/types";
 import "./Sunburst.css";
 
@@ -12,6 +12,7 @@ interface SunburstProps {
   root: TreeNode;
   selected: TreeNode | null;
   filterCategories: ReadonlySet<Category>;
+  searchQuery: string;
   rootPathLength: number;
   maxDepth: number;
   onSelect: (node: TreeNode) => void;
@@ -34,6 +35,7 @@ export function Sunburst(props: SunburstProps) {
     root,
     selected,
     filterCategories,
+    searchQuery,
     rootPathLength,
     maxDepth,
     onSelect,
@@ -54,6 +56,18 @@ export function Sunburst(props: SunburstProps) {
     ro.observe(el);
     return () => ro.disconnect();
   }, []);
+
+  // Precompute the set of nodes whose subtree contains a name match.
+  // Previously this was recomputed per-arc via a full subtree walk —
+  // O(N²) on big scans and visibly laggy while typing. The walk is now
+  // O(N), the per-arc check is a Set membership lookup, and the result
+  // is reused while `searchQuery` is unchanged.
+  // Must sit above the early `if (!size)` return so the hook count stays
+  // stable across the "measuring" → "ready" transition (React #310).
+  const matchSet = useMemo(
+    () => buildSubtreeMatchSet(root, normalizeSearchQuery(searchQuery)),
+    [root, searchQuery],
+  );
 
   if (!size || size.w === 0 || size.h === 0) {
     return <div className="treemap-wrap" ref={wrapRef} />;
@@ -108,7 +122,12 @@ export function Sunburst(props: SunburstProps) {
             if (angleSpan < 0.005) return null;
             const cat: Category = d.data.category;
             const live = findInRoot(d);
-            const active = live ? isActive(live, filterCategories) : true;
+            // For ring arcs (which can sit above leaves), match if the
+            // arc's subtree contains a hit — otherwise a deep match would
+            // be hidden behind a dimmed parent ring. `matchSet === null`
+            // means no search filter is active.
+            const matches = matchSet === null || (live !== null && matchSet.has(live));
+            const active = (live ? isActive(live, filterCategories) : true) && matches;
             const isSel = !!selected && live === selected;
             // Match Treemap LeafCell: parents (with children) slightly more
             // opaque than leaves. Avoids depth-based fade that made deep

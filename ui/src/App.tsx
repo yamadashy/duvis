@@ -98,6 +98,7 @@ export function App() {
       data={scan.tree}
       scannedInMs={scan.scanned_in_ms}
       meta={scan.meta}
+      scanRoot={scan.scan_root}
       onRescan={rescan}
     />
   );
@@ -107,10 +108,11 @@ interface LoadedProps {
   data: Entry;
   scannedInMs: number;
   meta: ScanMeta;
+  scanRoot: string;
   onRescan: () => void;
 }
 
-function Loaded({ data, meta, onRescan }: LoadedProps) {
+function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
   const [state, dispatch] = useAppState(data);
   const [hover, setHover] = useState<{
     node: TreeNode | null;
@@ -203,6 +205,8 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
         rootName={state.data.name}
         rootSize={state.data.size}
         theme={state.theme}
+        searchQuery={state.searchQuery}
+        onSearchChange={(q) => dispatch({ type: "setSearch", query: q })}
         onToggleTheme={() => dispatch({ type: "toggleTheme" })}
         onRescan={onRescan}
       />
@@ -221,6 +225,7 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
           total={agg.total}
           rootPath={state.rootPath}
           rootName={state.data.name}
+          scanRoot={scanRoot}
           onSelect={handleSelect}
           onDrillIn={handleDrillIn}
           onNavigateTo={(path) => dispatch({ type: "navigateTo", path })}
@@ -241,6 +246,7 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
               root={root}
               selected={selectedNode}
               filterCategories={state.filterCategories}
+              searchQuery={state.searchQuery}
               treemapPadding={TREEMAP_PADDING}
               treemapRadius={TREEMAP_RADIUS}
               maxDepth={state.depthByView.treemap}
@@ -253,6 +259,7 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
               root={root}
               selected={selectedNode}
               filterCategories={state.filterCategories}
+              searchQuery={state.searchQuery}
               rootPathLength={state.rootPath.length}
               maxDepth={state.depthByView.sunburst}
               onSelect={handleSelect}
@@ -265,6 +272,7 @@ function Loaded({ data, meta, onRescan }: LoadedProps) {
               root={root}
               selected={selectedNode}
               filterCategories={state.filterCategories}
+              searchQuery={state.searchQuery}
               sort={state.sort}
               onSelect={handleSelect}
               onDrillIn={handleDrillIn}
