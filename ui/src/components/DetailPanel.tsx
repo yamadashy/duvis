@@ -138,9 +138,12 @@ export function DetailPanel(props: DetailPanelProps) {
 
       <div className="detail-section">
         <div className="action-row">
-          <RevealButton segments={[...rootPath, ...inViewSegments]} />
+          {/* Row 1: clipboard ops (cheap, agent-friendly).
+              Row 2: filesystem ops (Reveal opens an external app; Trash
+              is intentionally disabled — duvis is read-only). */}
           <CopyPathButton scanRoot={scanRoot} segments={[...rootPath, ...inViewSegments]} />
           <CopyJsonButton entry={node.data} />
+          <RevealButton segments={[...rootPath, ...inViewSegments]} />
           <TrashButton />
         </div>
       </div>

@@ -209,7 +209,14 @@
    button's bounding rect, so it can't be clipped by the detail panel's
    overflow and isn't trapped behind any treemap stacking context. */
 .hint-wrap {
-  display: inline-flex;
+  /* `display: flex` (not inline-flex) so the wrapper stretches to fill
+     the grid cell in `.action-row` — otherwise the disabled trash button
+     ends up narrower than its peers. The inner button stretches via
+     `flex: 1`. */
+  display: flex;
+}
+.hint-wrap > .btn {
+  flex: 1;
 }
 .hint-tip {
   position: fixed;
