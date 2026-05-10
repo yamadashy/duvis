@@ -57,6 +57,18 @@ export function Sunburst(props: SunburstProps) {
     return () => ro.disconnect();
   }, []);
 
+  // Precompute the set of nodes whose subtree contains a name match.
+  // Previously this was recomputed per-arc via a full subtree walk —
+  // O(N²) on big scans and visibly laggy while typing. The walk is now
+  // O(N), the per-arc check is a Set membership lookup, and the result
+  // is reused while `searchQuery` is unchanged.
+  // Must sit above the early `if (!size)` return so the hook count stays
+  // stable across the "measuring" → "ready" transition (React #310).
+  const matchSet = useMemo(
+    () => buildSubtreeMatchSet(root, searchQuery.toLowerCase()),
+    [root, searchQuery],
+  );
+
   if (!size || size.w === 0 || size.h === 0) {
     return <div className="treemap-wrap" ref={wrapRef} />;
   }
@@ -73,16 +85,6 @@ export function Sunburst(props: SunburstProps) {
       .sum((d) => (d.children && d.children.length > 0 ? 0 : d.size))
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0)),
   ) as PartitionNode;
-
-  // Precompute the set of nodes whose subtree contains a name match.
-  // Previously this was recomputed per-arc via a full subtree walk —
-  // O(N²) on big scans and visibly laggy while typing. The walk is now
-  // O(N), the per-arc check is a Set membership lookup, and the result
-  // is reused while `searchQuery` is unchanged.
-  const matchSet = useMemo(
-    () => buildSubtreeMatchSet(root, searchQuery.toLowerCase()),
-    [root, searchQuery],
-  );
 
   const arcGen = d3arc<PartitionNode>()
     .startAngle((d) => d.x0)
