@@ -202,6 +202,10 @@ const ARCHIVE_EXTENSIONS: &[&str] = &[
 
 const BACKUP_EXTENSIONS: &[&str] = &[".bak", ".backup", ".old"];
 
+// `#[rustfmt::skip]` keeps the per-section grouping (Image / Video / Audio)
+// readable. Without it rustfmt collapses the trailing `// Audio.` comment
+// into the preceding video line, which makes the file harder to scan.
+#[rustfmt::skip]
 const MEDIA_EXTENSIONS: &[&str] = &[
     // Image (including camera RAW formats — `.raw` for generic exporters,
     // `.arw` Sony α, `.cr2` Canon, `.nef` Nikon, `.dng` Adobe DNG).
@@ -214,7 +218,8 @@ const MEDIA_EXTENSIONS: &[&str] = &[
     // `.ts` is intentionally excluded: while it's the MPEG transport-stream extension,
     // TypeScript files are vastly more common in real codebases and being miscategorized
     // as `media` is more harmful than missing the rare transport-stream file.
-    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp", // Audio.
+    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp",
+    // Audio.
     ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff",
 ];
 
