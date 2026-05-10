@@ -11,13 +11,16 @@ interface DetailPanelProps {
   /** Path of names from data root to the current view root (rootPath in App state). */
   rootPath: readonly string[];
   rootName: string;
+  /** Absolute filesystem path the scan was rooted at. Used to assemble the
+   *  full path for Copy Path. */
+  scanRoot: string;
   onDrillIn: (node: TreeNode) => void;
   onSelect: (node: TreeNode) => void;
   onNavigateTo: (path: string[]) => void;
 }
 
 export function DetailPanel(props: DetailPanelProps) {
-  const { node, total, rootPath, rootName, onDrillIn, onSelect, onNavigateTo } = props;
+  const { node, total, rootPath, rootName, scanRoot, onDrillIn, onSelect, onNavigateTo } = props;
   const cat = node.data.category;
   const meta = categoryMeta(cat);
   const days = node.data.modified_days_ago;
@@ -136,10 +139,124 @@ export function DetailPanel(props: DetailPanelProps) {
       <div className="detail-section">
         <div className="action-row">
           <RevealButton segments={[...rootPath, ...inViewSegments]} />
+          <CopyPathButton scanRoot={scanRoot} segments={[...rootPath, ...inViewSegments]} />
+          <CopyJsonButton entry={node.data} />
           <TrashButton />
         </div>
       </div>
     </aside>
+  );
+}
+
+/** Join the scan root with the segment path using the scan root's own
+ *  separator. We sniff `\` vs `/` from `scanRoot` so a Windows scan
+ *  reported as `C:\Users\me` gets backslashes, while a Unix scan stays
+ *  with forward slashes. */
+function joinPath(scanRoot: string, segments: readonly string[]): string {
+  if (segments.length === 0) return scanRoot;
+  const sep = scanRoot.includes("\\") && !scanRoot.includes("/") ? "\\" : "/";
+  const trimmed = scanRoot.endsWith(sep) ? scanRoot.slice(0, -1) : scanRoot;
+  return `${trimmed}${sep}${segments.join(sep)}`;
+}
+
+/** Wraps the async clipboard API in a transient ok/error state so the
+ *  button label can flash a confirmation. Falls back to the legacy
+ *  textarea + execCommand path on browsers without `navigator.clipboard`
+ *  (older Safari over plain http, etc.). */
+async function copyText(text: string): Promise<boolean> {
+  try {
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // fall through to the legacy path
+  }
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    const ok = document.execCommand("copy");
+    document.body.removeChild(ta);
+    return ok;
+  } catch {
+    return false;
+  }
+}
+
+function useCopyButton() {
+  const [state, setState] = useState<"idle" | "ok" | "error">("idle");
+  async function run(text: string) {
+    setState("idle");
+    const ok = await copyText(text);
+    setState(ok ? "ok" : "error");
+    setTimeout(() => setState("idle"), ok ? 1200 : 2000);
+  }
+  return { state, run };
+}
+
+function CopyPathButton({
+  scanRoot,
+  segments,
+}: {
+  scanRoot: string;
+  segments: readonly string[];
+}) {
+  const { state, run } = useCopyButton();
+  const fullPath = joinPath(scanRoot, segments);
+  const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy path";
+  return (
+    <button
+      type="button"
+      className="btn"
+      onClick={() => run(fullPath)}
+      title={`Copy ${fullPath}`}
+    >
+      <svg
+        viewBox="0 0 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
+        <rect x="3.5" y="2.5" width="6" height="7.5" rx="1" />
+        <path d="M5.5 4.5h2M5.5 6.5h2M5.5 8.5h1.5" strokeLinecap="round" />
+      </svg>
+      {label}
+    </button>
+  );
+}
+
+function CopyJsonButton({ entry }: { entry: TreeNode["data"] }) {
+  const { state, run } = useCopyButton();
+  // Drop `children` to keep the clipboard payload compact — pasting a
+  // selected directory shouldn't dump its whole subtree. The full tree is
+  // already available via the CLI's `--json`.
+  const { children: _children, ...slim } = entry;
+  const text = JSON.stringify(slim, null, 2);
+  const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy JSON";
+  return (
+    <button
+      type="button"
+      className="btn"
+      onClick={() => run(text)}
+      title="Copy this entry as JSON (without children)"
+    >
+      <svg
+        viewBox="0 0 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
+        <path d="M4.5 2.5C3 2.5 2.5 3 2.5 4.5v3C2.5 9 3 9.5 4.5 9.5" />
+        <path d="M7.5 2.5C9 2.5 9.5 3 9.5 4.5v3c0 1.5-.5 2-2 2" />
+      </svg>
+      {label}
+    </button>
   );
 }
 

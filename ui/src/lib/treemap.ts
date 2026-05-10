@@ -33,6 +33,27 @@ export function isActive(node: TreeNode, activeCategories: ReadonlySet<string>):
   return activeCategories.has(node.data.category);
 }
 
+/** Case-insensitive substring match on the node's basename. Empty query
+ *  matches everything (so callers can wire the same predicate regardless
+ *  of whether the user has typed in the search box). */
+export function nameMatchesSearch(node: TreeNode, query: string): boolean {
+  if (!query) return true;
+  return node.data.name.toLowerCase().includes(query.toLowerCase());
+}
+
+/** True if the node itself or any descendant matches the search query.
+ *  Used to keep parent cells "lit" when a child matches — otherwise the
+ *  match would be hidden inside a dimmed ancestor. Empty query → true. */
+export function subtreeMatchesSearch(node: TreeNode, query: string): boolean {
+  if (!query) return true;
+  const q = query.toLowerCase();
+  let hit = false;
+  node.each((n) => {
+    if (!hit && n.data.name.toLowerCase().includes(q)) hit = true;
+  });
+  return hit;
+}
+
 export interface LaidOutTree {
   parents: TreeNode[];
   leaves: TreeNode[];

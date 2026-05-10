@@ -82,6 +82,9 @@ export interface AppState {
   rootPath: string[];
   selectedPath: string[] | null; // path of names from data root to selected node
   filterCategories: ReadonlySet<Category>;
+  /** Free-text search applied alongside the category filter. Trimmed,
+   *  lowercased at the comparison site. Empty string = no filter. */
+  searchQuery: string;
   sort: SortMode;
   view: ViewMode;
   /** Depth slider value remembered separately per view. */
@@ -102,6 +105,7 @@ export type Action =
       visible: ReadonlySet<Category>;
     }
   | { type: "resetCategories" }
+  | { type: "setSearch"; query: string }
   | { type: "setSort"; sort: SortMode }
   | { type: "setView"; view: ViewMode }
   | { type: "setDepth"; depth: number }
@@ -113,6 +117,7 @@ export function initialState(data: Entry): AppState {
     rootPath: [],
     selectedPath: null,
     filterCategories: new Set(ALL_CATEGORIES),
+    searchQuery: "",
     sort: "size",
     view: "treemap",
     depthByView: { ...DEPTH_DEFAULTS },
@@ -144,6 +149,8 @@ function reducer(state: AppState, action: Action): AppState {
     }
     case "resetCategories":
       return { ...state, filterCategories: new Set(ALL_CATEGORIES) };
+    case "setSearch":
+      return { ...state, searchQuery: action.query };
     case "setSort":
       return { ...state, sort: action.sort };
     case "setView":

@@ -172,13 +172,18 @@
   color: var(--fg-mute);
 }
 
+/* Two-up grid: the detail panel is narrow, so a single-row flex of 4
+   buttons would either overflow or wrap each label onto multiple lines.
+   2 columns keep the labels readable at the default left-column width. */
 .action-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 6px;
 }
 .btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
   padding: 6px 10px;
   border-radius: var(--r-2);
@@ -186,6 +191,8 @@
   border: 1px solid var(--line-2);
   background: var(--bg-2);
   color: var(--fg);
+  white-space: nowrap;
+  min-width: 0;
   transition: all 0.12s var(--ease);
 }
 .btn:hover:not(:disabled) {

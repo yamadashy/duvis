@@ -4,6 +4,7 @@ import { humanSize } from "../lib/format";
 import {
   isActive,
   layoutTreemap,
+  nameMatchesSearch,
   PARENT_HEADER_MIN_HEIGHT_PX,
   type TreeNode,
 } from "../lib/treemap";
@@ -14,6 +15,7 @@ interface TreemapProps {
   root: TreeNode;
   selected: TreeNode | null;
   filterCategories: ReadonlySet<Category>;
+  searchQuery: string;
   treemapPadding: number;
   treemapRadius: number;
   maxDepth: number;
@@ -29,6 +31,7 @@ export function Treemap(props: TreemapProps) {
     root,
     selected,
     filterCategories,
+    searchQuery,
     treemapPadding,
     treemapRadius,
     maxDepth,
@@ -98,7 +101,7 @@ export function Treemap(props: TreemapProps) {
               key={`l-${i}-${n.data.name}`}
               node={n}
               radius={treemapRadius}
-              dim={!isActive(n, filterCategories)}
+              dim={!isActive(n, filterCategories) || !nameMatchesSearch(n, searchQuery)}
               isSelected={!!selected && nodesEqual(selected, n)}
               onSelect={() => onSelect(n)}
               onDrillIn={() => {

@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
 import { humanSize } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
-import { isActive } from "../lib/treemap";
+import { isActive, subtreeMatchesSearch } from "../lib/treemap";
 import type { Category, Entry } from "../lib/types";
 import "./Sunburst.css";
 
@@ -12,6 +12,7 @@ interface SunburstProps {
   root: TreeNode;
   selected: TreeNode | null;
   filterCategories: ReadonlySet<Category>;
+  searchQuery: string;
   rootPathLength: number;
   maxDepth: number;
   onSelect: (node: TreeNode) => void;
@@ -34,6 +35,7 @@ export function Sunburst(props: SunburstProps) {
     root,
     selected,
     filterCategories,
+    searchQuery,
     rootPathLength,
     maxDepth,
     onSelect,
@@ -108,7 +110,11 @@ export function Sunburst(props: SunburstProps) {
             if (angleSpan < 0.005) return null;
             const cat: Category = d.data.category;
             const live = findInRoot(d);
-            const active = live ? isActive(live, filterCategories) : true;
+            // For ring arcs (which can sit above leaves), match if the
+            // arc's subtree contains a hit — otherwise a deep match would
+            // be hidden behind a dimmed parent ring.
+            const matches = live ? subtreeMatchesSearch(live, searchQuery) : true;
+            const active = (live ? isActive(live, filterCategories) : true) && matches;
             const isSel = !!selected && live === selected;
             // Match Treemap LeafCell: parents (with children) slightly more
             // opaque than leaves. Avoids depth-based fade that made deep

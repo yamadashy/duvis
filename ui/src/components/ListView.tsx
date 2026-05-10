@@ -1,7 +1,7 @@
 import { categoryMeta, categoryVar } from "../lib/categories";
 import { humanSize, pct, relTime } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
-import { isActive } from "../lib/treemap";
+import { isActive, nameMatchesSearch } from "../lib/treemap";
 import type { Category, SortMode } from "../lib/types";
 import "./ListView.css";
 
@@ -9,6 +9,7 @@ interface ListViewProps {
   root: TreeNode;
   selected: TreeNode | null;
   filterCategories: ReadonlySet<Category>;
+  searchQuery: string;
   sort: SortMode;
   onSelect: (node: TreeNode) => void;
   onDrillIn: (node: TreeNode) => void;
@@ -32,10 +33,17 @@ const COLUMNS: ReadonlyArray<{
 ];
 
 export function ListView(props: ListViewProps) {
-  const { root, selected, filterCategories, sort, onSelect, onDrillIn, onSort, onHover } = props;
+  const { root, selected, filterCategories, searchQuery, sort, onSelect, onDrillIn, onSort, onHover } =
+    props;
 
   const total = root.value ?? 0;
-  const allItems = root.descendants().slice(1);
+  // List view actively filters on search (rows scroll, so dimming is less
+  // useful than in a fixed-area treemap). Category filter still dims so
+  // the legend toggles stay consistent across views.
+  const allItems = root
+    .descendants()
+    .slice(1)
+    .filter((n) => nameMatchesSearch(n, searchQuery));
   const items = allItems.slice(0, MAX_ROWS);
   const truncated = allItems.length > MAX_ROWS;
   const maxVal = items.reduce((m, n) => Math.max(m, n.value ?? 0), 1);
@@ -137,7 +145,9 @@ export function ListView(props: ListViewProps) {
             Showing top {MAX_ROWS} of {allItems.length} items. Drill in or filter to narrow.
           </div>
         ) : items.length === 0 ? (
-          <div className="list-empty">No items.</div>
+          <div className="list-empty">
+            {searchQuery ? `No entries match "${searchQuery}".` : "No items."}
+          </div>
         ) : null}
       </div>
     </div>
