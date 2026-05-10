@@ -34,7 +34,7 @@ Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `medi
   <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
 </p>
 
-## 📦 Install
+## 🚀 Quick Start
 
 ```sh
 cargo install duvis
@@ -48,7 +48,7 @@ cd duvis
 cargo install --path .
 ```
 
-## 🚀 Usage
+## 📖 Usage
 
 ```sh
 # Tree view of the current directory
