@@ -92,6 +92,7 @@ duvis ~/projects --ui
 | `--sort <size\|name>` | Sort order (default: `size`) |
 | `--reverse` | Reverse sort order |
 | `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
+| `--explain-category <NAME>` | Diagnostic: explain how a name would be classified, without scanning. Combines with `--json`. [More](#why-is-this-cache----explain-category) |
 
 #### Filters
 
@@ -226,6 +227,28 @@ because that directory is the natural grouping unit (a `node_modules` is a
 single thing, not a heap of unrelated files). The outermost named ancestor
 wins, so a project root that happens to contain a giant `node_modules` is
 *not* itself classified as `cache`.
+
+### Why is this `cache`? — `--explain-category`
+
+When you see a category in a scan and want to know *which* rule fired, run:
+
+```
+$ duvis --explain-category node_modules
+"node_modules"
+  as directory: cache        (matched directory rule: node_modules)
+  as file:      other        (no rule matched; defaulted to other)
+
+$ duvis --explain-category data.img.raw
+"data.img.raw"
+  as directory: other        (no rule matched; defaulted to other)
+  as file:      vm_image     (matched filename suffix: data.img.raw)
+```
+
+The same name can match different rules in each role (directory vs file), so
+both interpretations are always shown. Pass `--json` for structured output —
+useful when an agent wants to consume the rule that fired, not just the
+category. `--explain-category` skips scanning entirely; the `PATH` argument
+is ignored when this flag is given.
 
 ## How sizes are measured
 
