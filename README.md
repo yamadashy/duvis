@@ -111,9 +111,9 @@ only what's *shown* is filtered.
 
 `--json` / `--ndjson` / `--summary` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--summary` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output. Filters compose with every view.
 
-## 📊 Output examples
+### Output examples
 
-### Tree
+#### Tree
 
 ```
 project (438.9 MB)
@@ -123,7 +123,7 @@ project (438.9 MB)
 └── Cargo.toml        418 B
 ```
 
-### Summary
+#### Summary
 
 ```
 Total: 438.9 MB
@@ -132,7 +132,7 @@ Category Summary:
   build      438.9 MB  100%  1 items
 ```
 
-### Largest
+#### Largest
 
 ```
 $ duvis ~/projects --largest 5
@@ -149,7 +149,7 @@ With `--json --largest`, the response is `{meta, largest: [...]}` (no `tree` fie
 — this is a flat list, not a hierarchical view). `meta.largest_requested` and
 `meta.total_entries` let an agent tell whether the list it sees was truncated.
 
-### JSON
+#### JSON
 
 ```json
 {
@@ -183,7 +183,7 @@ When `--top N` drops some children, the parent gets `truncated_count` and `trunc
 fields so consumers can tell how much was hidden. `file_count` / `dir_count` always reflect
 the *full* scanned subtree — they don't change with `--top` or `--max-depth`.
 
-### NDJSON
+#### NDJSON
 
 ```jsonl
 {"type":"meta","wire_version":2,"duvis_version":"0.1.4","scan_root":"/Users/me/project",...}
@@ -194,7 +194,9 @@ the *full* scanned subtree — they don't change with `--top` or `--max-depth`.
 One JSON object per line, in DFS pre-order (parent before its children). Designed for
 streaming pipelines: `duvis ~/projects --ndjson | jq -c 'select(.size > 1e8)'`.
 
-## 🏷️ Categories
+## 🧠 Concepts
+
+### Categories
 
 `duvis` classifies entries into a small **core** vocabulary that always
 appears in the legend, plus a handful of **extended** categories that show
@@ -203,7 +205,7 @@ project trees; extended pops into view when relevant (e.g. a `model_cache`
 row appears on an AI dev machine, an `installer` row appears in
 `~/Downloads`).
 
-### Core
+#### Core
 
 - `cache` — package and tool caches (`node_modules/`, `.cache/`, `__pycache__/`, `.cargo/`, ...)
 - `build` — build artifacts (`target/`, `dist/`, `build/`, `.next/`, ...)
@@ -213,7 +215,7 @@ row appears on an AI dev machine, an `installer` row appears in
 - `ide` — IDE/editor metadata (`.idea/`, `.vscode/`, ...)
 - `other` — everything else
 
-### Extended (shown only when present)
+#### Extended (shown only when present)
 
 - `archive` — compressed bundles (`*.zip`, `*.tar.gz`, `*.7z`, `*.zst`, ...)
 - `installer` — install packages (`*.dmg`, `*.pkg`, `*.exe`, `*.deb`, `*.AppImage`, ...)
@@ -228,7 +230,7 @@ single thing, not a heap of unrelated files). The outermost named ancestor
 wins, so a project root that happens to contain a giant `node_modules` is
 *not* itself classified as `cache`.
 
-### Why is this `cache`? — `--explain-category`
+#### Why is this `cache`? — `--explain-category`
 
 When you see a category in a scan and want to know *which* rule fired, run:
 
@@ -250,7 +252,7 @@ useful when an agent wants to consume the rule that fired, not just the
 category. `--explain-category` skips scanning entirely; the `PATH` argument
 is ignored when this flag is given.
 
-## 📏 How sizes are measured
+### How sizes are measured
 
 On Unix, `duvis` reports the bytes a file actually occupies on disk
 (`st_blocks × 512`, the same default as `du`). Sparse files like VM images —
@@ -265,7 +267,9 @@ its full size (matching tools that don't dedupe by inode).
 
 Windows falls back to apparent size for now and does not dedupe hardlinks.
 
-## 🔌 Why port 7515?
+## ❓ FAQ
+
+### Why port 7515?
 
 In the spirit of [Vite's `5173`](https://vite.dev/) (`SITE`/`VITE` written
 with Roman numerals + leet — `V`=5, `I`=1, `T`=7, `E`=3), `duvis` defaults to
