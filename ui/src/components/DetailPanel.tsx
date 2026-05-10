@@ -1,4 +1,4 @@
-import { Fragment, useRef, useState } from "react";
+import { Fragment, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { categoryMeta, categoryVar } from "../lib/categories";
 import { humanSize, pct, relTime } from "../lib/format";
@@ -189,11 +189,34 @@ async function copyText(text: string): Promise<boolean> {
 
 function useCopyButton() {
   const [state, setState] = useState<"idle" | "ok" | "error">("idle");
+  // Hold the pending revert-to-idle timer in a ref so we can cancel it
+  // both on unmount and on rapid successive clicks (otherwise an earlier
+  // timer would race the newer state and snap the label back to "idle"
+  // mid-flash).
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    },
+    [],
+  );
+
   async function run(text: string) {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     setState("idle");
     const ok = await copyText(text);
     setState(ok ? "ok" : "error");
-    setTimeout(() => setState("idle"), ok ? 1200 : 2000);
+    timerRef.current = window.setTimeout(() => {
+      setState("idle");
+      timerRef.current = null;
+    }, ok ? 1200 : 2000);
   }
   return { state, run };
 }

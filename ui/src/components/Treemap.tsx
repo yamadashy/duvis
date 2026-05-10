@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
 import { humanSize } from "../lib/format";
 import {
@@ -61,6 +61,11 @@ export function Treemap(props: TreemapProps) {
     leaves = out.leaves;
   }
 
+  // Lower the query once per render rather than per-cell. Treemap can
+  // render thousands of leaves; the previous helper toLowerCase'd the
+  // query inside the predicate, so the cost scaled with cell count.
+  const loweredQuery = useMemo(() => searchQuery.toLowerCase(), [searchQuery]);
+
   return (
     <div className="treemap-wrap" ref={wrapRef}>
       <svg
@@ -101,7 +106,7 @@ export function Treemap(props: TreemapProps) {
               key={`l-${i}-${n.data.name}`}
               node={n}
               radius={treemapRadius}
-              dim={!isActive(n, filterCategories) || !nameMatchesSearch(n, searchQuery)}
+              dim={!isActive(n, filterCategories) || !nameMatchesSearch(n, loweredQuery)}
               isSelected={!!selected && nodesEqual(selected, n)}
               onSelect={() => onSelect(n)}
               onDrillIn={() => {

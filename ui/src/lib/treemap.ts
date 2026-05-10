@@ -33,25 +33,40 @@ export function isActive(node: TreeNode, activeCategories: ReadonlySet<string>):
   return activeCategories.has(node.data.category);
 }
 
-/** Case-insensitive substring match on the node's basename. Empty query
- *  matches everything (so callers can wire the same predicate regardless
- *  of whether the user has typed in the search box). */
-export function nameMatchesSearch(node: TreeNode, query: string): boolean {
-  if (!query) return true;
-  return node.data.name.toLowerCase().includes(query.toLowerCase());
+/** Case-insensitive substring match on the node's basename. The query
+ *  is expected to be already lowercased — callers typically `useMemo`
+ *  the lowered form once and reuse it across thousands of cells, so the
+ *  predicate doesn't pay for `toLowerCase()` per node. Empty query
+ *  matches everything. */
+export function nameMatchesSearch(node: TreeNode, loweredQuery: string): boolean {
+  if (!loweredQuery) return true;
+  return node.data.name.toLowerCase().includes(loweredQuery);
 }
 
-/** True if the node itself or any descendant matches the search query.
- *  Used to keep parent cells "lit" when a child matches — otherwise the
- *  match would be hidden inside a dimmed ancestor. Empty query → true. */
-export function subtreeMatchesSearch(node: TreeNode, query: string): boolean {
-  if (!query) return true;
-  const q = query.toLowerCase();
-  let hit = false;
-  node.each((n) => {
-    if (!hit && n.data.name.toLowerCase().includes(q)) hit = true;
-  });
-  return hit;
+/** Walk the tree once and return the set of nodes whose subtree (self
+ *  or any descendant) contains a name match for `loweredQuery`. Returns
+ *  `null` when the query is empty so callers can short-circuit cheaply
+ *  (`null` ↔ "no filter active"). The walk is post-order with an early
+ *  exit per branch — once a child reports a hit, the parent stops
+ *  scanning further siblings to confirm its own membership. */
+export function buildSubtreeMatchSet(
+  root: TreeNode,
+  loweredQuery: string,
+): ReadonlySet<TreeNode> | null {
+  if (!loweredQuery) return null;
+  const set = new Set<TreeNode>();
+  const visit = (n: TreeNode): boolean => {
+    let hit = n.data.name.toLowerCase().includes(loweredQuery);
+    if (n.children) {
+      for (const c of n.children as TreeNode[]) {
+        if (visit(c)) hit = true;
+      }
+    }
+    if (hit) set.add(n);
+    return hit;
+  };
+  visit(root);
+  return set;
 }
 
 export interface LaidOutTree {

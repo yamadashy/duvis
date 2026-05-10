@@ -1,10 +1,10 @@
 import { hierarchy, type HierarchyRectangularNode, partition } from "d3-hierarchy";
 import { arc as d3arc } from "d3-shape";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
 import { humanSize } from "../lib/format";
 import type { TreeNode } from "../lib/treemap";
-import { isActive, subtreeMatchesSearch } from "../lib/treemap";
+import { buildSubtreeMatchSet, isActive } from "../lib/treemap";
 import type { Category, Entry } from "../lib/types";
 import "./Sunburst.css";
 
@@ -74,6 +74,16 @@ export function Sunburst(props: SunburstProps) {
       .sort((a, b) => (b.value ?? 0) - (a.value ?? 0)),
   ) as PartitionNode;
 
+  // Precompute the set of nodes whose subtree contains a name match.
+  // Previously this was recomputed per-arc via a full subtree walk —
+  // O(N²) on big scans and visibly laggy while typing. The walk is now
+  // O(N), the per-arc check is a Set membership lookup, and the result
+  // is reused while `searchQuery` is unchanged.
+  const matchSet = useMemo(
+    () => buildSubtreeMatchSet(root, searchQuery.toLowerCase()),
+    [root, searchQuery],
+  );
+
   const arcGen = d3arc<PartitionNode>()
     .startAngle((d) => d.x0)
     .endAngle((d) => d.x1)
@@ -112,8 +122,9 @@ export function Sunburst(props: SunburstProps) {
             const live = findInRoot(d);
             // For ring arcs (which can sit above leaves), match if the
             // arc's subtree contains a hit — otherwise a deep match would
-            // be hidden behind a dimmed parent ring.
-            const matches = live ? subtreeMatchesSearch(live, searchQuery) : true;
+            // be hidden behind a dimmed parent ring. `matchSet === null`
+            // means no search filter is active.
+            const matches = matchSet === null || (live !== null && matchSet.has(live));
             const active = (live ? isActive(live, filterCategories) : true) && matches;
             const isSel = !!selected && live === selected;
             // Match Treemap LeafCell: parents (with children) slightly more
