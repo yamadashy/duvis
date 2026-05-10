@@ -250,6 +250,19 @@ pub struct Cli {
         help_heading = "UI Server Options"
     )]
     pub port: u16,
+
+    // ----- Diagnostics ------------------------------------------------------
+    /// Explain how a name would be classified, without scanning. Prints
+    /// both interpretations (as-directory / as-file) and the rule that
+    /// matched. Combine with --json for structured output. Useful when
+    /// you see a category in a scan and want to know why.
+    #[arg(
+        long,
+        value_name = "NAME",
+        conflicts_with_all = ["ndjson", "summary", "ui", "largest"],
+        help_heading = "Diagnostics"
+    )]
+    pub explain_category: Option<String>,
 }
 
 /// `clap` value parser used by `--max-depth` / `--top`. Rejects 0 so a

@@ -425,3 +425,61 @@ fn filter_ui_combo_is_rejected_with_error() {
         .assert()
         .failure();
 }
+
+#[test]
+fn explain_category_text_lists_both_interpretations() {
+    // No PATH argument: --explain-category short-circuits before any
+    // scanning, so the value of PATH should be irrelevant.
+    let assert = Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--explain-category", "node_modules"])
+        .assert()
+        .success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    assert!(
+        stdout.contains("node_modules"),
+        "expected name echoed back: {stdout}"
+    );
+    assert!(
+        stdout.contains("as directory: cache"),
+        "expected dir-side category: {stdout}"
+    );
+    assert!(
+        stdout.contains("as file:"),
+        "expected file-side line: {stdout}"
+    );
+    assert!(
+        stdout.contains("matched directory rule: node_modules"),
+        "expected rule explanation: {stdout}"
+    );
+}
+
+#[test]
+fn explain_category_json_emits_structured_payload() {
+    let assert = Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--explain-category", "data.img.raw", "--json"])
+        .assert()
+        .success();
+    let stdout = String::from_utf8(assert.get_output().stdout.clone()).unwrap();
+    let v: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--explain-category --json should be valid JSON");
+    assert_eq!(v["name"], "data.img.raw");
+    assert_eq!(v["as_file"]["category"], "vm_image");
+    assert_eq!(v["as_file"]["reason"]["kind"], "file_name_suffix");
+    assert_eq!(v["as_file"]["reason"]["needle"], "data.img.raw");
+    assert_eq!(v["as_directory"]["category"], "other");
+    assert_eq!(v["as_directory"]["reason"]["kind"], "default");
+}
+
+#[test]
+fn explain_category_rejects_combo_with_summary() {
+    // --explain-category is a diagnostic mode, not a view of the scanned
+    // tree. Combining it with another output mode would be ambiguous, so
+    // clap should reject it before we even try.
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--explain-category", "node_modules", "--summary"])
+        .assert()
+        .failure();
+}

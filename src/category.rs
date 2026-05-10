@@ -78,242 +78,344 @@ impl fmt::Display for Category {
     }
 }
 
-/// Classify a directory by its name.
-pub fn classify_dir(name: &str) -> Category {
+// ============================================================================
+// Rule tables — shared between `classify_*` and `explain_*` so the truth lives
+// in exactly one place.
+// ============================================================================
+
+/// AI model stores (re-downloadable; large enough to deserve their own
+/// category on AI dev machines). Checked before the more generic Cache rules
+/// so e.g. `.ollama` wins as ModelCache instead of being dragged into Cache.
+const MODEL_CACHE_DIRS: &[&str] = &[".ollama", ".lmstudio", ".huggingface"];
+
+/// OS-level backup stores (Apple Time Machine etc.).
+const BACKUP_DIRS: &[&str] = &["time machine backups", "backups.backupdb"];
+
+const CACHE_DIRS: &[&str] = &[
+    "node_modules",
+    ".cache",
+    "__pycache__",
+    ".npm",
+    ".yarn",
+    ".pnpm-store",
+    "caches",
+    ".gradle",
+    ".nuget",
+    ".pub-cache",
+    "pods",
+    ".cocoapods",
+    ".cargo",
+    "bower_components",
+    ".tmp",
+    "tmp",
+    "temp",
+    ".temp",
+    ".trash",
+    // Language version managers + tool installs (re-downloadable)
+    ".rustup",
+    ".pyenv",
+    ".rbenv",
+    ".nvm",
+    ".volta",
+    ".asdf",
+    "mise",
+    ".pipx",
+    "pipx",
+    ".poetry",
+    ".composer",
+    ".m2",
+    ".ivy2",
+    ".sbt",
+    ".stack",
+    ".cabal",
+    ".deno",
+    ".bun",
+    // Container / VM bundles (re-buildable / re-downloadable)
+    ".docker",
+    "vm_bundles",
+];
+
+const BUILD_DIRS: &[&str] = &[
+    "target",
+    "dist",
+    "build",
+    "out",
+    ".next",
+    ".nuxt",
+    ".output",
+    ".turbo",
+    ".angular",
+    "_build",
+    "cmake-build-debug",
+    "cmake-build-release",
+];
+
+const LOG_DIRS: &[&str] = &["logs", "log", ".logs"];
+
+const VCS_DIRS: &[&str] = &[".git", ".svn", ".hg", ".jj", ".bzr", "_darcs", ".fossil"];
+
+const IDE_DIRS: &[&str] = &[
+    ".idea",
+    ".vscode",
+    ".vscode-insiders",
+    ".vscode-server",
+    ".vs",
+    ".eclipse",
+    ".settings",
+    ".cursor",
+    ".cursor-server",
+    ".windsurf",
+    ".zed",
+    ".fleet",
+];
+
+/// Special filenames matched by suffix (not extension). Currently OrbStack's
+/// raw VM disk image, which is literally `data.img.raw` — matched by name so
+/// every Sony α RAW photo isn't dragged into vm_image just for its `.raw` tail.
+const VM_IMAGE_FILE_SUFFIXES: &[&str] = &["data.img.raw"];
+
+const VM_IMAGE_EXTENSIONS: &[&str] = &[
+    // `.iso` is OS install media most of the time, but it can also be a game
+    // ROM dump. Bucketed here for now — both are large blobs the user knows
+    // they put there.
+    ".vdi", ".vmdk", ".qcow2", ".vhd", ".vhdx", ".iso",
+];
+
+const INSTALLER_EXTENSIONS: &[&str] = &[
+    ".dmg",      // macOS disk image
+    ".pkg",      // macOS installer package
+    ".msi",      // Windows installer
+    ".exe",      // Windows executable / installer
+    ".deb",      // Debian package
+    ".rpm",      // RedHat package
+    ".appimage", // Linux AppImage
+    ".snap",     // Linux Snap package
+    ".flatpak",  // Linux Flatpak
+    ".apk",      // Android package
+];
+
+/// Match the common "single-extension" tail. Multi-part extensions like
+/// `.tar.gz` are still caught because they end in `.gz`.
+const ARCHIVE_EXTENSIONS: &[&str] = &[
+    ".zip", ".tar", ".tgz", ".tbz2", ".txz", ".gz", ".bz2", ".xz", ".7z", ".rar", ".zst",
+];
+
+const BACKUP_EXTENSIONS: &[&str] = &[".bak", ".backup", ".old"];
+
+// `#[rustfmt::skip]` keeps the per-section grouping (Image / Video / Audio)
+// readable. Without it rustfmt collapses the trailing `// Audio.` comment
+// into the preceding video line, which makes the file harder to scan.
+#[rustfmt::skip]
+const MEDIA_EXTENSIONS: &[&str] = &[
+    // Image (including camera RAW formats — `.raw` for generic exporters,
+    // `.arw` Sony α, `.cr2` Canon, `.nef` Nikon, `.dng` Adobe DNG).
+    // The literal `data.img.raw` OrbStack VM image is matched earlier in
+    // `explain_file` and never reaches here, so reintroducing `.raw` to
+    // media doesn't bring back the VM-image-as-media confusion.
+    ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".tiff", ".heic", ".heif",
+    ".psd", ".raw", ".arw", ".cr2", ".nef", ".dng",
+    // Video.
+    // `.ts` is intentionally excluded: while it's the MPEG transport-stream extension,
+    // TypeScript files are vastly more common in real codebases and being miscategorized
+    // as `media` is more harmful than missing the rare transport-stream file.
+    ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp",
+    // Audio.
+    ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff",
+];
+
+// ============================================================================
+// Classification with explanation
+// ============================================================================
+
+/// Why an entry was assigned a category. Surfaced via `--explain-category`
+/// so anyone debugging "why is this `cache`?" can see the rule that fired
+/// without reading the source.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[serde(tag = "kind", rename_all = "snake_case")]
+pub enum ClassificationReason {
+    /// Matched an exact directory-name rule (case-insensitive).
+    DirNameExact { needle: &'static str },
+    /// Directory name contains the substring "cache" (case-insensitive).
+    /// Catches things like `GPUCache` and `Code Cache` that aren't worth
+    /// listing individually.
+    DirNameContainsCache,
+    /// Matched a special filename suffix (e.g. `data.img.raw`). Distinct
+    /// from a plain extension because the rule keys off more than the dot
+    /// suffix.
+    FileNameSuffix { needle: &'static str },
+    /// Matched a file extension (e.g. `.log`, `.gz`).
+    FileExtension { needle: &'static str },
+    /// No rule matched; defaulted to `other`.
+    Default,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Classification {
+    pub category: Category,
+    pub reason: ClassificationReason,
+}
+
+impl ClassificationReason {
+    /// Human-readable one-liner used in the text output of
+    /// `--explain-category`. JSON output uses serde's tagged form instead.
+    pub fn describe(&self) -> String {
+        match self {
+            ClassificationReason::DirNameExact { needle } => {
+                format!("matched directory rule: {needle}")
+            }
+            ClassificationReason::DirNameContainsCache => {
+                "directory name contains \"cache\"".to_string()
+            }
+            ClassificationReason::FileNameSuffix { needle } => {
+                format!("matched filename suffix: {needle}")
+            }
+            ClassificationReason::FileExtension { needle } => {
+                format!("matched file extension: {needle}")
+            }
+            ClassificationReason::Default => "no rule matched; defaulted to other".to_string(),
+        }
+    }
+}
+
+/// Same logic as [`classify_dir`] but also records *which* rule matched.
+/// `classify_dir` is the thin wrapper used in the hot scanning path; this
+/// is the one called by `--explain-category` for transparency.
+pub fn explain_dir(name: &str) -> Classification {
     let lower = name.to_lowercase();
 
     // ----- Extended (checked first so they win over the more generic
-    // `cache` rules below; e.g. `.ollama` is more specifically a model
+    // Cache rules below; e.g. `.ollama` is more specifically a model
     // cache than just "a cache directory") -----
-
-    // AI model stores (re-downloadable; large enough to deserve their own
-    // category on AI dev machines).
-    if matches!(lower.as_str(), ".ollama" | ".lmstudio" | ".huggingface") {
-        return Category::ModelCache;
+    if let Some(needle) = first_exact_match(&lower, MODEL_CACHE_DIRS) {
+        return Classification {
+            category: Category::ModelCache,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
     }
-
-    // OS-level backup stores (Apple Time Machine etc.).
-    if matches!(lower.as_str(), "time machine backups" | "backups.backupdb") {
-        return Category::Backup;
+    if let Some(needle) = first_exact_match(&lower, BACKUP_DIRS) {
+        return Classification {
+            category: Category::Backup,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
     }
 
     // ----- Core -----
-
-    // Exact match: Cache directories
-    if matches!(
-        lower.as_str(),
-        "node_modules"
-            | ".cache"
-            | "__pycache__"
-            | ".npm"
-            | ".yarn"
-            | ".pnpm-store"
-            | "caches"
-            | ".gradle"
-            | ".nuget"
-            | ".pub-cache"
-            | "pods"
-            | ".cocoapods"
-            | ".cargo"
-            | "bower_components"
-            | ".tmp"
-            | "tmp"
-            | "temp"
-            | ".temp"
-            | ".trash"
-            // Language version managers + tool installs (re-downloadable)
-            | ".rustup"
-            | ".pyenv"
-            | ".rbenv"
-            | ".nvm"
-            | ".volta"
-            | ".asdf"
-            | "mise"
-            | ".pipx"
-            | "pipx"
-            | ".poetry"
-            | ".composer"
-            | ".m2"
-            | ".ivy2"
-            | ".sbt"
-            | ".stack"
-            | ".cabal"
-            | ".deno"
-            | ".bun"
-            // Container / VM bundles (re-buildable / re-downloadable)
-            | ".docker"
-            | "vm_bundles"
-    ) {
-        return Category::Cache;
+    if let Some(needle) = first_exact_match(&lower, CACHE_DIRS) {
+        return Classification {
+            category: Category::Cache,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
     }
-
-    // Partial match: directories containing "cache" (catches GPUCache, Code Cache, etc.)
     if lower.contains("cache") {
-        return Category::Cache;
+        return Classification {
+            category: Category::Cache,
+            reason: ClassificationReason::DirNameContainsCache,
+        };
+    }
+    if let Some(needle) = first_exact_match(&lower, BUILD_DIRS) {
+        return Classification {
+            category: Category::Build,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
+    }
+    if let Some(needle) = first_exact_match(&lower, LOG_DIRS) {
+        return Classification {
+            category: Category::Log,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
+    }
+    if let Some(needle) = first_exact_match(&lower, VCS_DIRS) {
+        return Classification {
+            category: Category::Vcs,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
+    }
+    if let Some(needle) = first_exact_match(&lower, IDE_DIRS) {
+        return Classification {
+            category: Category::Ide,
+            reason: ClassificationReason::DirNameExact { needle },
+        };
     }
 
-    // Exact match: Build artifact directories
-    if matches!(
-        lower.as_str(),
-        "target"
-            | "dist"
-            | "build"
-            | "out"
-            | ".next"
-            | ".nuxt"
-            | ".output"
-            | ".turbo"
-            | ".angular"
-            | "_build"
-            | "cmake-build-debug"
-            | "cmake-build-release"
-    ) {
-        return Category::Build;
+    Classification {
+        category: Category::Other,
+        reason: ClassificationReason::Default,
+    }
+}
+
+/// Same logic as [`classify_file`] but also records *which* rule matched.
+pub fn explain_file(name: &str) -> Classification {
+    let lower = name.to_lowercase();
+
+    if let Some(needle) = first_suffix_match(&lower, &[".log"]) {
+        return Classification {
+            category: Category::Log,
+            reason: ClassificationReason::FileExtension { needle },
+        };
     }
 
-    // Exact match: Log directories
-    if matches!(lower.as_str(), "logs" | "log" | ".logs") {
-        return Category::Log;
+    // ----- Extended file types (checked before media so a `data.img.raw`
+    // VM image isn't dragged into media just because of its `.raw` tail) -----
+    if let Some(needle) = first_suffix_match(&lower, VM_IMAGE_FILE_SUFFIXES) {
+        return Classification {
+            category: Category::VmImage,
+            reason: ClassificationReason::FileNameSuffix { needle },
+        };
+    }
+    if let Some(needle) = first_suffix_match(&lower, VM_IMAGE_EXTENSIONS) {
+        return Classification {
+            category: Category::VmImage,
+            reason: ClassificationReason::FileExtension { needle },
+        };
+    }
+    if let Some(needle) = first_suffix_match(&lower, INSTALLER_EXTENSIONS) {
+        return Classification {
+            category: Category::Installer,
+            reason: ClassificationReason::FileExtension { needle },
+        };
+    }
+    if let Some(needle) = first_suffix_match(&lower, ARCHIVE_EXTENSIONS) {
+        return Classification {
+            category: Category::Archive,
+            reason: ClassificationReason::FileExtension { needle },
+        };
+    }
+    if let Some(needle) = first_suffix_match(&lower, BACKUP_EXTENSIONS) {
+        return Classification {
+            category: Category::Backup,
+            reason: ClassificationReason::FileExtension { needle },
+        };
+    }
+    if let Some(needle) = first_suffix_match(&lower, MEDIA_EXTENSIONS) {
+        return Classification {
+            category: Category::Media,
+            reason: ClassificationReason::FileExtension { needle },
+        };
     }
 
-    // Exact match: VCS directories
-    if matches!(
-        lower.as_str(),
-        ".git" | ".svn" | ".hg" | ".jj" | ".bzr" | "_darcs" | ".fossil"
-    ) {
-        return Category::Vcs;
+    Classification {
+        category: Category::Other,
+        reason: ClassificationReason::Default,
     }
+}
 
-    // Exact match: IDE directories
-    if matches!(
-        lower.as_str(),
-        ".idea"
-            | ".vscode"
-            | ".vscode-insiders"
-            | ".vscode-server"
-            | ".vs"
-            | ".eclipse"
-            | ".settings"
-            | ".cursor"
-            | ".cursor-server"
-            | ".windsurf"
-            | ".zed"
-            | ".fleet"
-    ) {
-        return Category::Ide;
-    }
+fn first_exact_match(lower: &str, needles: &[&'static str]) -> Option<&'static str> {
+    needles.iter().copied().find(|n| *n == lower)
+}
 
-    Category::Other
+fn first_suffix_match(lower: &str, needles: &[&'static str]) -> Option<&'static str> {
+    needles.iter().copied().find(|n| lower.ends_with(*n))
+}
+
+/// Classify a directory by its name.
+pub fn classify_dir(name: &str) -> Category {
+    explain_dir(name).category
 }
 
 /// Classify a file by its name (extension or, for a few special cases,
 /// full filename).
 pub fn classify_file(name: &str) -> Category {
-    let lower = name.to_lowercase();
-
-    // Log files
-    if lower.ends_with(".log") {
-        return Category::Log;
-    }
-
-    // ----- Extended file types (checked before media so a `data.img.raw`
-    // VM image isn't dragged into media just because of its `.raw` tail) -----
-
-    // OrbStack-style raw VM disk image: file is literally named
-    // `data.img.raw`. We match on the name so we don't pull every Sony α
-    // RAW photo into the vm_image bucket.
-    if lower.ends_with("data.img.raw") {
-        return Category::VmImage;
-    }
-
-    if is_vm_image_extension(&lower) {
-        return Category::VmImage;
-    }
-
-    if is_installer_extension(&lower) {
-        return Category::Installer;
-    }
-
-    if is_archive_extension(&lower) {
-        return Category::Archive;
-    }
-
-    if is_backup_extension(&lower) {
-        return Category::Backup;
-    }
-
-    // Media files
-    if is_media_extension(&lower) {
-        return Category::Media;
-    }
-
-    Category::Other
-}
-
-fn is_media_extension(lower_name: &str) -> bool {
-    const MEDIA_EXTENSIONS: &[&str] = &[
-        // Image (including camera RAW formats — `.raw` for generic exporters,
-        // `.arw` Sony α, `.cr2` Canon, `.nef` Nikon, `.dng` Adobe DNG).
-        // The literal `data.img.raw` OrbStack VM image is matched earlier in
-        // `classify_file` and never reaches here, so reintroducing `.raw` to
-        // media doesn't bring back the VM-image-as-media confusion.
-        ".jpg", ".jpeg", ".png", ".gif", ".bmp", ".svg", ".webp", ".ico", ".tiff", ".heic", ".heif",
-        ".psd", ".raw", ".arw", ".cr2", ".nef", ".dng",
-        // Video.
-        // `.ts` is intentionally excluded: while it's the MPEG transport-stream extension,
-        // TypeScript files are vastly more common in real codebases and being miscategorized
-        // as `media` is more harmful than missing the rare transport-stream file.
-        ".mp4", ".avi", ".mkv", ".mov", ".wmv", ".flv", ".webm", ".m4v", ".3gp",
-        // Audio.
-        ".mp3", ".wav", ".flac", ".aac", ".ogg", ".wma", ".m4a", ".opus", ".aiff",
-    ];
-    MEDIA_EXTENSIONS.iter().any(|ext| lower_name.ends_with(ext))
-}
-
-fn is_vm_image_extension(lower_name: &str) -> bool {
-    // `.iso` is OS install media most of the time, but it can also be
-    // a game ROM dump. Bucketed here for now — both are large blobs the
-    // user knows they put there.
-    const VM_IMAGE_EXTENSIONS: &[&str] = &[".vdi", ".vmdk", ".qcow2", ".vhd", ".vhdx", ".iso"];
-    VM_IMAGE_EXTENSIONS
-        .iter()
-        .any(|ext| lower_name.ends_with(ext))
-}
-
-fn is_installer_extension(lower_name: &str) -> bool {
-    const INSTALLER_EXTENSIONS: &[&str] = &[
-        ".dmg",      // macOS disk image
-        ".pkg",      // macOS installer package
-        ".msi",      // Windows installer
-        ".exe",      // Windows executable / installer
-        ".deb",      // Debian package
-        ".rpm",      // RedHat package
-        ".appimage", // Linux AppImage
-        ".snap",     // Linux Snap package
-        ".flatpak",  // Linux Flatpak
-        ".apk",      // Android package
-    ];
-    INSTALLER_EXTENSIONS
-        .iter()
-        .any(|ext| lower_name.ends_with(ext))
-}
-
-fn is_archive_extension(lower_name: &str) -> bool {
-    // Match the common "single-extension" tail. Multi-part extensions like
-    // `.tar.gz` are still caught because they end in `.gz`.
-    const ARCHIVE_EXTENSIONS: &[&str] = &[
-        ".zip", ".tar", ".tgz", ".tbz2", ".txz", ".gz", ".bz2", ".xz", ".7z", ".rar", ".zst",
-    ];
-    ARCHIVE_EXTENSIONS
-        .iter()
-        .any(|ext| lower_name.ends_with(ext))
-}
-
-fn is_backup_extension(lower_name: &str) -> bool {
-    const BACKUP_EXTENSIONS: &[&str] = &[".bak", ".backup", ".old"];
-    BACKUP_EXTENSIONS
-        .iter()
-        .any(|ext| lower_name.ends_with(ext))
+    explain_file(name).category
 }
 
 #[cfg(test)]
@@ -422,7 +524,7 @@ mod tests {
         // firmwares still emit generic `.raw` files; both belong with the
         // rest of the camera RAW formats (`.cr2`, `.nef`, `.dng`). The
         // OrbStack `data.img.raw` literal is matched earlier in
-        // `classify_file` so it still wins as VmImage and never reaches the
+        // `explain_file` so it still wins as VmImage and never reaches the
         // media extension list.
         assert_eq!(classify_file("DSC0001.raw"), Category::Media);
         assert_eq!(classify_file("DSC0001.arw"), Category::Media);
@@ -468,5 +570,78 @@ mod tests {
         ] {
             assert_eq!(c.tier(), Tier::Extended, "{c:?} should be Extended");
         }
+    }
+
+    // ----- Explain ------------------------------------------------------------
+
+    #[test]
+    fn explain_dir_reports_exact_match_needle() {
+        let c = explain_dir("node_modules");
+        assert_eq!(c.category, Category::Cache);
+        assert_eq!(
+            c.reason,
+            ClassificationReason::DirNameExact {
+                needle: "node_modules"
+            }
+        );
+    }
+
+    #[test]
+    fn explain_dir_reports_extended_winning_over_cache() {
+        let c = explain_dir(".ollama");
+        assert_eq!(c.category, Category::ModelCache);
+        assert_eq!(
+            c.reason,
+            ClassificationReason::DirNameExact { needle: ".ollama" }
+        );
+    }
+
+    #[test]
+    fn explain_dir_reports_partial_cache_match() {
+        let c = explain_dir("GPUCache");
+        assert_eq!(c.category, Category::Cache);
+        assert_eq!(c.reason, ClassificationReason::DirNameContainsCache);
+    }
+
+    #[test]
+    fn explain_dir_reports_default_when_unmatched() {
+        let c = explain_dir("src");
+        assert_eq!(c.category, Category::Other);
+        assert_eq!(c.reason, ClassificationReason::Default);
+    }
+
+    #[test]
+    fn explain_file_reports_extension_needle() {
+        let c = explain_file("debug.log");
+        assert_eq!(c.category, Category::Log);
+        assert_eq!(
+            c.reason,
+            ClassificationReason::FileExtension { needle: ".log" }
+        );
+        let c = explain_file("source.tar.gz");
+        assert_eq!(c.category, Category::Archive);
+        assert_eq!(
+            c.reason,
+            ClassificationReason::FileExtension { needle: ".gz" }
+        );
+    }
+
+    #[test]
+    fn explain_file_reports_filename_suffix_for_orbstack() {
+        let c = explain_file("data.img.raw");
+        assert_eq!(c.category, Category::VmImage);
+        assert_eq!(
+            c.reason,
+            ClassificationReason::FileNameSuffix {
+                needle: "data.img.raw"
+            }
+        );
+    }
+
+    #[test]
+    fn explain_file_reports_default_when_unmatched() {
+        let c = explain_file("main.rs");
+        assert_eq!(c.category, Category::Other);
+        assert_eq!(c.reason, ClassificationReason::Default);
     }
 }
