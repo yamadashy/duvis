@@ -1,3 +1,7 @@
+// `Serialize` for `Category` is provided in `wire::category` so the
+// domain type stays derive-free. `Classification` / `ClassificationReason`
+// below still derive `Serialize` for now — they move to `wire::explain`
+// in the next commit.
 use serde::Serialize;
 use std::fmt;
 
@@ -19,9 +23,9 @@ pub enum Tier {
 /// File / directory categorisation surfaced in the legend, in `--summary`,
 /// and as the `--category` filter values. `Display` and `FromStr` use the
 /// canonical snake_case names (`cache`, `vm_image`, …); clap awareness
-/// lives in `cli/args.rs`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
-#[serde(rename_all = "snake_case")]
+/// lives in `cli/args.rs`. Wire-format serialization lives in
+/// `wire::category` so domain types stay free of serde derives.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Category {
     // ----- Core -----
     Cache,
