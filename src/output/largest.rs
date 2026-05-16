@@ -13,15 +13,14 @@
 use std::io::{self, Write};
 
 use anyhow::Result;
-use serde::Serialize;
 
 use super::format::format_size;
-use super::{
-    child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
-    scan_root_for_wire, OutputConfig, SubtreeCounts, WIRE_VERSION,
-};
-use crate::category::Category;
+use super::{child_relative_path, precompute_subtree_counts, OutputConfig, SubtreeCounts};
 use crate::entry::Entry;
+use crate::wire::largest::{
+    WireLargestEntry, WireLargestMeta, WireLargestNdjsonEntry, WireLargestNdjsonRecord,
+    WireLargestRoot,
+};
 
 /// Output target for `--largest` results. Selected by which format flag
 /// (if any) was passed alongside `--largest`.
@@ -199,62 +198,13 @@ fn render_path_for_text(row: &Row<'_>) -> String {
     format!("…{tail}")
 }
 
-#[derive(Serialize)]
-struct LargestRoot<'a> {
-    meta: Meta<'a>,
-    largest: Vec<LargestEntry>,
-}
-
-#[derive(Serialize)]
-struct Meta<'a> {
-    wire_version: u32,
-    duvis_version: &'static str,
-    scan_root: String,
-    hardlinks: &'a str,
-    items_scanned: u64,
-    items_skipped: u64,
-    /// Surfaced so an agent can tell whether the list it sees was
-    /// truncated by `--largest N` or genuinely smaller than N. Pair with
-    /// `total_entries` to compute "we saw 10 of 1234".
-    largest_requested: usize,
-    total_entries: u64,
-}
-
-#[derive(Serialize)]
-struct LargestEntry {
-    name: String,
-    relative_path: String,
-    depth: u32,
-    size: u64,
-    size_human: String,
-    is_dir: bool,
-    category: Category,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    modified_days_ago: Option<u64>,
-    file_count: u64,
-    dir_count: u64,
-}
-
-fn make_meta<'a>(config: &'a OutputConfig<'a>, n_requested: usize, total_entries: u64) -> Meta<'a> {
-    Meta {
-        wire_version: WIRE_VERSION,
-        duvis_version: env!("CARGO_PKG_VERSION"),
-        scan_root: scan_root_for_wire(config.scan_root),
-        hardlinks: hardlinks_label(config.hardlinks),
-        items_scanned: config.counts.scanned(),
-        items_skipped: config.counts.skipped(),
-        largest_requested: n_requested,
-        total_entries,
-    }
-}
-
-fn build_entry(row: &Row<'_>, counts: &SubtreeCounts) -> LargestEntry {
+fn build_entry(row: &Row<'_>, counts: &SubtreeCounts) -> WireLargestEntry {
     let (file_count, dir_count_with_self) = counts
         .get(&(row.entry as *const Entry))
         .copied()
         .unwrap_or((0, 0));
     let dir_count = dir_count_with_self.saturating_sub(if row.entry.is_dir() { 1 } else { 0 });
-    LargestEntry {
+    WireLargestEntry {
         name: row.entry.name.clone(),
         relative_path: row.relative_path.clone(),
         depth: row.depth,
@@ -277,40 +227,14 @@ fn write_json(
     out: &mut impl Write,
 ) -> Result<()> {
     let counts = precompute_subtree_counts(tree_root);
-    let entries: Vec<LargestEntry> = rows.iter().map(|r| build_entry(r, &counts)).collect();
-    let root = LargestRoot {
-        meta: make_meta(config, n_requested, total_entries),
+    let entries: Vec<WireLargestEntry> = rows.iter().map(|r| build_entry(r, &counts)).collect();
+    let root = WireLargestRoot {
+        meta: WireLargestMeta::from_config(config, n_requested, total_entries),
         largest: entries,
     };
     serde_json::to_writer_pretty(&mut *out, &root)?;
     writeln!(out)?;
     Ok(())
-}
-
-#[derive(Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum NdjsonRecord<'a> {
-    Meta(Meta<'a>),
-    Entry(NdjsonEntryRecord<'a>),
-}
-
-#[derive(Serialize)]
-struct NdjsonEntryRecord<'a> {
-    name: &'a str,
-    relative_path: &'a str,
-    depth: u32,
-    size: u64,
-    size_human: String,
-    is_dir: bool,
-    category: Category,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    modified_days_ago: Option<u64>,
-    file_count: u64,
-    dir_count: u64,
-    #[serde(skip_serializing_if = "is_zero_u64")]
-    truncated_count: u64,
-    #[serde(skip_serializing_if = "is_zero_u64")]
-    truncated_size: u64,
 }
 
 fn write_ndjson(
@@ -321,7 +245,11 @@ fn write_ndjson(
     total_entries: u64,
     out: &mut impl Write,
 ) -> Result<()> {
-    let meta_rec = NdjsonRecord::Meta(make_meta(config, n_requested, total_entries));
+    let meta_rec = WireLargestNdjsonRecord::Meta(WireLargestMeta::from_config(
+        config,
+        n_requested,
+        total_entries,
+    ));
     serde_json::to_writer(&mut *out, &meta_rec)?;
     writeln!(out)?;
 
@@ -332,7 +260,7 @@ fn write_ndjson(
             .copied()
             .unwrap_or((0, 0));
         let dir_count = dir_count_with_self.saturating_sub(if row.entry.is_dir() { 1 } else { 0 });
-        let rec = NdjsonRecord::Entry(NdjsonEntryRecord {
+        let rec = WireLargestNdjsonRecord::Entry(WireLargestNdjsonEntry {
             name: &row.entry.name,
             relative_path: &row.relative_path,
             depth: row.depth,
@@ -359,6 +287,7 @@ fn write_ndjson(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::category::Category;
     use crate::scanner::{HardlinkPolicy, ScanCounts};
     use std::path::PathBuf;
 

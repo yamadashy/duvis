@@ -26,7 +26,10 @@ mod tests {
         // Spot-check both core (`cache`) and extended (`vm_image`,
         // `model_cache`) variants so a future label() rename would fail
         // here as well as in category.rs.
-        assert_eq!(serde_json::to_string(&Category::Cache).unwrap(), "\"cache\"");
+        assert_eq!(
+            serde_json::to_string(&Category::Cache).unwrap(),
+            "\"cache\""
+        );
         assert_eq!(
             serde_json::to_string(&Category::VmImage).unwrap(),
             "\"vm_image\""

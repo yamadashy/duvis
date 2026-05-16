@@ -14,5 +14,6 @@
 pub mod category;
 pub mod entry;
 pub mod explain;
+pub mod largest;
 pub mod tree;
 pub mod ui;
