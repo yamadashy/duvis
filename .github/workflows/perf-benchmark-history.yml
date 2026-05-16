@@ -32,13 +32,13 @@ jobs:
           - os: windows-latest
             runs: 20
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v6
         with:
           node-version: 24.15.0
           cache: npm
@@ -56,7 +56,7 @@ jobs:
         run: node .github/scripts/perf-benchmark-history/bench-run.mjs "$GITHUB_WORKSPACE"
 
       - name: Upload benchmark result
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: bench-history-${{ matrix.os }}
           path: ${{ runner.temp }}/bench-result.json
@@ -70,7 +70,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           persist-credentials: false
 
@@ -89,7 +89,7 @@ jobs:
             git switch "$CURRENT_BRANCH"
           fi
 
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           path: results
           pattern: bench-history-*
