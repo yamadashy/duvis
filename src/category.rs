@@ -1,4 +1,7 @@
-use serde::Serialize;
+// Wire-format serialization for the types in this module lives in
+// `wire::category` (`Category`) and `wire::explain` (`Classification`,
+// `ClassificationReason`). The domain types here stay derive-free so
+// schema changes are an explicit edit in wire/.
 use std::fmt;
 
 /// Whether a category is part of the always-shown core vocabulary or an
@@ -19,9 +22,9 @@ pub enum Tier {
 /// File / directory categorisation surfaced in the legend, in `--summary`,
 /// and as the `--category` filter values. `Display` and `FromStr` use the
 /// canonical snake_case names (`cache`, `vm_image`, …); clap awareness
-/// lives in `cli/args.rs`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
-#[serde(rename_all = "snake_case")]
+/// lives in `cli/args.rs`. Wire-format serialization lives in
+/// `wire::category` so domain types stay free of serde derives.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum Category {
     // ----- Core -----
     Cache,
@@ -274,9 +277,8 @@ const MEDIA_EXTENSIONS: &[&str] = &[
 
 /// Why an entry was assigned a category. Surfaced via `--explain-category`
 /// so anyone debugging "why is this `cache`?" can see the rule that fired
-/// without reading the source.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
+/// without reading the source. Wire form lives in `wire::explain`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClassificationReason {
     /// Matched an exact directory-name rule (case-insensitive).
     DirNameExact { needle: &'static str },
@@ -294,7 +296,7 @@ pub enum ClassificationReason {
     Default,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Classification {
     pub category: Category,
     pub reason: ClassificationReason,

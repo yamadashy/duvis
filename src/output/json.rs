@@ -1,63 +1,14 @@
 use std::io::Write;
 
 use anyhow::Result;
-use serde::Serialize;
 
 use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
-    child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
-    scan_root_for_wire, select_top_refs, OutputConfig, SubtreeCounts, WIRE_VERSION,
+    child_relative_path, precompute_subtree_counts, select_top_refs, OutputConfig, SubtreeCounts,
 };
-use crate::category::Category;
 use crate::entry::Entry;
-
-#[derive(Serialize)]
-struct JsonRoot<'a> {
-    meta: Meta<'a>,
-    tree: JsonOutput,
-}
-
-#[derive(Serialize)]
-struct Meta<'a> {
-    wire_version: u32,
-    duvis_version: &'static str,
-    scan_root: String,
-    hardlinks: &'a str,
-    items_scanned: u64,
-    items_skipped: u64,
-}
-
-#[derive(Serialize)]
-struct JsonOutput {
-    name: String,
-    /// Path from the scan root, `/`-separated. Root itself is `"."`.
-    relative_path: String,
-    /// 0 at scan root, +1 per directory level.
-    depth: u32,
-    size: u64,
-    size_human: String,
-    is_dir: bool,
-    category: Category,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    modified_days_ago: Option<u64>,
-    /// Total regular files in this subtree (recursive). Constant for a
-    /// given Entry — does *not* change with `--top` / `--max-depth` since
-    /// those only affect what we emit, not what was measured.
-    file_count: u64,
-    /// Total directories in this subtree, excluding self.
-    dir_count: u64,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    children: Option<Vec<JsonOutput>>,
-    /// Direct children dropped at this level by `--top`. Zero (omitted)
-    /// when no top filter applied. Distinct from depth-truncation: that
-    /// shows up as a non-zero `file_count`/`dir_count` with no
-    /// `children` array, and is implicit.
-    #[serde(skip_serializing_if = "is_zero_u64")]
-    truncated_count: u64,
-    #[serde(skip_serializing_if = "is_zero_u64")]
-    truncated_size: u64,
-}
+use crate::wire::tree::{WireMeta, WireTreeNode, WireTreeRoot};
 
 /// Build the JSON view, looking up precomputed counts in `counts` so
 /// each entry is touched O(1) times. When a filter is active, children
@@ -71,10 +22,10 @@ fn build(
     top: Option<usize>,
     counts: &SubtreeCounts,
     visible: Option<&SubtreeMatch>,
-) -> JsonOutput {
+) -> WireTreeNode {
     let render_children = !matches!(max_depth, Some(max) if depth as usize >= max);
 
-    let mut children_out: Option<Vec<JsonOutput>> = None;
+    let mut children_out: Option<Vec<WireTreeNode>> = None;
     let mut truncated_count: u64 = 0;
     let mut truncated_size: u64 = 0;
 
@@ -121,7 +72,7 @@ fn build(
         .unwrap_or((0, 0));
     let dir_count = dir_count_with_self.saturating_sub(if entry.is_dir() { 1 } else { 0 });
 
-    JsonOutput {
+    WireTreeNode {
         name: entry.name.clone(),
         relative_path,
         depth,
@@ -154,15 +105,8 @@ pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Resu
         &counts,
         visible_map.as_ref(),
     );
-    let root = JsonRoot {
-        meta: Meta {
-            wire_version: WIRE_VERSION,
-            duvis_version: env!("CARGO_PKG_VERSION"),
-            scan_root: scan_root_for_wire(config.scan_root),
-            hardlinks: hardlinks_label(config.hardlinks),
-            items_scanned: config.counts.scanned(),
-            items_skipped: config.counts.skipped(),
-        },
+    let root = WireTreeRoot {
+        meta: WireMeta::from_config(config),
         tree,
     };
     serde_json::to_writer_pretty(&mut *out, &root)?;

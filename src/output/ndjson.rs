@@ -11,64 +11,17 @@
 use std::io::Write;
 
 use anyhow::Result;
-use serde::Serialize;
 
 use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
-    child_relative_path, hardlinks_label, is_zero_u64, precompute_subtree_counts,
-    scan_root_for_wire, select_top_refs, OutputConfig, SubtreeCounts, WIRE_VERSION,
+    child_relative_path, precompute_subtree_counts, select_top_refs, OutputConfig, SubtreeCounts,
 };
-use crate::category::Category;
 use crate::entry::Entry;
-
-#[derive(Serialize)]
-#[serde(tag = "type", rename_all = "snake_case")]
-enum Record<'a> {
-    Meta(MetaRecord<'a>),
-    Entry(EntryRecord<'a>),
-}
-
-#[derive(Serialize)]
-struct MetaRecord<'a> {
-    wire_version: u32,
-    duvis_version: &'static str,
-    scan_root: String,
-    hardlinks: &'a str,
-    items_scanned: u64,
-    items_skipped: u64,
-}
-
-#[derive(Serialize)]
-struct EntryRecord<'a> {
-    name: &'a str,
-    relative_path: String,
-    depth: u32,
-    size: u64,
-    size_human: String,
-    is_dir: bool,
-    category: Category,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    modified_days_ago: Option<u64>,
-    file_count: u64,
-    dir_count: u64,
-    /// Direct children dropped at this level by `--top`. Zero (omitted)
-    /// when no top filter applied.
-    #[serde(skip_serializing_if = "is_zero_u64")]
-    truncated_count: u64,
-    #[serde(skip_serializing_if = "is_zero_u64")]
-    truncated_size: u64,
-}
+use crate::wire::tree::{WireMeta, WireStreamEntry, WireStreamRecord};
 
 fn write_meta(out: &mut impl Write, config: &OutputConfig) -> Result<()> {
-    let rec = Record::Meta(MetaRecord {
-        wire_version: WIRE_VERSION,
-        duvis_version: env!("CARGO_PKG_VERSION"),
-        scan_root: scan_root_for_wire(config.scan_root),
-        hardlinks: hardlinks_label(config.hardlinks),
-        items_scanned: config.counts.scanned(),
-        items_skipped: config.counts.skipped(),
-    });
+    let rec = WireStreamRecord::Meta(WireMeta::from_config(config));
     serde_json::to_writer(&mut *out, &rec)?;
     writeln!(out)?;
     Ok(())
@@ -125,9 +78,9 @@ fn write_entry(
         }
     }
 
-    let rec = Record::Entry(EntryRecord {
+    let rec = WireStreamRecord::Entry(WireStreamEntry {
         name: &entry.name,
-        relative_path: relative_path.clone(),
+        relative_path: &relative_path,
         depth,
         size: entry.size,
         size_human: format_size(entry.size),

@@ -7,6 +7,7 @@ use crate::category;
 use crate::entry::SortOrder;
 use crate::output::{self, OutputConfig};
 use crate::scanner::{self, HardlinkPolicy};
+use crate::wire::explain::WireExplain;
 
 use super::plan::{RunPlan, ScanPlan};
 
@@ -86,11 +87,7 @@ fn explain_category(name: &str, json: bool, out: &mut impl Write) -> Result<()> 
     let as_dir = category::explain_dir(name);
     let as_file = category::explain_file(name);
     if json {
-        let payload = serde_json::json!({
-            "name": name,
-            "as_directory": as_dir,
-            "as_file": as_file,
-        });
+        let payload = WireExplain::new(name, &as_dir, &as_file);
         writeln!(out, "{}", serde_json::to_string_pretty(&payload)?)?;
     } else {
         writeln!(out, "{name:?}")?;

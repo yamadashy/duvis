@@ -4,6 +4,7 @@ pub mod entry;
 pub mod output;
 pub mod scanner;
 pub mod ui;
+pub mod wire;
 
 /// Binary entry. `main.rs` calls this and returns the resulting exit
 /// code. All CLI / dispatch / exit-code work lives inside the lib crate

@@ -40,6 +40,94 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
+  layering:
+    name: Layering invariants
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: serde derives confined to src/wire/
+        # Domain types in entry / category / scanner deliberately do
+        # not derive (or hand-implement) serde traits — the on-wire
+        # format is defined exclusively under src/wire/. A
+        # `#[derive(Serialize)]` or `impl Serialize for …` outside
+        # wire/ would silently couple the wire schema to a domain
+        # refactor, which is exactly what this layer split prevents.
+        run: |
+          set -euo pipefail
+          violations=$(
+            grep -rnE \
+              'derive\([^)]*(Serialize|Deserialize)|impl[[:space:]]+(<[^>]*>[[:space:]]+)?(Serialize|Deserialize)[[:space:]]+for' \
+              src/ --include='*.rs' \
+            | grep -vE '^src/wire(/|\.rs)' \
+            || true
+          )
+          if [[ -n "$violations" ]]; then
+            echo "::error::serde derive / impl found outside src/wire/:"
+            echo "$violations"
+            exit 1
+          fi
+      - name: axum confined to src/ui.rs
+        # `axum` is the HTTP framework used only by the --ui server.
+        # Pulling it into core / cli / output would couple the
+        # library half of the crate to a heavy async dep — the
+        # split is what lets `duvis --json` stay a fast synchronous
+        # path.
+        run: |
+          set -euo pipefail
+          violations=$(
+            grep -rnE '\baxum::|^use[[:space:]]+axum\b' src/ --include='*.rs' \
+            | grep -vE '^src/ui(/|\.rs)' \
+            || true
+          )
+          if [[ -n "$violations" ]]; then
+            echo "::error::axum used outside src/ui.rs:"
+            echo "$violations"
+            exit 1
+          fi
+      - name: tokio confined to UI server + cli dispatcher
+        # `tokio` is only needed where we actually run async code:
+        # the UI server (src/ui.rs) and the cli dispatch path that
+        # block_on's it (src/cli/app.rs). Output writers and the
+        # scanner stay sync.
+        run: |
+          set -euo pipefail
+          violations=$(
+            grep -rnE '\btokio::|^use[[:space:]]+tokio\b' src/ --include='*.rs' \
+            | grep -vE '^src/ui(/|\.rs)|^src/cli/app\.rs' \
+            || true
+          )
+          if [[ -n "$violations" ]]; then
+            echo "::error::tokio used outside src/ui.rs and src/cli/app.rs:"
+            echo "$violations"
+            exit 1
+          fi
+      - name: clap confined to src/cli/
+        # clap derives + types belong in the cli layer. Domain code
+        # mustn't import clap so that the library half of the crate
+        # can be driven without a clap-parsed Cli (integration tests
+        # construct `RunPlan` directly).
+        #
+        # Looking for `use clap` (imports) and `#[clap(` /
+        # `#[derive(.. clap::Parser ..)]`-style attributes rather
+        # than any mention of `clap::`, so comments referencing the
+        # historical clap behaviour don't trip the check.
+        run: |
+          set -euo pipefail
+          violations=$(
+            grep -rnE '^[[:space:]]*(use[[:space:]]+clap\b|#\[(derive\([^)]*clap|clap\())' \
+              src/ --include='*.rs' \
+            | grep -vE '^src/cli(/|\.rs)' \
+            || true
+          )
+          if [[ -n "$violations" ]]; then
+            echo "::error::clap used outside src/cli/:"
+            echo "$violations"
+            exit 1
+          fi
+
   fmt:
     name: Format (rustfmt)
     runs-on: ubuntu-latest

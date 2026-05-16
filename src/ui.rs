@@ -4,7 +4,6 @@ use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
 use axum::routing::{get, post};
 use axum::Router;
-use serde::Deserialize;
 use serde_json::json;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
@@ -13,6 +12,8 @@ use std::time::Instant;
 
 use crate::entry::{Entry, SortOrder};
 use crate::scanner::{HardlinkPolicy, ScanCounts};
+use crate::wire::entry::WireEntry;
+use crate::wire::ui::WireRevealReq;
 
 /// Days threshold for "stale" classification. Files modified longer ago than
 /// this are counted toward the "Stale" stat in the UI.
@@ -216,7 +217,7 @@ async fn data_json(State(s): State<Arc<AppState>>) -> Response {
             "items_scanned": state.counts.scanned(),
             "items_skipped": state.counts.skipped(),
             "scan_root": scan_root,
-            "tree": tree,
+            "tree": WireEntry::from_entry(tree),
             "meta": meta_block(),
         }),
         Inner::Error(msg) => json!({
@@ -240,16 +241,9 @@ async fn rescan(State(s): State<Arc<AppState>>) -> StatusCode {
     StatusCode::ACCEPTED
 }
 
-#[derive(Deserialize)]
-struct RevealReq {
-    /// Path segments below the scanned root, e.g. ["target", "debug"].
-    /// An empty array reveals the root itself.
-    segments: Vec<String>,
-}
-
 async fn reveal(
     State(state): State<Arc<AppState>>,
-    axum::Json(req): axum::Json<RevealReq>,
+    axum::Json(req): axum::Json<WireRevealReq>,
 ) -> Response {
     // Build the absolute path while rejecting anything that smells like
     // path traversal — the segments come from the page, not from the user
