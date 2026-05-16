@@ -25,7 +25,7 @@ mod tests {
     fn serializes_to_snake_case_label() {
         // Spot-check both core (`cache`) and extended (`vm_image`,
         // `model_cache`) variants so a future label() rename would fail
-        // here as well as in category.rs.
+        // here as well as in classify/category.rs.
         assert_eq!(
             serde_json::to_string(&Category::Cache).unwrap(),
             "\"cache\""
