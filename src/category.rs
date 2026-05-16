@@ -16,9 +16,12 @@ pub enum Tier {
     Extended,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, clap::ValueEnum)]
+/// File / directory categorisation surfaced in the legend, in `--summary`,
+/// and as the `--category` filter values. `Display` and `FromStr` use the
+/// canonical snake_case names (`cache`, `vm_image`, …); clap awareness
+/// lives in `cli/args.rs`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize)]
 #[serde(rename_all = "snake_case")]
-#[clap(rename_all = "snake_case")]
 pub enum Category {
     // ----- Core -----
     Cache,
@@ -75,6 +78,30 @@ impl Category {
 impl fmt::Display for Category {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{}", self.label())
+    }
+}
+
+impl std::str::FromStr for Category {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "cache" => Ok(Category::Cache),
+            "build" => Ok(Category::Build),
+            "log" => Ok(Category::Log),
+            "media" => Ok(Category::Media),
+            "vcs" => Ok(Category::Vcs),
+            "ide" => Ok(Category::Ide),
+            "other" => Ok(Category::Other),
+            "archive" => Ok(Category::Archive),
+            "installer" => Ok(Category::Installer),
+            "vm_image" => Ok(Category::VmImage),
+            "model_cache" => Ok(Category::ModelCache),
+            "backup" => Ok(Category::Backup),
+            other => Err(format!(
+                "invalid category '{other}' (expected one of: cache, build, log, media, \
+                 vcs, ide, other, archive, installer, vm_image, model_cache, backup)"
+            )),
+        }
     }
 }
 

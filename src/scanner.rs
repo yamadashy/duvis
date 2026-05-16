@@ -1,8 +1,10 @@
 use anyhow::Result;
 use rayon::prelude::*;
 use std::collections::HashSet;
+use std::fmt;
 use std::fs;
 use std::path::Path;
+use std::str::FromStr;
 use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::SystemTime;
@@ -14,7 +16,11 @@ use crate::entry::Entry;
 /// hardlinked paths. Default matches `du` — each inode counts once. Unix
 /// only; on Windows this knob has no effect because the std `Metadata`
 /// API can't surface a portable file id.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, clap::ValueEnum)]
+///
+/// `Display` / `FromStr` are the canonical string forms used by the CLI
+/// (`--hardlinks count-once|count-each`). clap awareness lives in
+/// `cli/args.rs`; the core type stays clap-free.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum HardlinkPolicy {
     /// Each (dev, inode) is counted once. Subsequent links to the same
     /// inode contribute 0 bytes. Matches `du`'s default behavior.
@@ -24,6 +30,28 @@ pub enum HardlinkPolicy {
     /// inode is shared. Inflates totals on trees with many hardlinks
     /// (e.g. content-addressable stores like pnpm).
     CountEach,
+}
+
+impl fmt::Display for HardlinkPolicy {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            HardlinkPolicy::CountOnce => "count-once",
+            HardlinkPolicy::CountEach => "count-each",
+        })
+    }
+}
+
+impl FromStr for HardlinkPolicy {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "count-once" => Ok(HardlinkPolicy::CountOnce),
+            "count-each" => Ok(HardlinkPolicy::CountEach),
+            other => Err(format!(
+                "invalid hardlink policy '{other}' (expected 'count-once' or 'count-each')"
+            )),
+        }
+    }
 }
 
 /// Above this depth, fall back to sequential to avoid task-spawn overhead

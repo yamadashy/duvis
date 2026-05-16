@@ -1,12 +1,44 @@
+use std::fmt;
+use std::str::FromStr;
+
 use serde::ser::SerializeStruct;
 use serde::{Serialize, Serializer};
 
 use crate::category::Category;
 
-#[derive(Debug, Clone, Copy, clap::ValueEnum)]
+/// How siblings are ordered for display. `Size` (default) is largest-first
+/// before `--reverse` flips it; `Name` is alphabetical.
+///
+/// `Display` / `FromStr` are the canonical string forms used by the CLI
+/// (`--sort size|name`) and any future programmatic caller. The core type
+/// deliberately doesn't derive `clap::ValueEnum` — clap awareness lives
+/// in `cli/args.rs`, which wires this via its `value_parser`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SortOrder {
     Size,
     Name,
+}
+
+impl fmt::Display for SortOrder {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(match self {
+            SortOrder::Size => "size",
+            SortOrder::Name => "name",
+        })
+    }
+}
+
+impl FromStr for SortOrder {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "size" => Ok(SortOrder::Size),
+            "name" => Ok(SortOrder::Name),
+            other => Err(format!(
+                "invalid sort order '{other}' (expected 'size' or 'name')"
+            )),
+        }
+    }
 }
 
 /// File or directory variant. Holding children inside the `Dir` variant
