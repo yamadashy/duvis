@@ -95,13 +95,14 @@ pub enum WireStreamRecord<'a> {
 }
 
 /// One NDJSON entry line. Same per-entry fields as [`WireTreeNode`]
-/// minus `children` (NDJSON is intentionally flat). Borrows the
-/// entry's name so the hot recursion path doesn't allocate it per
-/// line.
+/// minus `children` (NDJSON is intentionally flat). Borrows both
+/// `name` and `relative_path` so the hot recursion path doesn't
+/// allocate per line — matches the same lifetime story used by
+/// [`super::largest::WireLargestNdjsonEntry`].
 #[derive(Debug, Serialize)]
 pub struct WireStreamEntry<'a> {
     pub name: &'a str,
-    pub relative_path: String,
+    pub relative_path: &'a str,
     pub depth: u32,
     pub size: u64,
     pub size_human: String,

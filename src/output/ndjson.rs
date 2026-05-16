@@ -80,7 +80,7 @@ fn write_entry(
 
     let rec = WireStreamRecord::Entry(WireStreamEntry {
         name: &entry.name,
-        relative_path: relative_path.clone(),
+        relative_path: &relative_path,
         depth,
         size: entry.size,
         size_human: format_size(entry.size),
