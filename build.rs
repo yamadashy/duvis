@@ -1,5 +1,5 @@
-// Materializes the bundled browser UI into Cargo's `OUT_DIR` so `src/ui.rs`
-// can `include_str!` it. Two paths:
+// Materializes the bundled browser UI into Cargo's `OUT_DIR` so
+// `src/ui/assets.rs` can `include_str!` it. Two paths:
 //
 // - **Developer checkout** (`ui/` present): run `npm run build` so the
 //   bundled UI is always in sync with `ui/src/`, copy to OUT_DIR.
