@@ -11,7 +11,7 @@ use std::path::Path;
 
 use crate::entry::Entry;
 use crate::filter::Filter;
-use crate::scanner::{HardlinkPolicy, ScanCounts};
+use crate::scan::{HardlinkPolicy, ScanCounts};
 
 pub struct RenderConfig<'a> {
     pub max_depth: Option<usize>,

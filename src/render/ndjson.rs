@@ -125,7 +125,7 @@ mod tests {
     use super::*;
     use crate::classify::Category;
     use crate::entry::Entry;
-    use crate::scanner::HardlinkPolicy;
+    use crate::scan::HardlinkPolicy;
     use std::path::PathBuf;
 
     fn dir(name: &str, children: Vec<Entry>) -> Entry {
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn first_line_is_meta_then_dfs_pre_order_entries() {
         let scan_root = PathBuf::from("/tmp/proj");
-        let counts = crate::scanner::ScanCounts::default();
+        let counts = crate::scan::ScanCounts::default();
         let filter = crate::filter::Filter::default();
         let cfg = RenderConfig {
             max_depth: None,
@@ -181,7 +181,7 @@ mod tests {
     #[test]
     fn each_entry_carries_full_subtree_counts() {
         let scan_root = PathBuf::from("/tmp/proj");
-        let counts = crate::scanner::ScanCounts::default();
+        let counts = crate::scan::ScanCounts::default();
         let filter = crate::filter::Filter::default();
         let cfg = RenderConfig {
             max_depth: None,

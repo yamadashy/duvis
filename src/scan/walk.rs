@@ -1,59 +1,20 @@
+//! Parallel rayon walk over a filesystem tree. Owns the
+//! `ScanCtx` state passed down the recursion and the public
+//! `scan` / `scan_with_progress` entry points.
+
 use anyhow::Result;
 use rayon::prelude::*;
 use std::collections::HashSet;
-use std::fmt;
 use std::fs;
 use std::path::Path;
-use std::str::FromStr;
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::Ordering;
 use std::sync::Mutex;
-use std::time::SystemTime;
 
 use crate::classify::{self, Category};
 use crate::entry::Entry;
 
-/// How to attribute bytes when the same inode is reachable via multiple
-/// hardlinked paths. Default matches `du` — each inode counts once. Unix
-/// only; on Windows this knob has no effect because the std `Metadata`
-/// API can't surface a portable file id.
-///
-/// `Display` / `FromStr` are the canonical string forms used by the CLI
-/// (`--hardlinks count-once|count-each`). clap awareness lives in
-/// `cli/args.rs`; the core type stays clap-free.
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-pub enum HardlinkPolicy {
-    /// Each (dev, inode) is counted once. Subsequent links to the same
-    /// inode contribute 0 bytes. Matches `du`'s default behavior.
-    #[default]
-    CountOnce,
-    /// Each link contributes its full disk usage, even when the underlying
-    /// inode is shared. Inflates totals on trees with many hardlinks
-    /// (e.g. content-addressable stores like pnpm).
-    CountEach,
-}
-
-impl fmt::Display for HardlinkPolicy {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(match self {
-            HardlinkPolicy::CountOnce => "count-once",
-            HardlinkPolicy::CountEach => "count-each",
-        })
-    }
-}
-
-impl FromStr for HardlinkPolicy {
-    type Err = String;
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        // Case-insensitive to match the previous `clap::ValueEnum` behaviour.
-        match s.to_ascii_lowercase().as_str() {
-            "count-once" => Ok(HardlinkPolicy::CountOnce),
-            "count-each" => Ok(HardlinkPolicy::CountEach),
-            _ => Err(format!(
-                "invalid hardlink policy '{s}' (expected 'count-once' or 'count-each')"
-            )),
-        }
-    }
-}
+use super::metadata::{days_since_modified, file_disk_usage};
+use super::{HardlinkPolicy, ScanCounts};
 
 /// Above this depth, fall back to sequential to avoid task-spawn overhead
 /// dominating tiny leaf directories. Empirically, raising it from 3 to a
@@ -63,39 +24,19 @@ impl FromStr for HardlinkPolicy {
 /// Shallow / wide trees (e.g. ~/Library) see negligible change.
 const PARALLEL_DEPTH: usize = 16;
 
-/// Live counters shared between the scanner and any observer. `items_scanned`
-/// drives the "12,345 items…" progress UI; `items_skipped` reports filesystem
-/// entries we could not read (permission denied, races against deletion, …)
-/// so the user can tell that the reported total is incomplete.
-#[derive(Default, Debug)]
-pub struct ScanCounts {
-    pub items_scanned: AtomicU64,
-    pub items_skipped: AtomicU64,
-}
-
-impl ScanCounts {
-    pub fn scanned(&self) -> u64 {
-        self.items_scanned.load(Ordering::Relaxed)
-    }
-
-    pub fn skipped(&self) -> u64 {
-        self.items_skipped.load(Ordering::Relaxed)
-    }
-}
-
 /// Per-scan state that has to be shared across the rayon workers but
 /// isn't part of the public progress signal. `seen_inodes` is what makes
 /// hardlink dedup work: the first worker to see a multi-link inode wins
 /// the bytes, others report 0.
-struct ScanCtx<'a> {
-    counts: &'a ScanCounts,
+pub(super) struct ScanCtx<'a> {
+    pub(super) counts: &'a ScanCounts,
     // Only the Unix `file_disk_usage` reads these — Windows can't surface
     // a portable file id, so dedup is a no-op there. Suppress the
     // dead_code warning rather than splitting the struct by cfg.
     #[cfg_attr(not(unix), allow(dead_code))]
-    hardlinks: HardlinkPolicy,
+    pub(super) hardlinks: HardlinkPolicy,
     #[cfg_attr(not(unix), allow(dead_code))]
-    seen_inodes: Mutex<HashSet<(u64, u64)>>,
+    pub(super) seen_inodes: Mutex<HashSet<(u64, u64)>>,
 }
 
 impl<'a> ScanCtx<'a> {
@@ -171,50 +112,6 @@ fn scan_recursive(
     }
 }
 
-/// Bytes a regular file actually occupies on disk. On Unix we use
-/// `st_blocks * 512` (matching what `du` reports by default) so that sparse
-/// files such as VM disk images (OrbStack `data.img.raw`, `Docker.raw`, ...)
-/// don't appear hundreds of times bigger than they really are. APFS/NTFS
-/// transparent compression is reflected for the same reason. Windows lacks
-/// a portable per-file allocated-bytes API, so we fall back to apparent size.
-///
-/// When `ctx.hardlinks == CountOnce` we dedupe regular files with
-/// `nlink > 1`: the first walker to claim a (dev, ino) reports the bytes,
-/// later walkers see 0. Only regular files participate — hardlinks to
-/// symlinks/FIFOs/sockets are rare and their footprint is negligible, so
-/// counting them every time is simpler than risking surprising "0 B"
-/// rows for those types.
-///
-/// Note: because the walk is parallel via rayon, *which* path among
-/// several hardlinks ends up holding the bytes is not deterministic
-/// across runs. Totals are stable; per-path attribution and per-category
-/// attribution (when the same inode lives under directories of different
-/// categories) can shuffle. Use `count-each` if you need every path to
-/// report its raw size.
-#[cfg(unix)]
-fn file_disk_usage(metadata: &fs::Metadata, ctx: &ScanCtx<'_>) -> u64 {
-    use std::os::unix::fs::MetadataExt;
-    let bytes = metadata.blocks() * 512;
-    if ctx.hardlinks == HardlinkPolicy::CountEach {
-        return bytes;
-    }
-    if !metadata.file_type().is_file() || metadata.nlink() <= 1 {
-        return bytes;
-    }
-    let key = (metadata.dev(), metadata.ino());
-    let mut seen = ctx.seen_inodes.lock().unwrap();
-    if seen.insert(key) {
-        bytes
-    } else {
-        0
-    }
-}
-
-#[cfg(not(unix))]
-fn file_disk_usage(metadata: &fs::Metadata, _ctx: &ScanCtx<'_>) -> u64 {
-    metadata.len()
-}
-
 fn scan_children(path: &Path, depth: usize, inherited: Category, ctx: &ScanCtx<'_>) -> Vec<Entry> {
     let entries: Vec<_> = match fs::read_dir(path) {
         Ok(rd) => rd
@@ -262,12 +159,6 @@ fn scan_children(path: &Path, depth: usize, inherited: Category, ctx: &ScanCtx<'
             )
             .collect()
     }
-}
-
-fn days_since_modified(metadata: &fs::Metadata) -> Option<u64> {
-    let modified = metadata.modified().ok()?;
-    let duration = SystemTime::now().duration_since(modified).ok()?;
-    Some(duration.as_secs() / 86400)
 }
 
 #[cfg(test)]

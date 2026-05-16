@@ -6,7 +6,7 @@
 use crate::classify::Category;
 use crate::entry::SortOrder;
 use crate::filter::EntryType;
-use crate::scanner::HardlinkPolicy;
+use crate::scan::HardlinkPolicy;
 use clap::{ArgGroup, Parser};
 use std::path::PathBuf;
 

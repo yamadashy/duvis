@@ -120,7 +120,7 @@ mod tests {
     use crate::classify::Category;
     use crate::entry::Entry;
     use crate::filter::Filter;
-    use crate::scanner::HardlinkPolicy;
+    use crate::scan::HardlinkPolicy;
     use std::path::PathBuf;
     use std::sync::atomic::Ordering;
 
@@ -134,7 +134,7 @@ mod tests {
 
     fn fake_config<'a>(
         scan_root: &'a PathBuf,
-        counts: &'a crate::scanner::ScanCounts,
+        counts: &'a crate::scan::ScanCounts,
         filter: &'a Filter,
     ) -> RenderConfig<'a> {
         RenderConfig {
@@ -150,7 +150,7 @@ mod tests {
     #[test]
     fn meta_block_carries_scan_root_and_hardlinks() {
         let scan_root = PathBuf::from("/tmp/proj");
-        let counts = crate::scanner::ScanCounts::default();
+        let counts = crate::scan::ScanCounts::default();
         counts.items_scanned.store(42, Ordering::Relaxed);
         let filter = Filter::default();
         let cfg = fake_config(&scan_root, &counts, &filter);
@@ -167,7 +167,7 @@ mod tests {
     #[test]
     fn relative_path_root_is_dot_and_descendants_use_forward_slashes() {
         let scan_root = PathBuf::from("/tmp/proj");
-        let counts = crate::scanner::ScanCounts::default();
+        let counts = crate::scan::ScanCounts::default();
         let filter = Filter::default();
         let cfg = fake_config(&scan_root, &counts, &filter);
         let tree = dir(
@@ -194,7 +194,7 @@ mod tests {
     #[test]
     fn file_and_dir_counts_aggregate_recursively() {
         let scan_root = PathBuf::from("/tmp/proj");
-        let counts = crate::scanner::ScanCounts::default();
+        let counts = crate::scan::ScanCounts::default();
         let filter = Filter::default();
         let cfg = fake_config(&scan_root, &counts, &filter);
         // proj/  (1 dir self + 1 dir src) → dir_count = 1 ; file_count = 3
@@ -219,7 +219,7 @@ mod tests {
     #[test]
     fn truncated_counts_reflect_top_drops() {
         let scan_root = PathBuf::from("/tmp/proj");
-        let counts = crate::scanner::ScanCounts::default();
+        let counts = crate::scan::ScanCounts::default();
         let filter = Filter::default();
         let cfg = RenderConfig {
             max_depth: None,
