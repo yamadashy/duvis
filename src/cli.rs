@@ -1,14 +1,16 @@
-// The actual `--help` text lives in `src/help.rs` as a hand-formatted block
+// The actual `--help` text lives in `src/cli/help.rs` as a hand-formatted block
 // (mirroring pdfvision's layout). clap's `override_help` swaps in that text
 // for both `-h` and `--help`. The `///` doc comments below are kept for
 // cargo doc / IDE tooltips but are not what users see at the CLI.
 
+mod help;
+
 use crate::category::Category;
 use crate::entry::SortOrder;
-use crate::help::HELP_TEXT;
 use crate::output::filter::EntryType;
 use crate::scanner::HardlinkPolicy;
 use clap::{ArgGroup, Parser};
+use help::HELP_TEXT;
 use std::path::PathBuf;
 
 #[derive(Parser)]
