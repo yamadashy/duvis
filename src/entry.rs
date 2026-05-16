@@ -1,9 +1,6 @@
 use std::fmt;
 use std::str::FromStr;
 
-use serde::ser::SerializeStruct;
-use serde::{Serialize, Serializer};
-
 use crate::category::Category;
 
 /// How siblings are ordered for display. `Size` (default) is largest-first
@@ -138,29 +135,6 @@ impl Entry {
     }
 }
 
-/// Custom Serialize impl that flattens `EntryKind` back into the v0.1.0
-/// wire format (`is_dir: bool` + optional `children: [Entry]`). The
-/// browser UI and any AI agent consuming `/data.json` rely on this shape.
-impl Serialize for Entry {
-    fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {
-        // Field count = name, size, is_dir, category, [modified_days_ago],
-        // [children]. Worth being a bit loose — the count is a hint, not a
-        // contract for serde_json.
-        let mut s = ser.serialize_struct("Entry", 6)?;
-        s.serialize_field("name", &self.name)?;
-        s.serialize_field("size", &self.size)?;
-        s.serialize_field("is_dir", &self.is_dir())?;
-        s.serialize_field("category", &self.category)?;
-        if let Some(d) = self.modified_days_ago {
-            s.serialize_field("modified_days_ago", &d)?;
-        }
-        if let EntryKind::Dir(children) = &self.kind {
-            s.serialize_field("children", children)?;
-        }
-        s.end()
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -246,16 +220,7 @@ mod tests {
         assert!(f.children().is_none());
     }
 
-    #[test]
-    fn json_round_trip_preserves_wire_shape() {
-        // Sanity-check that the custom Serialize matches the v0.1.0 wire
-        // format: is_dir + children present, modified_days_ago skipped when
-        // None.
-        let root = dir_with("root", vec![leaf("a.txt", 10)]);
-        let json = serde_json::to_string(&root).unwrap();
-        assert!(json.contains("\"is_dir\":true"));
-        assert!(json.contains("\"children\":["));
-        assert!(json.contains("\"is_dir\":false"));
-        assert!(!json.contains("modified_days_ago"));
-    }
+    // The v0.1.0 JSON-shape round-trip test moved to `wire::entry`
+    // along with the wire projection itself — the domain `Entry`
+    // intentionally no longer implements `Serialize`.
 }
