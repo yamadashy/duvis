@@ -4,6 +4,7 @@ use anyhow::Result;
 use clap::{CommandFactory, Parser};
 
 use duvis::category;
+use duvis::cli::signals;
 use duvis::cli::Cli;
 use duvis::output::filter::{Filter, FilterInputs};
 use duvis::output::largest::LargestFormat;
@@ -11,15 +12,7 @@ use duvis::output::{self, OutputConfig, OutputMode};
 use duvis::scanner;
 
 fn main() -> Result<()> {
-    // Restore SIGPIPE's default disposition so `duvis ... | head` exits
-    // silently (process killed by SIGPIPE) instead of surfacing
-    // `Error: Broken pipe (os error 32)`. Rust runtime ignores SIGPIPE by
-    // default, which is the wrong behavior for a Unix CLI that streams to
-    // stdout. Same approach as ripgrep, fd, etc.
-    #[cfg(unix)]
-    unsafe {
-        libc::signal(libc::SIGPIPE, libc::SIG_DFL);
-    }
+    signals::reset_sigpipe();
 
     // No arguments at all → show help instead of silently scanning the
     // current directory. Once the user passes any flag (e.g. `duvis --ui`)

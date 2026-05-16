@@ -4,6 +4,7 @@
 // cargo doc / IDE tooltips but are not what users see at the CLI.
 
 mod help;
+pub mod signals;
 
 use crate::category::Category;
 use crate::entry::SortOrder;
