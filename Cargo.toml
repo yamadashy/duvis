@@ -28,15 +28,27 @@ include = [
     "/prebuilt/ui.html",
 ]
 
+[features]
+# Default build ships the full binary with the browser UI server. End
+# users (`cargo install duvis`) and crates.io publishes both get this.
+default = ["ui"]
+# Embedded HTTP server + browser UI (`--ui` flag, axum routes, bundled
+# HTML). Turning this off lets downstream consumers (and any future
+# `duvis-core`-style library usage) compile without pulling axum /
+# tokio / open into the dependency graph. Trade-off: `--ui` and
+# `--port` disappear from the CLI surface and clap rejects them as
+# unknown arguments.
+ui = ["dep:axum", "dep:tokio", "dep:open"]
+
 [dependencies]
 clap = { version = "4.6.1", features = ["derive"] }
 serde = { version = "1.0.228", features = ["derive"] }
 serde_json = "1.0.149"
 anyhow = "1.0.102"
 rayon = "1.12.0"
-axum = "0.8.9"
-tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"] }
-open = "5.3.4"
+axum = { version = "0.8.9", optional = true }
+tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"], optional = true }
+open = { version = "5.3.4", optional = true }
 # Compiled glob matchers for `--name` filters. `GlobSet` lets us test a
 # filename against several patterns in one walk-step without rebuilding
 # the matcher per entry.

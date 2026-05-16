@@ -4,6 +4,7 @@ pub mod entry;
 pub mod filter;
 pub mod render;
 pub mod scan;
+#[cfg(feature = "ui")]
 pub mod ui;
 pub mod wire;
 

@@ -183,6 +183,24 @@ jobs:
       - run: cargo test --verbose
       - run: cargo run --release -- --help
 
+  test-no-ui:
+    # `ui` is a default feature. This job proves the crate still builds
+    # and tests cleanly with the UI server stripped — axum / tokio / open
+    # are gated behind `--no-default-features`, so a downstream consumer
+    # (or any future library-only use) can compile without that surface.
+    name: Test (--no-default-features)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo build --no-default-features --verbose
+      - run: cargo test --no-default-features --verbose
+      - run: cargo clippy --no-default-features --all-targets -- -D warnings
+
   coverage:
     name: Coverage
     runs-on: ubuntu-latest

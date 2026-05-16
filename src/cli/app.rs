@@ -1,12 +1,16 @@
 use std::io::{self, Write};
+#[cfg(feature = "ui")]
 use std::path::PathBuf;
 
 use anyhow::Result;
 
 use crate::classify;
+#[cfg(feature = "ui")]
 use crate::entry::SortOrder;
 use crate::render::{self, RenderConfig};
-use crate::scan::{self, HardlinkPolicy};
+#[cfg(feature = "ui")]
+use crate::scan::HardlinkPolicy;
+use crate::scan::{self};
 use crate::wire::explain::WireExplain;
 
 use super::plan::{RunPlan, ScanPlan};
@@ -17,6 +21,7 @@ use super::plan::{RunPlan, ScanPlan};
 pub fn run(plan: RunPlan) -> Result<()> {
     match plan {
         RunPlan::ExplainCategory { name, json } => run_explain(&name, json),
+        #[cfg(feature = "ui")]
         RunPlan::Ui {
             path,
             port,
@@ -36,6 +41,7 @@ fn run_explain(name: &str, json: bool) -> Result<()> {
     Ok(())
 }
 
+#[cfg(feature = "ui")]
 fn run_ui(
     path: PathBuf,
     port: u16,
