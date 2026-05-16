@@ -44,11 +44,12 @@ impl fmt::Display for HardlinkPolicy {
 impl FromStr for HardlinkPolicy {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        // Case-insensitive to match the previous `clap::ValueEnum` behaviour.
+        match s.to_ascii_lowercase().as_str() {
             "count-once" => Ok(HardlinkPolicy::CountOnce),
             "count-each" => Ok(HardlinkPolicy::CountEach),
-            other => Err(format!(
-                "invalid hardlink policy '{other}' (expected 'count-once' or 'count-each')"
+            _ => Err(format!(
+                "invalid hardlink policy '{s}' (expected 'count-once' or 'count-each')"
             )),
         }
     }

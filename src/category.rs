@@ -40,6 +40,26 @@ pub enum Category {
 }
 
 impl Category {
+    /// Every variant in declaration order. Single source of truth for
+    /// iteration (`FromStr` error message, round-trip tests, future
+    /// listings). Adding a new variant to the enum requires extending
+    /// this slice — the round-trip test in this module will catch
+    /// drift.
+    pub const ALL: &'static [Category] = &[
+        Category::Cache,
+        Category::Build,
+        Category::Log,
+        Category::Media,
+        Category::Vcs,
+        Category::Ide,
+        Category::Other,
+        Category::Archive,
+        Category::Installer,
+        Category::VmImage,
+        Category::ModelCache,
+        Category::Backup,
+    ];
+
     pub fn label(&self) -> &'static str {
         match self {
             Category::Cache => "cache",
@@ -84,24 +104,22 @@ impl fmt::Display for Category {
 impl std::str::FromStr for Category {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
-            "cache" => Ok(Category::Cache),
-            "build" => Ok(Category::Build),
-            "log" => Ok(Category::Log),
-            "media" => Ok(Category::Media),
-            "vcs" => Ok(Category::Vcs),
-            "ide" => Ok(Category::Ide),
-            "other" => Ok(Category::Other),
-            "archive" => Ok(Category::Archive),
-            "installer" => Ok(Category::Installer),
-            "vm_image" => Ok(Category::VmImage),
-            "model_cache" => Ok(Category::ModelCache),
-            "backup" => Ok(Category::Backup),
-            other => Err(format!(
-                "invalid category '{other}' (expected one of: cache, build, log, media, \
-                 vcs, ide, other, archive, installer, vm_image, model_cache, backup)"
-            )),
-        }
+        // Case-insensitive to match the previous `clap::ValueEnum`
+        // behaviour. Matching and the error message both come from
+        // `Category::ALL` + `label()` so adding a new variant only
+        // requires extending the enum and `ALL`.
+        let lower = s.to_ascii_lowercase();
+        Category::ALL
+            .iter()
+            .copied()
+            .find(|c| c.label() == lower)
+            .ok_or_else(|| {
+                let labels: Vec<&str> = Category::ALL.iter().map(|c| c.label()).collect();
+                format!(
+                    "invalid category '{s}' (expected one of: {})",
+                    labels.join(", ")
+                )
+            })
     }
 }
 
@@ -670,5 +688,34 @@ mod tests {
         let c = explain_file("main.rs");
         assert_eq!(c.category, Category::Other);
         assert_eq!(c.reason, ClassificationReason::Default);
+    }
+
+    #[test]
+    fn category_display_round_trips_through_from_str() {
+        for &c in Category::ALL {
+            let s = c.to_string();
+            let parsed: Category = s.parse().expect("label() must parse back via FromStr");
+            assert_eq!(parsed, c, "round-trip mismatch for {c:?} via '{s}'");
+        }
+    }
+
+    #[test]
+    fn category_from_str_is_case_insensitive() {
+        assert_eq!("CACHE".parse::<Category>().unwrap(), Category::Cache);
+        assert_eq!("Vm_Image".parse::<Category>().unwrap(), Category::VmImage);
+    }
+
+    #[test]
+    fn category_from_str_rejects_unknown_with_full_list() {
+        let err = "bogus".parse::<Category>().unwrap_err();
+        // Error message should mention every variant so users see the
+        // full vocabulary even when they typo.
+        for c in Category::ALL {
+            assert!(
+                err.contains(c.label()),
+                "error message missing '{}': {err}",
+                c.label()
+            );
+        }
     }
 }

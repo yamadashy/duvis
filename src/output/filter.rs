@@ -52,11 +52,12 @@ impl std::fmt::Display for EntryType {
 impl std::str::FromStr for EntryType {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        // Case-insensitive to match the previous `clap::ValueEnum` behaviour.
+        match s.to_ascii_lowercase().as_str() {
             "file" => Ok(EntryType::File),
             "dir" => Ok(EntryType::Dir),
-            other => Err(format!(
-                "invalid entry type '{other}' (expected 'file' or 'dir')"
+            _ => Err(format!(
+                "invalid entry type '{s}' (expected 'file' or 'dir')"
             )),
         }
     }

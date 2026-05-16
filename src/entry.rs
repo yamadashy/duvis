@@ -31,11 +31,13 @@ impl fmt::Display for SortOrder {
 impl FromStr for SortOrder {
     type Err = String;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        match s {
+        // Case-insensitive to match the previous `clap::ValueEnum` behaviour
+        // (clap's PossibleValue matching is case-insensitive by default).
+        match s.to_ascii_lowercase().as_str() {
             "size" => Ok(SortOrder::Size),
             "name" => Ok(SortOrder::Name),
-            other => Err(format!(
-                "invalid sort order '{other}' (expected 'size' or 'name')"
+            _ => Err(format!(
+                "invalid sort order '{s}' (expected 'size' or 'name')"
             )),
         }
     }
