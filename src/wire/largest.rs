@@ -9,7 +9,7 @@
 use serde::Serialize;
 
 use crate::category::Category;
-use crate::output::{is_zero_u64, OutputConfig};
+use crate::render::{is_zero_u64, RenderConfig};
 use crate::wire::tree::WireMeta;
 
 /// Top-level `--largest --json` envelope: `{meta, largest: [...]}`.
@@ -38,7 +38,7 @@ pub struct WireLargestMeta<'a> {
 
 impl<'a> WireLargestMeta<'a> {
     pub fn from_config(
-        config: &'a OutputConfig<'a>,
+        config: &'a RenderConfig<'a>,
         largest_requested: usize,
         total_entries: u64,
     ) -> Self {

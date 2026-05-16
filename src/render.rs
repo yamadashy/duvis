@@ -13,7 +13,7 @@ use std::path::Path;
 use crate::entry::Entry;
 use crate::scanner::{HardlinkPolicy, ScanCounts};
 
-pub struct OutputConfig<'a> {
+pub struct RenderConfig<'a> {
     pub max_depth: Option<usize>,
     pub top: Option<usize>,
     /// Absolute, canonicalized scan root. Surfaced via `meta.scan_root` in
@@ -87,7 +87,7 @@ pub(crate) fn select_top_refs<'a>(
 /// mutually-exclusive ArgGroup + per-flag conflicts, so exactly one
 /// variant reaches the dispatcher.
 #[derive(Debug, Clone, Copy)]
-pub enum OutputMode {
+pub enum RenderMode {
     Tree,
     Json,
     Ndjson,
@@ -176,22 +176,22 @@ fn walk_counts(entry: &Entry, map: &mut SubtreeCounts) -> (u64, u64) {
     (files, dirs)
 }
 
-/// Dispatch to the appropriate output backend. Each backend takes a
+/// Dispatch to the appropriate backend. Each backend takes a
 /// `&mut impl Write` so tests can capture output into a buffer. `--ui`
 /// is handled in main.rs since it spins up an async server instead of
 /// writing to a stream.
-pub fn render(
+pub fn write(
     entry: &Entry,
-    config: &OutputConfig,
-    mode: OutputMode,
+    config: &RenderConfig,
+    mode: RenderMode,
     out: &mut impl Write,
 ) -> anyhow::Result<()> {
     match mode {
-        OutputMode::Tree => tree::write(entry, config, out)?,
-        OutputMode::Json => json::write(entry, config, out)?,
-        OutputMode::Ndjson => ndjson::write(entry, config, out)?,
-        OutputMode::Summary => summary::write(entry, config, out)?,
-        OutputMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
+        RenderMode::Tree => tree::write(entry, config, out)?,
+        RenderMode::Json => json::write(entry, config, out)?,
+        RenderMode::Ndjson => ndjson::write(entry, config, out)?,
+        RenderMode::Summary => summary::write(entry, config, out)?,
+        RenderMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
     }
     Ok(())
 }

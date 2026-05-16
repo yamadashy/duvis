@@ -7,8 +7,8 @@
 //! and a sibling `children` array, the way the browser UI has always
 //! consumed it.
 //!
-//! Output renderers (`output/json.rs`, `output/ndjson.rs`,
-//! `output/largest.rs`) emit *richer* shapes (relative_path, depth,
+//! Output renderers (`render/json.rs`, `render/ndjson.rs`,
+//! `render/largest.rs`) emit *richer* shapes (relative_path, depth,
 //! file_count, size_human, …) defined in [`super::tree`] and
 //! [`super::largest`]; this lean shape exists for the UI consumer.
 

@@ -3,7 +3,7 @@ use std::io::{self, Write};
 
 use super::filter::Filter;
 use super::format::format_size;
-use super::OutputConfig;
+use super::RenderConfig;
 use crate::category::Category;
 use crate::entry::Entry;
 
@@ -12,7 +12,7 @@ struct CategoryStats {
     count: u64,
 }
 
-pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::Result<()> {
+pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
     let mut stats: HashMap<Category, CategoryStats> = HashMap::new();
     collect_stats(entry, config.filter, &mut stats);
 

@@ -15,12 +15,12 @@ use anyhow::Result;
 use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
-    child_relative_path, precompute_subtree_counts, select_top_refs, OutputConfig, SubtreeCounts,
+    child_relative_path, precompute_subtree_counts, select_top_refs, RenderConfig, SubtreeCounts,
 };
 use crate::entry::Entry;
 use crate::wire::tree::{WireMeta, WireStreamEntry, WireStreamRecord};
 
-fn write_meta(out: &mut impl Write, config: &OutputConfig) -> Result<()> {
+fn write_meta(out: &mut impl Write, config: &RenderConfig) -> Result<()> {
     let rec = WireStreamRecord::Meta(WireMeta::from_config(config));
     serde_json::to_writer(&mut *out, &rec)?;
     writeln!(out)?;
@@ -102,7 +102,7 @@ fn write_entry(
     Ok(())
 }
 
-pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Result<()> {
+pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Result<()> {
     write_meta(out, config)?;
     let counts = precompute_subtree_counts(entry);
     let visible_map = if config.filter.is_empty() {
@@ -149,8 +149,8 @@ mod tests {
     fn first_line_is_meta_then_dfs_pre_order_entries() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
-        let filter = crate::output::filter::Filter::default();
-        let cfg = OutputConfig {
+        let filter = crate::render::filter::Filter::default();
+        let cfg = RenderConfig {
             max_depth: None,
             top: None,
             scan_root: &scan_root,
@@ -182,8 +182,8 @@ mod tests {
     fn each_entry_carries_full_subtree_counts() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
-        let filter = crate::output::filter::Filter::default();
-        let cfg = OutputConfig {
+        let filter = crate::render::filter::Filter::default();
+        let cfg = RenderConfig {
             max_depth: None,
             top: None,
             scan_root: &scan_root,

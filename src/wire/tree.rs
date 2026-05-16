@@ -3,14 +3,14 @@
 //! `meta` block — the only real difference is hierarchical (`children`
 //! nested) vs. flat (one record per line, parent before children).
 //!
-//! Construction logic lives in `output/json.rs` and `output/ndjson.rs`;
+//! Construction logic lives in `render/json.rs` and `render/ndjson.rs`;
 //! this module owns the on-wire shape only, so the JSON contract is
 //! defined in exactly one place per format.
 
 use serde::Serialize;
 
 use crate::category::Category;
-use crate::output::{hardlinks_label, is_zero_u64, scan_root_for_wire, OutputConfig, WIRE_VERSION};
+use crate::render::{hardlinks_label, is_zero_u64, scan_root_for_wire, RenderConfig, WIRE_VERSION};
 
 /// Common `meta` block emitted by both `--json` (as `meta`) and
 /// `--ndjson` (as the first record, tagged `type: "meta"`). Identical
@@ -30,7 +30,7 @@ impl<'a> WireMeta<'a> {
     /// Build the meta block from the active output config. Centralised
     /// so a future field addition (or a `meta.scan_root` formatting
     /// tweak) touches one place.
-    pub fn from_config(config: &'a OutputConfig<'a>) -> Self {
+    pub fn from_config(config: &'a RenderConfig<'a>) -> Self {
         Self {
             wire_version: WIRE_VERSION,
             duvis_version: env!("CARGO_PKG_VERSION"),
