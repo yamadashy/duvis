@@ -9,7 +9,7 @@
 
 use serde::Serialize;
 
-use crate::category::Category;
+use crate::classify::Category;
 use crate::render::{hardlinks_label, is_zero_u64, scan_root_for_wire, RenderConfig, WIRE_VERSION};
 
 /// Common `meta` block emitted by both `--json` (as `meta`) and

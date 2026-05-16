@@ -287,7 +287,7 @@ fn write_ndjson(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::category::Category;
+    use crate::classify::Category;
     use crate::scanner::{HardlinkPolicy, ScanCounts};
     use std::path::PathBuf;
 
@@ -327,7 +327,7 @@ mod tests {
     fn cfg<'a>(
         scan_root: &'a PathBuf,
         counts: &'a ScanCounts,
-        filter: &'a crate::render::filter::Filter,
+        filter: &'a crate::filter::Filter,
     ) -> RenderConfig<'a> {
         RenderConfig {
             max_depth: None,
@@ -405,7 +405,7 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let filter = crate::render::filter::Filter::default();
+        let filter = crate::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 3, LargestFormat::Text, &mut buf).unwrap();
@@ -424,7 +424,7 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let filter = crate::render::filter::Filter::default();
+        let filter = crate::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 2, LargestFormat::Json, &mut buf).unwrap();
@@ -445,7 +445,7 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let filter = crate::render::filter::Filter::default();
+        let filter = crate::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 3, LargestFormat::Ndjson, &mut buf).unwrap();

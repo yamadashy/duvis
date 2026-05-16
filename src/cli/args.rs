@@ -3,9 +3,9 @@
 // for both `-h` and `--help`. The `///` doc comments below are kept for
 // cargo doc / IDE tooltips but are not what users see at the CLI.
 
-use crate::category::Category;
+use crate::classify::Category;
 use crate::entry::SortOrder;
-use crate::render::filter::EntryType;
+use crate::filter::EntryType;
 use crate::scanner::HardlinkPolicy;
 use clap::{ArgGroup, Parser};
 use std::path::PathBuf;

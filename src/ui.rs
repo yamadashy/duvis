@@ -325,7 +325,7 @@ mod tests {
     use serde_json::Value;
     use tower::ServiceExt;
 
-    use crate::category::Category;
+    use crate::classify::Category;
 
     fn fake_entry(name: &str) -> Entry {
         Entry::dir(

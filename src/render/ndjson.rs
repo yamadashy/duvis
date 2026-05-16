@@ -12,12 +12,12 @@ use std::io::Write;
 
 use anyhow::Result;
 
-use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
     child_relative_path, precompute_subtree_counts, select_top_refs, RenderConfig, SubtreeCounts,
 };
 use crate::entry::Entry;
+use crate::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use crate::wire::tree::{WireMeta, WireStreamEntry, WireStreamRecord};
 
 fn write_meta(out: &mut impl Write, config: &RenderConfig) -> Result<()> {
@@ -123,7 +123,7 @@ pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::category::Category;
+    use crate::classify::Category;
     use crate::entry::Entry;
     use crate::scanner::HardlinkPolicy;
     use std::path::PathBuf;
@@ -149,7 +149,7 @@ mod tests {
     fn first_line_is_meta_then_dfs_pre_order_entries() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
-        let filter = crate::render::filter::Filter::default();
+        let filter = crate::filter::Filter::default();
         let cfg = RenderConfig {
             max_depth: None,
             top: None,
@@ -182,7 +182,7 @@ mod tests {
     fn each_entry_carries_full_subtree_counts() {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
-        let filter = crate::render::filter::Filter::default();
+        let filter = crate::filter::Filter::default();
         let cfg = RenderConfig {
             max_depth: None,
             top: None,

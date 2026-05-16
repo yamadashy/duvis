@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::io::{self, Write};
 
-use super::filter::Filter;
 use super::format::format_size;
 use super::RenderConfig;
-use crate::category::Category;
+use crate::classify::Category;
 use crate::entry::Entry;
+use crate::filter::Filter;
 
 struct CategoryStats {
     size: u64,

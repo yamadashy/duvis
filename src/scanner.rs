@@ -9,7 +9,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::Mutex;
 use std::time::SystemTime;
 
-use crate::category::{self, Category};
+use crate::classify::{self, Category};
 use crate::entry::Entry;
 
 /// How to attribute bytes when the same inode is reachable via multiple
@@ -148,7 +148,7 @@ fn scan_recursive(
     let modified_days_ago = days_since_modified(&metadata);
 
     if metadata.is_dir() {
-        let own = category::classify_dir(&name);
+        let own = classify::classify_dir(&name);
         let effective = if inherited != Category::Other {
             inherited
         } else {
@@ -160,7 +160,7 @@ fn scan_recursive(
         let effective = if inherited != Category::Other {
             inherited
         } else {
-            category::classify_file(&name)
+            classify::classify_file(&name)
         };
         Ok(Entry::file(
             name,

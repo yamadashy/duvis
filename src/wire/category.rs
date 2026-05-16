@@ -9,7 +9,7 @@
 
 use serde::{Serialize, Serializer};
 
-use crate::category::Category;
+use crate::classify::Category;
 
 impl Serialize for Category {
     fn serialize<S: Serializer>(&self, ser: S) -> Result<S::Ok, S::Error> {

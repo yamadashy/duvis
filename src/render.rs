@@ -1,4 +1,3 @@
-pub mod filter;
 mod format;
 pub mod json;
 pub mod largest;
@@ -11,6 +10,7 @@ use std::io::Write;
 use std::path::Path;
 
 use crate::entry::Entry;
+use crate::filter::Filter;
 use crate::scanner::{HardlinkPolicy, ScanCounts};
 
 pub struct RenderConfig<'a> {
@@ -32,7 +32,7 @@ pub struct RenderConfig<'a> {
     /// per-entry match check in renderers that would otherwise pay for
     /// it. Totals (parent dir size, scan counts) are unaffected — only
     /// what's *shown* is filtered.
-    pub filter: &'a filter::Filter,
+    pub filter: &'a Filter,
 }
 
 /// Pick the largest `n` children by size while preserving their relative order
