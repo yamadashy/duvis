@@ -288,7 +288,7 @@ fn write_ndjson(
 mod tests {
     use super::*;
     use crate::classify::Category;
-    use crate::scanner::{HardlinkPolicy, ScanCounts};
+    use crate::scan::{HardlinkPolicy, ScanCounts};
     use std::path::PathBuf;
 
     fn dir(name: &str, children: Vec<Entry>) -> Entry {

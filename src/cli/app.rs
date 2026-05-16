@@ -6,7 +6,7 @@ use anyhow::Result;
 use crate::classify;
 use crate::entry::SortOrder;
 use crate::render::{self, RenderConfig};
-use crate::scanner::{self, HardlinkPolicy};
+use crate::scan::{self, HardlinkPolicy};
 use crate::wire::explain::WireExplain;
 
 use super::plan::{RunPlan, ScanPlan};
@@ -51,7 +51,7 @@ fn run_ui(
 }
 
 fn run_scan(plan: ScanPlan) -> Result<()> {
-    let (mut tree, counts) = scanner::scan(&plan.path, plan.hardlinks)?;
+    let (mut tree, counts) = scan::scan(&plan.path, plan.hardlinks)?;
     tree.sort(&plan.sort, plan.reverse);
 
     let config = RenderConfig {

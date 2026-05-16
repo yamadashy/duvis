@@ -6,7 +6,7 @@ use crate::entry::SortOrder;
 use crate::filter::{Filter, FilterInputs};
 use crate::render::largest::LargestFormat;
 use crate::render::RenderMode;
-use crate::scanner::HardlinkPolicy;
+use crate::scan::HardlinkPolicy;
 
 use super::args::Cli;
 

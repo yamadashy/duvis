@@ -11,7 +11,7 @@ use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
 use crate::entry::{Entry, SortOrder};
-use crate::scanner::{HardlinkPolicy, ScanCounts};
+use crate::scan::{HardlinkPolicy, ScanCounts};
 use crate::wire::entry::WireEntry;
 use crate::wire::ui::WireRevealReq;
 
@@ -150,7 +150,7 @@ fn start_scan(state: Arc<AppState>) {
     tokio::task::spawn_blocking(move || {
         let started = Instant::now();
         let scan_result =
-            crate::scanner::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
+            crate::scan::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
         {
             let mut s = state.state.lock().unwrap();
             if s.scan_id == scan_id {

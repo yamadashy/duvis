@@ -1,6 +1,6 @@
 //! Wire-format DTOs. Every type emitted via `--json` / `--ndjson` /
 //! `--explain-category --json` / the UI's `/data.json` lives in this
-//! module. Domain types in `entry`, `category`, `scanner` deliberately
+//! module. Domain types in `entry`, `classify`, `scan` deliberately
 //! don't derive `Serialize` — converting to a wire DTO is an explicit
 //! step at the rendering boundary so that:
 //!
