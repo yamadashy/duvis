@@ -5,7 +5,7 @@ use anyhow::Result;
 use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
-    child_relative_path, precompute_subtree_counts, select_top_refs, OutputConfig, SubtreeCounts,
+    child_relative_path, precompute_subtree_counts, select_top_refs, RenderConfig, SubtreeCounts,
 };
 use crate::entry::Entry;
 use crate::wire::tree::{WireMeta, WireTreeNode, WireTreeRoot};
@@ -89,7 +89,7 @@ fn build(
     }
 }
 
-pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> Result<()> {
+pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Result<()> {
     let counts = precompute_subtree_counts(entry);
     let visible_map = if config.filter.is_empty() {
         None
@@ -119,7 +119,7 @@ mod tests {
     use super::*;
     use crate::category::Category;
     use crate::entry::Entry;
-    use crate::output::filter::Filter;
+    use crate::render::filter::Filter;
     use crate::scanner::HardlinkPolicy;
     use std::path::PathBuf;
     use std::sync::atomic::Ordering;
@@ -136,8 +136,8 @@ mod tests {
         scan_root: &'a PathBuf,
         counts: &'a crate::scanner::ScanCounts,
         filter: &'a Filter,
-    ) -> OutputConfig<'a> {
-        OutputConfig {
+    ) -> RenderConfig<'a> {
+        RenderConfig {
             max_depth: None,
             top: None,
             scan_root,
@@ -221,7 +221,7 @@ mod tests {
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = crate::scanner::ScanCounts::default();
         let filter = Filter::default();
-        let cfg = OutputConfig {
+        let cfg = RenderConfig {
             max_depth: None,
             top: Some(1),
             scan_root: &scan_root,

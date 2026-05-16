@@ -15,7 +15,7 @@ use std::io::{self, Write};
 use anyhow::Result;
 
 use super::format::format_size;
-use super::{child_relative_path, precompute_subtree_counts, OutputConfig, SubtreeCounts};
+use super::{child_relative_path, precompute_subtree_counts, RenderConfig, SubtreeCounts};
 use crate::entry::Entry;
 use crate::wire::largest::{
     WireLargestEntry, WireLargestMeta, WireLargestNdjsonEntry, WireLargestNdjsonRecord,
@@ -98,7 +98,7 @@ fn select_largest<'a>(rows: &mut Vec<Row<'a>>, n: usize) {
 
 pub fn write(
     entry: &Entry,
-    config: &OutputConfig,
+    config: &RenderConfig,
     n: usize,
     format: LargestFormat,
     out: &mut impl Write,
@@ -129,7 +129,7 @@ const PATH_DISPLAY_CAP: usize = 60;
 
 fn write_text(
     rows: &[Row<'_>],
-    config: &OutputConfig,
+    config: &RenderConfig,
     n_requested: usize,
     total_entries: u64,
     out: &mut impl Write,
@@ -221,7 +221,7 @@ fn build_entry(row: &Row<'_>, counts: &SubtreeCounts) -> WireLargestEntry {
 fn write_json(
     tree_root: &Entry,
     rows: &[Row<'_>],
-    config: &OutputConfig,
+    config: &RenderConfig,
     n_requested: usize,
     total_entries: u64,
     out: &mut impl Write,
@@ -240,7 +240,7 @@ fn write_json(
 fn write_ndjson(
     tree_root: &Entry,
     rows: &[Row<'_>],
-    config: &OutputConfig,
+    config: &RenderConfig,
     n_requested: usize,
     total_entries: u64,
     out: &mut impl Write,
@@ -327,9 +327,9 @@ mod tests {
     fn cfg<'a>(
         scan_root: &'a PathBuf,
         counts: &'a ScanCounts,
-        filter: &'a crate::output::filter::Filter,
-    ) -> OutputConfig<'a> {
-        OutputConfig {
+        filter: &'a crate::render::filter::Filter,
+    ) -> RenderConfig<'a> {
+        RenderConfig {
             max_depth: None,
             top: None,
             scan_root,
@@ -405,7 +405,7 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let filter = crate::output::filter::Filter::default();
+        let filter = crate::render::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 3, LargestFormat::Text, &mut buf).unwrap();
@@ -424,7 +424,7 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let filter = crate::output::filter::Filter::default();
+        let filter = crate::render::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 2, LargestFormat::Json, &mut buf).unwrap();
@@ -445,7 +445,7 @@ mod tests {
         let tree = fixture();
         let scan_root = PathBuf::from("/tmp/proj");
         let counts = ScanCounts::default();
-        let filter = crate::output::filter::Filter::default();
+        let filter = crate::render::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
         write(&tree, &cfg, 3, LargestFormat::Ndjson, &mut buf).unwrap();

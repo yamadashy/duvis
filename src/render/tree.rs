@@ -2,11 +2,11 @@ use std::io::{self, Write};
 
 use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
-use super::{select_top, select_top_refs, OutputConfig};
+use super::{select_top, select_top_refs, RenderConfig};
 use crate::category::Category;
 use crate::entry::Entry;
 
-pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::Result<()> {
+pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
     writeln!(out, "{} ({})", entry.name, format_size(entry.size))?;
 
     // `None` when no filter is active so the "not applicable" case is
@@ -38,7 +38,7 @@ pub fn write(entry: &Entry, config: &OutputConfig, out: &mut impl Write) -> io::
 /// filter-relevant ancestors), not N out of the raw children.
 fn visible_children<'a>(
     children: &'a [Entry],
-    config: &OutputConfig,
+    config: &RenderConfig,
     visible: Option<&SubtreeMatch>,
 ) -> (Vec<&'a Entry>, usize, u64) {
     let Some(map) = visible else {
@@ -55,7 +55,7 @@ fn write_entry(
     entry: &Entry,
     prefix: &str,
     is_last: bool,
-    config: &OutputConfig,
+    config: &RenderConfig,
     visible: Option<&SubtreeMatch>,
     current_depth: usize,
     out: &mut impl Write,

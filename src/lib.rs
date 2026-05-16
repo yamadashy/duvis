@@ -1,7 +1,7 @@
 pub mod category;
 pub mod cli;
 pub mod entry;
-pub mod output;
+pub mod render;
 pub mod scanner;
 pub mod ui;
 pub mod wire;

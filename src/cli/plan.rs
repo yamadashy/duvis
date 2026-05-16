@@ -3,9 +3,9 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use crate::entry::SortOrder;
-use crate::output::filter::{Filter, FilterInputs};
-use crate::output::largest::LargestFormat;
-use crate::output::OutputMode;
+use crate::render::filter::{Filter, FilterInputs};
+use crate::render::largest::LargestFormat;
+use crate::render::RenderMode;
 use crate::scanner::HardlinkPolicy;
 
 use super::args::Cli;
@@ -38,7 +38,7 @@ pub struct ScanPlan {
     pub hardlinks: HardlinkPolicy,
     pub max_depth: Option<usize>,
     pub top: Option<usize>,
-    pub mode: OutputMode,
+    pub mode: RenderMode,
     pub filter: Filter,
 }
 
@@ -85,15 +85,15 @@ pub fn from_cli(cli: Cli) -> Result<RunPlan> {
         } else {
             LargestFormat::Text
         };
-        OutputMode::Largest { n, format }
+        RenderMode::Largest { n, format }
     } else if cli.json {
-        OutputMode::Json
+        RenderMode::Json
     } else if cli.ndjson {
-        OutputMode::Ndjson
+        RenderMode::Ndjson
     } else if cli.summary {
-        OutputMode::Summary
+        RenderMode::Summary
     } else {
-        OutputMode::Tree
+        RenderMode::Tree
     };
 
     Ok(RunPlan::Scan(ScanPlan {

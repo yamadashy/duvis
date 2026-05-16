@@ -5,7 +5,7 @@ use anyhow::Result;
 
 use crate::category;
 use crate::entry::SortOrder;
-use crate::output::{self, OutputConfig};
+use crate::render::{self, RenderConfig};
 use crate::scanner::{self, HardlinkPolicy};
 use crate::wire::explain::WireExplain;
 
@@ -54,7 +54,7 @@ fn run_scan(plan: ScanPlan) -> Result<()> {
     let (mut tree, counts) = scanner::scan(&plan.path, plan.hardlinks)?;
     tree.sort(&plan.sort, plan.reverse);
 
-    let config = OutputConfig {
+    let config = RenderConfig {
         max_depth: plan.max_depth,
         top: plan.top,
         scan_root: &plan.path,
@@ -64,7 +64,7 @@ fn run_scan(plan: ScanPlan) -> Result<()> {
     };
     let stdout = io::stdout();
     let mut out = stdout.lock();
-    output::render(&tree, &config, plan.mode, &mut out)?;
+    render::write(&tree, &config, plan.mode, &mut out)?;
     out.flush()?;
 
     let skipped = counts.skipped();
