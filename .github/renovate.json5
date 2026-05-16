@@ -7,6 +7,10 @@
   "rangeStrategy": "bump",
   "dependencyDashboard": false,
   "labels": ["dependencies", "renovate"],
+  // `.tool-versions` (rust / nodejs / npm pins for asdf + mise) is
+  // bumped by hand alongside intentional toolchain upgrades, so
+  // Renovate must not race ahead with auto-PRs against it.
+  "ignorePaths": [".tool-versions"],
   "packageRules": [
     {
       matchDepTypes: ['peerDependencies'],
