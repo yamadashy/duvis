@@ -12,3 +12,4 @@
 //! confined to files under this module — CI enforces it.
 
 pub mod category;
+pub mod explain;

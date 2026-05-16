@@ -1,8 +1,7 @@
-// `Serialize` for `Category` is provided in `wire::category` so the
-// domain type stays derive-free. `Classification` / `ClassificationReason`
-// below still derive `Serialize` for now — they move to `wire::explain`
-// in the next commit.
-use serde::Serialize;
+// Wire-format serialization for the types in this module lives in
+// `wire::category` (`Category`) and `wire::explain` (`Classification`,
+// `ClassificationReason`). The domain types here stay derive-free so
+// schema changes are an explicit edit in wire/.
 use std::fmt;
 
 /// Whether a category is part of the always-shown core vocabulary or an
@@ -278,9 +277,8 @@ const MEDIA_EXTENSIONS: &[&str] = &[
 
 /// Why an entry was assigned a category. Surfaced via `--explain-category`
 /// so anyone debugging "why is this `cache`?" can see the rule that fired
-/// without reading the source.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
-#[serde(tag = "kind", rename_all = "snake_case")]
+/// without reading the source. Wire form lives in `wire::explain`.
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ClassificationReason {
     /// Matched an exact directory-name rule (case-insensitive).
     DirNameExact { needle: &'static str },
@@ -298,7 +296,7 @@ pub enum ClassificationReason {
     Default,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Classification {
     pub category: Category,
     pub reason: ClassificationReason,
