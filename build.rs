@@ -30,6 +30,18 @@ fn main() {
     println!("cargo:rerun-if-changed=ui/vite.config.ts");
     println!("cargo:rerun-if-changed=ui/tsconfig.json");
     println!("cargo:rerun-if-changed=prebuilt/ui.html");
+    // Re-run if the `ui` feature flips between configurations so the
+    // build script's "did the consumer ask for the UI?" answer stays
+    // in sync with cargo's view.
+    println!("cargo:rerun-if-env-changed=CARGO_FEATURE_UI");
+
+    // Nothing to materialise when the consumer compiled with
+    // `--no-default-features` (and didn't re-enable `ui`). The
+    // `include_str!` of `OUT_DIR/ui.html` only happens inside
+    // `src/ui/assets.rs`, which is itself gated by `#[cfg(feature = "ui")]`.
+    if env::var_os("CARGO_FEATURE_UI").is_none() {
+        return;
+    }
 
     let out_dir: PathBuf = env::var_os("OUT_DIR")
         .expect("OUT_DIR is set by cargo for build scripts")

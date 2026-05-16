@@ -18,7 +18,10 @@ use super::args::Cli;
 pub enum RunPlan {
     /// `--explain-category <NAME>` short-circuit. Skips scanning.
     ExplainCategory { name: String, json: bool },
-    /// `--ui` browser UI. Spins up an async runtime.
+    /// `--ui` browser UI. Spins up an async runtime. Only present
+    /// when the `ui` feature is enabled — without it, `--ui` / `--port`
+    /// aren't parsed in the first place.
+    #[cfg(feature = "ui")]
     Ui {
         path: PathBuf,
         port: u16,
@@ -56,6 +59,7 @@ pub fn from_cli(cli: Cli) -> Result<RunPlan> {
 
     let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
 
+    #[cfg(feature = "ui")]
     if cli.ui {
         return Ok(RunPlan::Ui {
             path,

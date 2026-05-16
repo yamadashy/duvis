@@ -15,12 +15,25 @@ use super::help::HELP_TEXT;
 #[derive(Parser)]
 #[command(name = "duvis", version, override_help = HELP_TEXT)]
 // Output formats are mutually exclusive; tree is the default when none of
-// --json / --ndjson / --summary / --ui is given.
-#[command(group(
-    ArgGroup::new("output")
-        .multiple(false)
-        .args(["json", "ndjson", "summary", "ui"])
-))]
+// --json / --ndjson / --summary / --ui is given. The arg group lists
+// `ui` only when the feature is on, so a no-default-features build
+// doesn't trip on a clap reference to a missing argument.
+#[cfg_attr(
+    feature = "ui",
+    command(group(
+        ArgGroup::new("output")
+            .multiple(false)
+            .args(["json", "ndjson", "summary", "ui"])
+    ))
+)]
+#[cfg_attr(
+    not(feature = "ui"),
+    command(group(
+        ArgGroup::new("output")
+            .multiple(false)
+            .args(["json", "ndjson", "summary"])
+    ))
+)]
 pub struct Cli {
     /// Target file or directory to scan. Defaults to "." (current directory)
     /// when at least one flag is given. Running `duvis` with no arguments
@@ -53,6 +66,7 @@ pub struct Cli {
     /// Open a browser UI with treemap, sunburst, and list views. Starts an
     /// embedded HTTP server (default port 7515; see --port) and launches
     /// your default browser. Mutually exclusive with --json and --summary.
+    #[cfg(feature = "ui")]
     #[arg(long, help_heading = "Output Format")]
     pub ui: bool,
 
@@ -96,13 +110,20 @@ pub struct Cli {
     /// flat list ordered by size. Combines with --json / --ndjson for
     /// structured output. Mutually exclusive with --summary and --ui
     /// (those are different views, not just different formats).
-    #[arg(
+    #[cfg_attr(feature = "ui", arg(
         long,
         value_name = "N",
         value_parser = positive_usize,
         conflicts_with_all = ["summary", "ui"],
         help_heading = "Display Options"
-    )]
+    ))]
+    #[cfg_attr(not(feature = "ui"), arg(
+        long,
+        value_name = "N",
+        value_parser = positive_usize,
+        conflicts_with = "summary",
+        help_heading = "Display Options"
+    ))]
     pub largest: Option<usize>,
 
     /// How to attribute bytes to hardlinked files. `count-once` (default)
@@ -129,32 +150,58 @@ pub struct Cli {
     // has interactive controls for these axes, and silently ignoring them at
     // the CLI would be a foot-gun. clap surfaces the conflict with a clear
     // "argument cannot be used with --ui" message.
-    #[arg(
-        long,
-        value_delimiter = ',',
-        value_name = "CATEGORY",
-        conflicts_with = "ui",
-        help_heading = "Filters"
+    #[cfg_attr(
+        feature = "ui",
+        arg(
+            long,
+            value_delimiter = ',',
+            value_name = "CATEGORY",
+            conflicts_with = "ui",
+            help_heading = "Filters"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "ui"),
+        arg(
+            long,
+            value_delimiter = ',',
+            value_name = "CATEGORY",
+            help_heading = "Filters"
+        )
     )]
     pub category: Vec<Category>,
 
     /// Restrict displayed entries by type: `file` or `dir`.
-    #[arg(
-        long,
-        value_name = "file|dir",
-        conflicts_with = "ui",
-        help_heading = "Filters"
+    #[cfg_attr(
+        feature = "ui",
+        arg(
+            long,
+            value_name = "file|dir",
+            conflicts_with = "ui",
+            help_heading = "Filters"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "ui"),
+        arg(long, value_name = "file|dir", help_heading = "Filters")
     )]
     pub r#type: Option<EntryType>,
 
     /// Show only entries whose disk usage is at least this size.
     /// 1024-based, case-insensitive: `100M`, `1.5G`, `50KiB`, `1024`
     /// (bare integer = bytes).
-    #[arg(
-        long,
-        value_name = "SIZE",
-        conflicts_with = "ui",
-        help_heading = "Filters"
+    #[cfg_attr(
+        feature = "ui",
+        arg(
+            long,
+            value_name = "SIZE",
+            conflicts_with = "ui",
+            help_heading = "Filters"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "ui"),
+        arg(long, value_name = "SIZE", help_heading = "Filters")
     )]
     pub min_size: Option<String>,
 
@@ -162,11 +209,18 @@ pub struct Cli {
     /// Repeatable; multiple patterns are OR-combined among themselves
     /// and AND-combined with other filters: `--name "*.log" --name "*.tmp"`.
     /// Quote in the shell to keep the glob from being expanded by zsh / bash.
-    #[arg(
-        long,
-        value_name = "GLOB",
-        conflicts_with = "ui",
-        help_heading = "Filters"
+    #[cfg_attr(
+        feature = "ui",
+        arg(
+            long,
+            value_name = "GLOB",
+            conflicts_with = "ui",
+            help_heading = "Filters"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "ui"),
+        arg(long, value_name = "GLOB", help_heading = "Filters")
     )]
     pub name: Vec<String>,
 
@@ -174,28 +228,43 @@ pub struct Cli {
     /// `d` (days, default), `w` (7d), `m` (30d), `y` (365d). e.g.
     /// `--changed-within 7d` or `--changed-within 2w`. Field name
     /// (`changed`) leaves room for future `--accessed-within` etc.
-    #[arg(
-        long,
-        value_name = "DURATION",
-        conflicts_with = "ui",
-        help_heading = "Filters"
+    #[cfg_attr(
+        feature = "ui",
+        arg(
+            long,
+            value_name = "DURATION",
+            conflicts_with = "ui",
+            help_heading = "Filters"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "ui"),
+        arg(long, value_name = "DURATION", help_heading = "Filters")
     )]
     pub changed_within: Option<String>,
 
     /// Show only entries modified more than <DURATION> ago. Same suffix
     /// rules as --changed-within. Combine for a window:
     /// `--changed-within 1y --changed-before 30d` = 30 days .. 1 year ago.
-    #[arg(
-        long,
-        value_name = "DURATION",
-        conflicts_with = "ui",
-        help_heading = "Filters"
+    #[cfg_attr(
+        feature = "ui",
+        arg(
+            long,
+            value_name = "DURATION",
+            conflicts_with = "ui",
+            help_heading = "Filters"
+        )
+    )]
+    #[cfg_attr(
+        not(feature = "ui"),
+        arg(long, value_name = "DURATION", help_heading = "Filters")
     )]
     pub changed_before: Option<String>,
 
     // ----- UI Server --------------------------------------------------------
     /// Port for the --ui HTTP server (default 7515). Falls back to a free
     /// OS-assigned port if busy.
+    #[cfg(feature = "ui")]
     #[arg(
         long,
         default_value = "7515",
@@ -209,12 +278,18 @@ pub struct Cli {
     /// both interpretations (as-directory / as-file) and the rule that
     /// matched. Combine with --json for structured output. Useful when
     /// you see a category in a scan and want to know why.
-    #[arg(
+    #[cfg_attr(feature = "ui", arg(
         long,
         value_name = "NAME",
         conflicts_with_all = ["ndjson", "summary", "ui", "largest"],
         help_heading = "Diagnostics"
-    )]
+    ))]
+    #[cfg_attr(not(feature = "ui"), arg(
+        long,
+        value_name = "NAME",
+        conflicts_with_all = ["ndjson", "summary", "largest"],
+        help_heading = "Diagnostics"
+    ))]
     pub explain_category: Option<String>,
 }
 
