@@ -1,5 +1,5 @@
 //! Parallel rayon walk over a filesystem tree. Owns the
-//! [`ScanCtx`] state passed down the recursion and the public
+//! `ScanCtx` state passed down the recursion and the public
 //! `scan` / `scan_with_progress` entry points.
 
 use anyhow::Result;

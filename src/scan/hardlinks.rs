@@ -1,6 +1,6 @@
 //! `HardlinkPolicy` — how to attribute bytes when the same inode is
 //! reachable via multiple hardlinked paths. CLI surface enum; the
-//! actual dedup happens in [`super::metadata::file_disk_usage`].
+//! actual dedup happens in `super::metadata::file_disk_usage`.
 
 use std::fmt;
 use std::str::FromStr;
