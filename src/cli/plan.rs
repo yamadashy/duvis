@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 
 use crate::entry::SortOrder;
-use crate::render::filter::{Filter, FilterInputs};
+use crate::filter::{Filter, FilterInputs};
 use crate::render::largest::LargestFormat;
 use crate::render::RenderMode;
 use crate::scanner::HardlinkPolicy;

@@ -1,7 +1,7 @@
 use std::fmt;
 use std::str::FromStr;
 
-use crate::category::Category;
+use crate::classify::Category;
 
 /// How siblings are ordered for display. `Size` (default) is largest-first
 /// before `--reverse` flips it; `Name` is alphabetical.

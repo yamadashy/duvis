@@ -25,7 +25,7 @@ pub struct WireEntry {
     pub name: String,
     pub size: u64,
     pub is_dir: bool,
-    pub category: crate::category::Category,
+    pub category: crate::classify::Category,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub modified_days_ago: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -57,7 +57,7 @@ impl WireEntry {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::category::Category;
+    use crate::classify::Category;
 
     fn leaf(name: &str, size: u64) -> Entry {
         Entry::file(name.to_string(), size, Category::Other, None)

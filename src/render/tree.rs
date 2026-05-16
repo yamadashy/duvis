@@ -1,10 +1,10 @@
 use std::io::{self, Write};
 
-use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{select_top, select_top_refs, RenderConfig};
-use crate::category::Category;
+use crate::classify::Category;
 use crate::entry::Entry;
+use crate::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 
 pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
     writeln!(out, "{} ({})", entry.name, format_size(entry.size))?;

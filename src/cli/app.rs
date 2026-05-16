@@ -3,7 +3,7 @@ use std::path::PathBuf;
 
 use anyhow::Result;
 
-use crate::category;
+use crate::classify;
 use crate::entry::SortOrder;
 use crate::render::{self, RenderConfig};
 use crate::scanner::{self, HardlinkPolicy};
@@ -84,8 +84,8 @@ fn run_scan(plan: ScanPlan) -> Result<()> {
 /// file) and surface both so callers don't have to guess which role to
 /// pass.
 fn explain_category(name: &str, json: bool, out: &mut impl Write) -> Result<()> {
-    let as_dir = category::explain_dir(name);
-    let as_file = category::explain_file(name);
+    let as_dir = classify::explain_dir(name);
+    let as_file = classify::explain_file(name);
     if json {
         let payload = WireExplain::new(name, &as_dir, &as_file);
         writeln!(out, "{}", serde_json::to_string_pretty(&payload)?)?;

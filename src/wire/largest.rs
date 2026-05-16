@@ -8,7 +8,7 @@
 
 use serde::Serialize;
 
-use crate::category::Category;
+use crate::classify::Category;
 use crate::render::{is_zero_u64, RenderConfig};
 use crate::wire::tree::WireMeta;
 

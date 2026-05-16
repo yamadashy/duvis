@@ -2,14 +2,14 @@
 //!
 //! Mirrors the shape used to live on the domain `Classification` /
 //! `ClassificationReason` types directly. Moving it here means
-//! `category.rs` no longer needs `serde` at all, so a future tweak to
-//! the classification model (renaming an enum variant, say) won't
+//! `classify::rules` no longer needs `serde` at all, so a future tweak
+//! to the classification model (renaming an enum variant, say) won't
 //! silently shift the JSON contract; the wire shape only changes when
 //! someone edits this file.
 
 use serde::Serialize;
 
-use crate::category::{Category, Classification, ClassificationReason};
+use crate::classify::{Category, Classification, ClassificationReason};
 
 /// Top-level payload emitted by `--explain-category <NAME> --json`.
 /// The same `name` is classified both as a directory and as a file
@@ -76,7 +76,7 @@ impl From<&ClassificationReason> for WireClassificationReason {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::category::{explain_dir, explain_file};
+    use crate::classify::{explain_dir, explain_file};
 
     #[test]
     fn wire_shape_matches_v0_1_x_explain_format() {

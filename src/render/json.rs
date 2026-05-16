@@ -2,12 +2,12 @@ use std::io::Write;
 
 use anyhow::Result;
 
-use super::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use super::format::format_size;
 use super::{
     child_relative_path, precompute_subtree_counts, select_top_refs, RenderConfig, SubtreeCounts,
 };
 use crate::entry::Entry;
+use crate::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 use crate::wire::tree::{WireMeta, WireTreeNode, WireTreeRoot};
 
 /// Build the JSON view, looking up precomputed counts in `counts` so
@@ -117,9 +117,9 @@ pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Resu
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::category::Category;
+    use crate::classify::Category;
     use crate::entry::Entry;
-    use crate::render::filter::Filter;
+    use crate::filter::Filter;
     use crate::scanner::HardlinkPolicy;
     use std::path::PathBuf;
     use std::sync::atomic::Ordering;

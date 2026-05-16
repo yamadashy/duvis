@@ -1,6 +1,7 @@
-pub mod category;
+pub mod classify;
 pub mod cli;
 pub mod entry;
+pub mod filter;
 pub mod render;
 pub mod scanner;
 pub mod ui;
