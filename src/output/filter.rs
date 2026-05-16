@@ -30,10 +30,37 @@ use crate::entry::Entry;
 
 /// `--type` filter: file or dir. Anything else (symlink etc.) is
 /// reduced to one of these by `Entry::is_dir()`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, clap::ValueEnum)]
+///
+/// `Display` / `FromStr` are the canonical string forms used by the CLI
+/// (`--type file|dir`). clap awareness lives in `cli/args.rs`; the core
+/// type stays clap-free.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum EntryType {
     File,
     Dir,
+}
+
+impl std::fmt::Display for EntryType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            EntryType::File => "file",
+            EntryType::Dir => "dir",
+        })
+    }
+}
+
+impl std::str::FromStr for EntryType {
+    type Err = String;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        // Case-insensitive to match the previous `clap::ValueEnum` behaviour.
+        match s.to_ascii_lowercase().as_str() {
+            "file" => Ok(EntryType::File),
+            "dir" => Ok(EntryType::Dir),
+            _ => Err(format!(
+                "invalid entry type '{s}' (expected 'file' or 'dir')"
+            )),
+        }
+    }
 }
 
 #[derive(Debug, Default)]
