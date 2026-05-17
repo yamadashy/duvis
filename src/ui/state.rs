@@ -106,6 +106,11 @@ pub(super) fn start_scan(state: Arc<AppState>) {
         *s = fresh;
     }
     tokio::task::spawn_blocking(move || {
+        // RAII guard: releases the in-flight gate even if the scan or the
+        // mutex lock panics. Without this, a panic during a scan would
+        // leave the gate stuck `true` forever and silently block every
+        // subsequent /rescan.
+        let _guard = InFlightGuard(&state.scan_in_flight);
         let started = Instant::now();
         let scan_result =
             crate::scan::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
@@ -123,13 +128,20 @@ pub(super) fn start_scan(state: Arc<AppState>) {
             }
             Err(e) => Inner::Error(e.to_string()),
         };
-        {
-            let mut s = state.state.lock().unwrap();
-            if s.scan_id == scan_id {
-                s.inner = next_inner;
-            }
+        let mut s = state.state.lock().unwrap();
+        if s.scan_id == scan_id {
+            s.inner = next_inner;
         }
-        // Release the gate so the next /rescan can proceed.
-        state.scan_in_flight.store(false, Ordering::Release);
     });
+}
+
+/// Releases the `scan_in_flight` gate on drop. Holding this for the
+/// lifetime of the scan task means a panic anywhere in the task (scan,
+/// sort, mutex poison) still unblocks the next /rescan.
+struct InFlightGuard<'a>(&'a AtomicBool);
+
+impl Drop for InFlightGuard<'_> {
+    fn drop(&mut self) {
+        self.0.store(false, Ordering::Release);
+    }
 }
