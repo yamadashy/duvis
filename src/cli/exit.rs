@@ -9,7 +9,7 @@ use anyhow::Error;
 /// Conservative for now — every post-parse failure maps to 1. Phase 1b
 /// introduces typed errors that will let us split usage (2) vs runtime
 /// (1) more finely.
-pub fn from_error(err: &Error) -> ExitCode {
+pub(super) fn from_error(err: &Error) -> ExitCode {
     eprintln!("error: {err:#}");
     ExitCode::FAILURE
 }

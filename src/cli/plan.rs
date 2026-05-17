@@ -4,8 +4,7 @@ use anyhow::Result;
 
 use crate::entry::SortOrder;
 use crate::filter::{Filter, FilterInputs};
-use crate::render::largest::LargestFormat;
-use crate::render::RenderMode;
+use crate::render::{LargestFormat, RenderMode};
 use crate::scan::HardlinkPolicy;
 
 use super::args::Cli;
@@ -15,7 +14,7 @@ use super::args::Cli;
 /// of the raw `Cli` happens past this conversion. Keeps `cli::app`
 /// a single `match` and keeps the clap-derived struct out of scan /
 /// render / ui paths.
-pub enum RunPlan {
+pub(super) enum RunPlan {
     /// `--explain-category <NAME>` short-circuit. Skips scanning.
     ExplainCategory { name: String, json: bool },
     /// `--ui` browser UI. Spins up an async runtime. Only present
@@ -34,7 +33,7 @@ pub enum RunPlan {
     Scan(ScanPlan),
 }
 
-pub struct ScanPlan {
+pub(super) struct ScanPlan {
     pub path: PathBuf,
     pub sort: SortOrder,
     pub reverse: bool,
@@ -49,7 +48,7 @@ pub struct ScanPlan {
 /// inputs are parsed here (not lazily) so a typo in `--min-size` or
 /// `--changed-within` fails in milliseconds rather than after a
 /// multi-minute walk of a huge tree.
-pub fn from_cli(cli: Cli) -> Result<RunPlan> {
+pub(super) fn from_cli(cli: Cli) -> Result<RunPlan> {
     if let Some(name) = cli.explain_category {
         return Ok(RunPlan::ExplainCategory {
             name,

@@ -8,8 +8,8 @@
 //! `ClassificationReason`). The domain types here stay derive-free so
 //! schema changes are an explicit edit in `wire/`.
 
-pub mod category;
-pub mod rules;
+mod category;
+mod rules;
 
 pub use category::{Category, Tier};
 pub use rules::{

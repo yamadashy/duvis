@@ -30,8 +30,8 @@
 //!   renderers to skip subtrees with no matching descendants in O(1)
 //!   per entry.
 
-pub mod parse;
-pub mod subtree;
+mod parse;
+mod subtree;
 
 use std::collections::HashSet;
 

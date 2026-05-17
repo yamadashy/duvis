@@ -1,9 +1,9 @@
 mod format;
-pub mod json;
-pub mod largest;
-pub mod ndjson;
-pub mod summary;
-pub mod tree;
+mod json;
+mod largest;
+mod ndjson;
+mod summary;
+mod tree;
 
 use std::collections::HashMap;
 use std::io::Write;
@@ -12,6 +12,10 @@ use std::path::Path;
 use crate::entry::Entry;
 use crate::filter::Filter;
 use crate::scan::{HardlinkPolicy, ScanCounts};
+
+// Re-export the one render submodule item the cli plan layer references
+// by name, so submodules can stay private.
+pub(crate) use largest::LargestFormat;
 
 pub struct RenderConfig<'a> {
     pub max_depth: Option<usize>,

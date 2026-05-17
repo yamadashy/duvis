@@ -24,7 +24,7 @@ use std::process::ExitCode;
 /// Binary entry. Owns the full CLI pipeline and returns the process
 /// exit code. `main.rs` should call this directly (via `duvis::run_cli`)
 /// so the lib crate owns every CLI concern.
-pub fn run() -> ExitCode {
+pub(crate) fn run() -> ExitCode {
     signals::reset_sigpipe();
 
     // No arguments at all → show help instead of silently scanning the

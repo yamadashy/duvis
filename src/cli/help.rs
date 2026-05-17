@@ -33,7 +33,7 @@
 // obvious in review — when you change one, change the other.
 
 #[cfg(feature = "ui")]
-pub const HELP_TEXT: &str = "duvis - Disk usage visualizer for both AI agents and humans
+pub(super) const HELP_TEXT: &str = "duvis - Disk usage visualizer for both AI agents and humans
 
 Usage:
   duvis [PATH] [options]
@@ -139,7 +139,7 @@ mod tests_no_ui {
 }
 
 #[cfg(not(feature = "ui"))]
-pub const HELP_TEXT: &str = "duvis - Disk usage visualizer for both AI agents and humans
+pub(super) const HELP_TEXT: &str = "duvis - Disk usage visualizer for both AI agents and humans
 
 Usage:
   duvis [PATH] [options]

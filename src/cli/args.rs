@@ -34,7 +34,7 @@ use super::help::HELP_TEXT;
             .args(["json", "ndjson", "summary"])
     ))
 )]
-pub struct Cli {
+pub(super) struct Cli {
     /// Target file or directory to scan. Defaults to "." (current directory)
     /// when at least one flag is given. Running `duvis` with no arguments
     /// at all prints --help instead.
