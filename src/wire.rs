@@ -12,8 +12,14 @@
 //! confined to files under this module — CI enforces it.
 
 pub mod category;
-pub mod entry;
 pub mod explain;
 pub mod largest;
 pub mod tree;
+
+// Only consumed by the `ui` feature today (UI server's /data.json tree
+// payload and /reveal request). Gated so the no-default-features build
+// stays warning-clean.
+#[cfg(feature = "ui")]
+pub mod entry;
+#[cfg(feature = "ui")]
 pub mod ui;

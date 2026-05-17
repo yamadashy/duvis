@@ -16,9 +16,7 @@ mod args;
 mod exit;
 mod help;
 mod plan;
-pub mod signals;
-
-pub use args::Cli;
+mod signals;
 
 use clap::{CommandFactory, Parser};
 use std::process::ExitCode;
