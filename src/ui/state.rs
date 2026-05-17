@@ -98,6 +98,13 @@ pub(super) fn start_scan(state: Arc<AppState>) {
     {
         return;
     }
+    // Construct the guard immediately after winning the CAS so that
+    // *any* failure path between here and the task body — a poisoned
+    // mutex on the `state.lock()` below, an OOM on Arc allocation, the
+    // runtime declining to schedule the blocking task — still releases
+    // the gate. Without this the gate could stay stuck `true` forever
+    // and silently no-op every subsequent /rescan.
+    let guard = InFlightGuard(Arc::clone(&state));
     let scan_id = state.next_scan_id.fetch_add(1, Ordering::Relaxed);
     let fresh = ScanState::scanning(scan_id);
     let counts = Arc::clone(&fresh.counts);
@@ -106,11 +113,11 @@ pub(super) fn start_scan(state: Arc<AppState>) {
         *s = fresh;
     }
     tokio::task::spawn_blocking(move || {
-        // RAII guard: releases the in-flight gate even if the scan or the
-        // mutex lock panics. Without this, a panic during a scan would
-        // leave the gate stuck `true` forever and silently block every
-        // subsequent /rescan.
-        let _guard = InFlightGuard(&state.scan_in_flight);
+        // Bind the moved guard so its lifetime spans the whole task
+        // body — drop on closure exit (success or panic) releases the
+        // gate. If the closure is never executed (runtime shutdown),
+        // dropping the closure itself still drops the guard.
+        let _guard = guard;
         let started = Instant::now();
         let scan_result =
             crate::scan::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
@@ -135,13 +142,15 @@ pub(super) fn start_scan(state: Arc<AppState>) {
     });
 }
 
-/// Releases the `scan_in_flight` gate on drop. Holding this for the
-/// lifetime of the scan task means a panic anywhere in the task (scan,
-/// sort, mutex poison) still unblocks the next /rescan.
-struct InFlightGuard<'a>(&'a AtomicBool);
+/// Releases the `scan_in_flight` gate on drop. Owning an `Arc<AppState>`
+/// (rather than borrowing the atomic) lets the guard be constructed
+/// before `spawn_blocking` and moved into the `'static` closure, so the
+/// gate clears on every drop path — scan panic, sort panic, mutex
+/// poison, or the task never being scheduled.
+struct InFlightGuard(Arc<AppState>);
 
-impl Drop for InFlightGuard<'_> {
+impl Drop for InFlightGuard {
     fn drop(&mut self) {
-        self.0.store(false, Ordering::Release);
+        self.0.scan_in_flight.store(false, Ordering::Release);
     }
 }
