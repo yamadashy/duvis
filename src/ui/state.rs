@@ -98,6 +98,13 @@ pub(super) fn start_scan(state: Arc<AppState>) {
     {
         return;
     }
+    // Construct the guard immediately after winning the CAS so that
+    // *any* failure path between here and the task body — a poisoned
+    // mutex on the `state.lock()` below, an OOM on Arc allocation, the
+    // runtime declining to schedule the blocking task — still releases
+    // the gate. Without this the gate could stay stuck `true` forever
+    // and silently no-op every subsequent /rescan.
+    let guard = InFlightGuard(Arc::clone(&state));
     let scan_id = state.next_scan_id.fetch_add(1, Ordering::Relaxed);
     let fresh = ScanState::scanning(scan_id);
     let counts = Arc::clone(&fresh.counts);
@@ -106,26 +113,44 @@ pub(super) fn start_scan(state: Arc<AppState>) {
         *s = fresh;
     }
     tokio::task::spawn_blocking(move || {
+        // Bind the moved guard so its lifetime spans the whole task
+        // body — drop on closure exit (success or panic) releases the
+        // gate. If the closure is never executed (runtime shutdown),
+        // dropping the closure itself still drops the guard.
+        let _guard = guard;
         let started = Instant::now();
         let scan_result =
             crate::scan::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
-        {
-            let mut s = state.state.lock().unwrap();
-            if s.scan_id == scan_id {
-                s.inner = match scan_result {
-                    Ok(mut tree) => {
-                        tree.sort(&state.sort, state.reverse);
-                        let scanned_in_ms = started.elapsed().as_millis() as u64;
-                        Inner::Ready {
-                            tree,
-                            scanned_in_ms,
-                        }
-                    }
-                    Err(e) => Inner::Error(e.to_string()),
-                };
+        // Sort *before* acquiring the mutex — sorting a multi-million-entry
+        // tree can take a noticeable fraction of a second, and `/data.json`
+        // handlers compete for the same lock.
+        let next_inner = match scan_result {
+            Ok(mut tree) => {
+                tree.sort(&state.sort, state.reverse);
+                let scanned_in_ms = started.elapsed().as_millis() as u64;
+                Inner::Ready {
+                    tree,
+                    scanned_in_ms,
+                }
             }
+            Err(e) => Inner::Error(e.to_string()),
+        };
+        let mut s = state.state.lock().unwrap();
+        if s.scan_id == scan_id {
+            s.inner = next_inner;
         }
-        // Release the gate so the next /rescan can proceed.
-        state.scan_in_flight.store(false, Ordering::Release);
     });
+}
+
+/// Releases the `scan_in_flight` gate on drop. Owning an `Arc<AppState>`
+/// (rather than borrowing the atomic) lets the guard be constructed
+/// before `spawn_blocking` and moved into the `'static` closure, so the
+/// gate clears on every drop path — scan panic, sort panic, mutex
+/// poison, or the task never being scheduled.
+struct InFlightGuard(Arc<AppState>);
+
+impl Drop for InFlightGuard {
+    fn drop(&mut self) {
+        self.0.scan_in_flight.store(false, Ordering::Release);
+    }
 }

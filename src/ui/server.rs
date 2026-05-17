@@ -5,7 +5,7 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{Context, Result};
 use axum::extract::State;
 use axum::http::StatusCode;
 use axum::response::{Html, IntoResponse, Response};
@@ -28,6 +28,14 @@ pub async fn serve(
     reverse: bool,
     hardlinks: HardlinkPolicy,
 ) -> Result<()> {
+    // Canonicalize once at boot so `/reveal` can compare a request's
+    // canonical resolved path against `scan_root` with `starts_with`. If
+    // we kept the user-supplied path (which may be relative, contain `..`,
+    // or traverse symlinks like macOS's `/var` → `/private/var`) the
+    // comparison would spuriously reject valid in-tree paths.
+    let scan_root = scan_root
+        .canonicalize()
+        .with_context(|| format!("failed to canonicalize scan root: {}", scan_root.display()))?;
     let app_state = Arc::new(AppState::new(scan_root, sort, reverse, hardlinks));
 
     // Kick off the initial scan immediately so the browser can render a
