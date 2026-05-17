@@ -21,6 +21,8 @@
 //!
 //! Binary use is just [`run_cli`], which `main.rs` delegates to.
 
+#![warn(unreachable_pub)]
+
 mod classify;
 mod cli;
 mod entry;

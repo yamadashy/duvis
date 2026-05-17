@@ -16,16 +16,16 @@ use crate::classify::{Category, Classification, ClassificationReason};
 /// because the rules differ between the two roles (e.g. `node_modules`
 /// is `cache` as a dir but `other` as a file).
 #[derive(Debug, Serialize)]
-pub struct WireExplain<'a> {
-    pub name: &'a str,
-    pub as_directory: WireClassification,
-    pub as_file: WireClassification,
+pub(crate) struct WireExplain<'a> {
+    pub(crate) name: &'a str,
+    pub(crate) as_directory: WireClassification,
+    pub(crate) as_file: WireClassification,
 }
 
 #[derive(Debug, Serialize)]
-pub struct WireClassification {
-    pub category: Category,
-    pub reason: WireClassificationReason,
+pub(crate) struct WireClassification {
+    pub(crate) category: Category,
+    pub(crate) reason: WireClassificationReason,
 }
 
 /// Tagged-union mirror of `ClassificationReason`. Keeping the
@@ -34,7 +34,7 @@ pub struct WireClassification {
 /// name is a wire concern, not a domain concern.
 #[derive(Debug, Serialize)]
 #[serde(tag = "kind", rename_all = "snake_case")]
-pub enum WireClassificationReason {
+pub(crate) enum WireClassificationReason {
     DirNameExact { needle: &'static str },
     DirNameContainsCache,
     FileNameSuffix { needle: &'static str },
@@ -43,7 +43,7 @@ pub enum WireClassificationReason {
 }
 
 impl<'a> WireExplain<'a> {
-    pub fn new(name: &'a str, as_dir: &Classification, as_file: &Classification) -> Self {
+    pub(crate) fn new(name: &'a str, as_dir: &Classification, as_file: &Classification) -> Self {
         Self {
             name,
             as_directory: WireClassification::from(as_dir),

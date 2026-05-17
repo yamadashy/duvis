@@ -25,7 +25,7 @@ use crate::wire::largest::{
 /// Output target for `--largest` results. Selected by which format flag
 /// (if any) was passed alongside `--largest`.
 #[derive(Debug, Clone, Copy)]
-pub enum LargestFormat {
+pub(crate) enum LargestFormat {
     Text,
     Json,
     Ndjson,
@@ -96,7 +96,7 @@ fn select_largest<'a>(rows: &mut Vec<Row<'a>>, n: usize) {
     rows.sort_unstable_by(compare_rows);
 }
 
-pub fn write(
+pub(crate) fn write(
     entry: &Entry,
     config: &RenderConfig,
     n: usize,

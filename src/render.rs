@@ -17,26 +17,26 @@ use crate::scan::{HardlinkPolicy, ScanCounts};
 // by name, so submodules can stay private.
 pub(crate) use largest::LargestFormat;
 
-pub struct RenderConfig<'a> {
-    pub max_depth: Option<usize>,
-    pub top: Option<usize>,
+pub(crate) struct RenderConfig<'a> {
+    pub(crate) max_depth: Option<usize>,
+    pub(crate) top: Option<usize>,
     /// Absolute, canonicalized scan root. Surfaced via `meta.scan_root` in
     /// JSON / NDJSON so an agent that pipes the output elsewhere can still
     /// reconstruct full paths from the per-entry `relative_path`.
-    pub scan_root: &'a Path,
+    pub(crate) scan_root: &'a Path,
     /// Final scan counters. Forwarded into `meta` for the structured
     /// outputs so callers can tell "we visited 1.2M items, 3 were skipped"
     /// without parsing stderr.
-    pub counts: &'a ScanCounts,
+    pub(crate) counts: &'a ScanCounts,
     /// Which hardlink dedup mode produced the sizes. Recorded in `meta`
     /// so consumers can tell whether a per-path size already accounts for
     /// shared inodes or not.
-    pub hardlinks: HardlinkPolicy,
+    pub(crate) hardlinks: HardlinkPolicy,
     /// Display-time predicate. `Filter::is_empty()` short-circuits the
     /// per-entry match check in renderers that would otherwise pay for
     /// it. Totals (parent dir size, scan counts) are unaffected — only
     /// what's *shown* is filtered.
-    pub filter: &'a Filter,
+    pub(crate) filter: &'a Filter,
 }
 
 /// Pick the largest `n` children by size while preserving their relative order
@@ -91,7 +91,7 @@ pub(crate) fn select_top_refs<'a>(
 /// mutually-exclusive ArgGroup + per-flag conflicts, so exactly one
 /// variant reaches the dispatcher.
 #[derive(Debug, Clone, Copy)]
-pub enum RenderMode {
+pub(crate) enum RenderMode {
     Tree,
     Json,
     Ndjson,
@@ -184,7 +184,7 @@ fn walk_counts(entry: &Entry, map: &mut SubtreeCounts) -> (u64, u64) {
 /// `&mut impl Write` so tests can capture output into a buffer. `--ui`
 /// is handled in main.rs since it spins up an async server instead of
 /// writing to a stream.
-pub fn write(
+pub(crate) fn write(
     entry: &Entry,
     config: &RenderConfig,
     mode: RenderMode,

@@ -11,8 +11,8 @@
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-pub struct WireRevealReq {
+pub(crate) struct WireRevealReq {
     /// Path segments below the scanned root, e.g. ["target", "debug"].
     /// An empty array reveals the root itself.
-    pub segments: Vec<String>,
+    pub(crate) segments: Vec<String>,
 }

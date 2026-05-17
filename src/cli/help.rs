@@ -108,36 +108,6 @@ Exit codes
   0  Success
   1  Argument error, scan failure, or other error (message on stderr)";
 
-#[cfg(all(test, feature = "ui"))]
-mod tests_ui {
-    use super::HELP_TEXT;
-
-    #[test]
-    fn ui_help_mentions_ui_flag() {
-        assert!(HELP_TEXT.contains("--ui"));
-        assert!(HELP_TEXT.contains("--port"));
-    }
-}
-
-#[cfg(all(test, not(feature = "ui")))]
-mod tests_no_ui {
-    use super::HELP_TEXT;
-
-    #[test]
-    fn no_ui_help_does_not_mention_ui_flags() {
-        // Guard against drift: when the `ui` feature is off, the help text
-        // must not advertise flags that the parser rejects.
-        assert!(
-            !HELP_TEXT.contains("--ui"),
-            "no-ui HELP_TEXT still mentions --ui"
-        );
-        assert!(
-            !HELP_TEXT.contains("--port"),
-            "no-ui HELP_TEXT still mentions --port"
-        );
-    }
-}
-
 #[cfg(not(feature = "ui"))]
 pub(super) const HELP_TEXT: &str = "duvis - Disk usage visualizer for both AI agents and humans
 
@@ -208,3 +178,31 @@ Examples
 Exit codes
   0  Success
   1  Argument error, scan failure, or other error (message on stderr)";
+
+#[cfg(test)]
+mod tests {
+    use super::HELP_TEXT;
+
+    /// Guard against drift: when the `ui` feature is off, the help text
+    /// must not advertise flags that the parser rejects; when it's on,
+    /// it must.
+    #[cfg(feature = "ui")]
+    #[test]
+    fn ui_help_mentions_ui_flags() {
+        assert!(HELP_TEXT.contains("--ui"));
+        assert!(HELP_TEXT.contains("--port"));
+    }
+
+    #[cfg(not(feature = "ui"))]
+    #[test]
+    fn no_ui_help_omits_ui_flags() {
+        assert!(
+            !HELP_TEXT.contains("--ui"),
+            "no-ui HELP_TEXT still mentions --ui"
+        );
+        assert!(
+            !HELP_TEXT.contains("--port"),
+            "no-ui HELP_TEXT still mentions --port"
+        );
+    }
+}

@@ -21,15 +21,15 @@ use crate::entry::{Entry, EntryKind};
 /// used to) means `#[serde(skip_serializing_if = "Option::is_none")]`
 /// handles the optional-field discipline declaratively.
 #[derive(Debug, Serialize)]
-pub struct WireEntry {
-    pub name: String,
-    pub size: u64,
-    pub is_dir: bool,
-    pub category: crate::classify::Category,
+pub(crate) struct WireEntry {
+    pub(crate) name: String,
+    pub(crate) size: u64,
+    pub(crate) is_dir: bool,
+    pub(crate) category: crate::classify::Category,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub modified_days_ago: Option<u64>,
+    pub(crate) modified_days_ago: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub children: Option<Vec<WireEntry>>,
+    pub(crate) children: Option<Vec<WireEntry>>,
 }
 
 impl WireEntry {
@@ -38,7 +38,7 @@ impl WireEntry {
     /// empty — the empty array carries information ("we descended but
     /// found nothing") that distinguishes it from a depth-truncated
     /// view.
-    pub fn from_entry(entry: &Entry) -> Self {
+    pub(crate) fn from_entry(entry: &Entry) -> Self {
         let children = match &entry.kind {
             EntryKind::Dir(c) => Some(c.iter().map(WireEntry::from_entry).collect()),
             EntryKind::File => None,

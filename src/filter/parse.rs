@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 /// `B / K / KB / KiB / M / MB / MiB / G / GB / GiB / T / TB / TiB`
 /// (case-insensitive). All multipliers are 1024-based to match
 /// `format_size` and `du -h`. Floating-point is accepted: `1.5G`.
-pub fn parse_size(s: &str) -> Result<u64> {
+pub(crate) fn parse_size(s: &str) -> Result<u64> {
     let s = s.trim();
     if s.is_empty() {
         return Err(anyhow!("empty size"));
@@ -57,7 +57,7 @@ pub fn parse_size(s: &str) -> Result<u64> {
 /// Returns the duration in *days*. Calendar-correctness is not the
 /// goal here — agents asking "files older than 30 days" don't want
 /// a date library, they want a fast cutoff.
-pub fn parse_duration_days(s: &str) -> Result<u64> {
+pub(crate) fn parse_duration_days(s: &str) -> Result<u64> {
     let s = s.trim();
     if s.is_empty() {
         return Err(anyhow!("empty duration"));
