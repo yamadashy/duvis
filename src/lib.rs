@@ -3,17 +3,19 @@
 //! The crate is shipped primarily as a CLI binary, but the same logic
 //! is also reachable as a library. To keep refactors safe, only the
 //! handful of items re-exported here are part of the stable public
-//! surface — the internal module layout (`scan/`, `classify/`, `cli/`,
-//! `render/`, `wire/`, `filter/`, `ui/`) is an implementation detail and
-//! may change between minor versions.
+//! surface — the internal module layout (`scan/`, `classify/`, `entry/`,
+//! `cli/`, `render/`, `wire/`, `filter/`, `ui/`) is an implementation
+//! detail and may change between minor versions.
 //!
 //! Typical library use:
 //! ```no_run
 //! use duvis::{scan, HardlinkPolicy};
 //! let (tree, counts) = scan(std::path::Path::new("."), HardlinkPolicy::CountOnce).unwrap();
 //! println!("scanned {} items", counts.scanned());
-//! for child in tree.children().into_iter().flatten() {
-//!     println!("{}", child.name);
+//! if let Some(children) = tree.children() {
+//!     for child in children {
+//!         println!("{}", child.name);
+//!     }
 //! }
 //! ```
 //!
