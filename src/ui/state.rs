@@ -109,20 +109,24 @@ pub(super) fn start_scan(state: Arc<AppState>) {
         let started = Instant::now();
         let scan_result =
             crate::scan::scan_with_progress(&state.scan_root, &counts, state.hardlinks);
+        // Sort *before* acquiring the mutex — sorting a multi-million-entry
+        // tree can take a noticeable fraction of a second, and `/data.json`
+        // handlers compete for the same lock.
+        let next_inner = match scan_result {
+            Ok(mut tree) => {
+                tree.sort(&state.sort, state.reverse);
+                let scanned_in_ms = started.elapsed().as_millis() as u64;
+                Inner::Ready {
+                    tree,
+                    scanned_in_ms,
+                }
+            }
+            Err(e) => Inner::Error(e.to_string()),
+        };
         {
             let mut s = state.state.lock().unwrap();
             if s.scan_id == scan_id {
-                s.inner = match scan_result {
-                    Ok(mut tree) => {
-                        tree.sort(&state.sort, state.reverse);
-                        let scanned_in_ms = started.elapsed().as_millis() as u64;
-                        Inner::Ready {
-                            tree,
-                            scanned_in_ms,
-                        }
-                    }
-                    Err(e) => Inner::Error(e.to_string()),
-                };
+                s.inner = next_inner;
             }
         }
         // Release the gate so the next /rescan can proceed.
