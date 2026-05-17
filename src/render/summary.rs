@@ -12,7 +12,7 @@ struct CategoryStats {
     count: u64,
 }
 
-pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
+pub(crate) fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
     let mut stats: HashMap<Category, CategoryStats> = HashMap::new();
     collect_stats(entry, config.filter, &mut stats);
 

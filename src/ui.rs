@@ -11,9 +11,9 @@
 //! - [`reveal`] — `/reveal` handler + the `reveal_in_filer` cfg
 //!   family (macOS / Windows / fallback).
 
-pub mod assets;
-pub mod reveal;
-pub mod server;
-pub mod state;
+pub(crate) mod assets;
+pub(crate) mod reveal;
+pub(crate) mod server;
+pub(crate) mod state;
 
-pub use server::serve;
+pub(crate) use server::serve;

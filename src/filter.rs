@@ -30,8 +30,8 @@
 //!   renderers to skip subtrees with no matching descendants in O(1)
 //!   per entry.
 
-pub mod parse;
-pub mod subtree;
+mod parse;
+mod subtree;
 
 use std::collections::HashSet;
 
@@ -41,8 +41,8 @@ use globset::{Glob, GlobSet, GlobSetBuilder};
 use crate::classify::Category;
 use crate::entry::Entry;
 
-pub use parse::{parse_duration_days, parse_size};
-pub use subtree::{precompute_subtree_match, subtree_visible, SubtreeMatch};
+pub(crate) use parse::{parse_duration_days, parse_size};
+pub(crate) use subtree::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 
 /// `--type` filter: file or dir. Anything else (symlink etc.) is
 /// reduced to one of these by `Entry::is_dir()`.
@@ -51,7 +51,7 @@ pub use subtree::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 /// (`--type file|dir`). clap awareness lives in `cli/args.rs`; the core
 /// type stays clap-free.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EntryType {
+pub(crate) enum EntryType {
     File,
     Dir,
 }
@@ -80,7 +80,7 @@ impl std::str::FromStr for EntryType {
 }
 
 #[derive(Debug, Default)]
-pub struct Filter {
+pub(crate) struct Filter {
     /// Empty = no category filter; non-empty = AND requires
     /// `entry.category ∈ this set`.
     categories: HashSet<Category>,
@@ -96,17 +96,17 @@ pub struct Filter {
 
 /// Inputs collected from clap. Kept as a separate struct so `Filter`
 /// itself can stay decoupled from the CLI surface and be unit-testable.
-pub struct FilterInputs {
-    pub categories: Vec<Category>,
-    pub type_: Option<EntryType>,
-    pub min_size: Option<String>,
-    pub names: Vec<String>,
-    pub changed_within: Option<String>,
-    pub changed_before: Option<String>,
+pub(crate) struct FilterInputs {
+    pub(crate) categories: Vec<Category>,
+    pub(crate) type_: Option<EntryType>,
+    pub(crate) min_size: Option<String>,
+    pub(crate) names: Vec<String>,
+    pub(crate) changed_within: Option<String>,
+    pub(crate) changed_before: Option<String>,
 }
 
 impl Filter {
-    pub fn from_inputs(inputs: FilterInputs) -> Result<Self> {
+    pub(crate) fn from_inputs(inputs: FilterInputs) -> Result<Self> {
         let categories: HashSet<Category> = inputs.categories.into_iter().collect();
 
         let names = if inputs.names.is_empty() {
@@ -145,7 +145,7 @@ impl Filter {
 
     /// `true` when no filter has been set — renderers can fast-path
     /// skip the per-entry match call.
-    pub fn is_empty(&self) -> bool {
+    pub(crate) fn is_empty(&self) -> bool {
         self.categories.is_empty()
             && self.type_.is_none()
             && self.min_size.is_none()
@@ -155,7 +155,7 @@ impl Filter {
     }
 
     /// Test a single entry against every active sub-filter (AND).
-    pub fn matches(&self, entry: &Entry) -> bool {
+    pub(crate) fn matches(&self, entry: &Entry) -> bool {
         if !self.categories.is_empty() && !self.categories.contains(&entry.category) {
             return false;
         }

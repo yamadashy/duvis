@@ -19,9 +19,9 @@ use super::Filter;
 /// `subtree_has_match[entry] = self.matches(entry) ∨ ∃ child : subtree_has_match[child]`.
 /// Used by tree / json renderers so they can skip subtrees with no
 /// matching descendants in O(1) per entry.
-pub type SubtreeMatch = HashMap<*const Entry, bool>;
+pub(crate) type SubtreeMatch = HashMap<*const Entry, bool>;
 
-pub fn precompute_subtree_match(entry: &Entry, filter: &Filter) -> SubtreeMatch {
+pub(crate) fn precompute_subtree_match(entry: &Entry, filter: &Filter) -> SubtreeMatch {
     let mut map: SubtreeMatch = HashMap::new();
     walk_match(entry, filter, &mut map);
     map
@@ -50,7 +50,7 @@ fn walk_match(entry: &Entry, filter: &Filter, map: &mut SubtreeMatch) -> bool {
 /// responsible for emitting the scan-root header / `meta` block
 /// regardless of this value, so an "empty match" scan still produces a
 /// coherent (zero-result) document.
-pub fn subtree_visible(entry: &Entry, map: &SubtreeMatch) -> bool {
+pub(crate) fn subtree_visible(entry: &Entry, map: &SubtreeMatch) -> bool {
     map.get(&(entry as *const Entry)).copied().unwrap_or(false)
 }
 

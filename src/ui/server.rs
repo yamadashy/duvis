@@ -21,7 +21,7 @@ use super::assets::HTML_TEMPLATE;
 use super::reveal::reveal;
 use super::state::{start_scan, AppState, Inner, STALE_DAYS};
 
-pub async fn serve(
+pub(crate) async fn serve(
     scan_root: PathBuf,
     port: u16,
     sort: SortOrder,

@@ -11,15 +11,20 @@
 //! `Serialize` / `Deserialize` derives (and equivalent impls) are
 //! confined to files under this module — CI enforces it.
 
-pub mod category;
-pub mod explain;
-pub mod largest;
-pub mod tree;
+// Submodules are `pub(crate)` (not `pub`) because the parent `wire`
+// module is itself private from the crate root — these DTOs are an
+// internal serialization detail, not part of the library's public API.
+// Renderers / ui / cli access them by path, which is why they're not
+// `mod`.
+pub(crate) mod category;
+pub(crate) mod explain;
+pub(crate) mod largest;
+pub(crate) mod tree;
 
 // Only consumed by the `ui` feature today (UI server's /data.json tree
 // payload and /reveal request). Gated so the no-default-features build
 // stays warning-clean.
 #[cfg(feature = "ui")]
-pub mod entry;
+pub(crate) mod entry;
 #[cfg(feature = "ui")]
-pub mod ui;
+pub(crate) mod ui;

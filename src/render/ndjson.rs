@@ -102,7 +102,7 @@ fn write_entry(
     Ok(())
 }
 
-pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Result<()> {
+pub(crate) fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Result<()> {
     write_meta(out, config)?;
     let counts = precompute_subtree_counts(entry);
     let visible_map = if config.filter.is_empty() {

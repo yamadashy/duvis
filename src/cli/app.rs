@@ -18,7 +18,7 @@ use super::plan::{RunPlan, ScanPlan};
 /// Dispatch the parsed plan. Each variant handler owns its own IO
 /// (stdout lock, async runtime, etc.) so the dispatcher stays a single
 /// match.
-pub fn run(plan: RunPlan) -> Result<()> {
+pub(super) fn run(plan: RunPlan) -> Result<()> {
     match plan {
         RunPlan::ExplainCategory { name, json } => run_explain(&name, json),
         #[cfg(feature = "ui")]

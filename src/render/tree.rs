@@ -6,7 +6,7 @@ use crate::classify::Category;
 use crate::entry::Entry;
 use crate::filter::{precompute_subtree_match, subtree_visible, SubtreeMatch};
 
-pub fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
+pub(crate) fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> io::Result<()> {
     writeln!(out, "{} ({})", entry.name, format_size(entry.size))?;
 
     // `None` when no filter is active so the "not applicable" case is
