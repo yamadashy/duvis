@@ -1,7 +1,7 @@
 import { Fragment, type MouseEvent } from "react";
-import { CATEGORIES, type CategoryMeta, categoryVar } from "../lib/categories";
-import { humanSize, pct } from "../lib/format";
-import type { Category } from "../lib/types";
+import { CATEGORIES, type CategoryMeta, categoryVar } from "../data/categories";
+import { humanSize, pct } from "../data/format";
+import type { Category } from "../data/types";
 import "./Legend.css";
 
 interface LegendProps {

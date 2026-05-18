@@ -1,11 +1,11 @@
 import { hierarchy, type HierarchyRectangularNode, partition } from "d3-hierarchy";
 import { arc as d3arc } from "d3-shape";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
-import { humanSize } from "../lib/format";
-import type { TreeNode } from "../lib/treemap";
-import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../lib/treemap";
-import type { Category, Entry } from "../lib/types";
+import { categoryVar, LIGHT_FILL_CATEGORIES } from "../data/categories";
+import { humanSize } from "../data/format";
+import type { TreeNode } from "../data/hierarchy";
+import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../data/search";
+import type { Category, Entry } from "../data/types";
 import "./Sunburst.css";
 
 interface SunburstProps {

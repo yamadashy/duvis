@@ -1,15 +1,10 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { categoryVar, LIGHT_FILL_CATEGORIES } from "../lib/categories";
-import { humanSize } from "../lib/format";
-import {
-  isActive,
-  layoutTreemap,
-  nameMatchesSearch,
-  normalizeSearchQuery,
-  PARENT_HEADER_MIN_HEIGHT_PX,
-  type TreeNode,
-} from "../lib/treemap";
-import type { Category, Entry } from "../lib/types";
+import { categoryVar, LIGHT_FILL_CATEGORIES } from "../data/categories";
+import { humanSize } from "../data/format";
+import type { TreeNode } from "../data/hierarchy";
+import { isActive, nameMatchesSearch, normalizeSearchQuery } from "../data/search";
+import { layoutTreemap, PARENT_HEADER_MIN_HEIGHT_PX } from "../data/treemapLayout";
+import type { Category, Entry } from "../data/types";
 import "./Treemap.css";
 
 interface TreemapProps {

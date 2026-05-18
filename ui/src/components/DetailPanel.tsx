@@ -1,8 +1,8 @@
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { categoryMeta, categoryVar } from "../lib/categories";
-import { humanSize, pct, relTime } from "../lib/format";
-import type { TreeNode } from "../lib/treemap";
+import { categoryMeta, categoryVar } from "../data/categories";
+import { humanSize, pct, relTime } from "../data/format";
+import type { TreeNode } from "../data/hierarchy";
 import "./DetailPanel.css";
 
 interface DetailPanelProps {

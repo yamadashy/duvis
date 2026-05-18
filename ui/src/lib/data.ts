@@ -1,4 +1,4 @@
-import type { Entry } from "./types";
+import type { Entry } from "../data/types";
 
 /** Server-derived constants shipped to the UI at boot. */
 export interface ScanMeta {

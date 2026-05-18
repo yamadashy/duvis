@@ -1,5 +1,5 @@
-import { humanSize, pct } from "../lib/format";
-import type { CategoryAggregates } from "../lib/treemap";
+import { humanSize, pct } from "../data/format";
+import type { CategoryAggregates } from "../data/hierarchy";
 import "./StatsRow.css";
 
 interface StatsRowProps {

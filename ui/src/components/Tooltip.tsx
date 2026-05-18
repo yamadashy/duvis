@@ -1,7 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
-import { categoryMeta, categoryVar } from "../lib/categories";
-import { humanSize, pct, relTime } from "../lib/format";
-import type { TreeNode } from "../lib/treemap";
+import { categoryMeta, categoryVar } from "../data/categories";
+import { humanSize, pct, relTime } from "../data/format";
+import type { TreeNode } from "../data/hierarchy";
 import "./Tooltip.css";
 
 interface TooltipProps {

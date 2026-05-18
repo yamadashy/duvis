@@ -13,8 +13,8 @@ import { Treemap } from "./components/Treemap";
 import { ViewTabs } from "./components/ViewTabs";
 import { ResizeHandle } from "./components/ResizeHandle";
 import { fetchScan, requestRescan, type ScanInfo, type ScanMeta } from "./lib/data";
-import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./lib/treemap";
-import type { Category, Entry } from "./lib/types";
+import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./data/hierarchy";
+import type { Category, Entry } from "./data/types";
 import { useAppState } from "./state/appState";
 import {
   clampColumn,

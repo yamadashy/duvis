@@ -1,4 +1,4 @@
-import { humanSize } from "../lib/format";
+import { humanSize } from "../data/format";
 import "./Topbar.css";
 
 interface TopbarProps {

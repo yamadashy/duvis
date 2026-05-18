@@ -1,9 +1,9 @@
 import { useMemo } from "react";
-import { categoryMeta, categoryVar } from "../lib/categories";
-import { humanSize, pct, relTime } from "../lib/format";
-import type { TreeNode } from "../lib/treemap";
-import { isActive, nameMatchesSearch, normalizeSearchQuery } from "../lib/treemap";
-import type { Category, SortMode } from "../lib/types";
+import { categoryMeta, categoryVar } from "../data/categories";
+import { humanSize, pct, relTime } from "../data/format";
+import type { TreeNode } from "../data/hierarchy";
+import { isActive, nameMatchesSearch, normalizeSearchQuery } from "../data/search";
+import type { Category, SortMode } from "../data/types";
 import "./ListView.css";
 
 interface ListViewProps {

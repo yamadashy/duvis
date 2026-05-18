@@ -1,6 +1,6 @@
 import { useReducer } from "react";
-import { ALL_CATEGORIES } from "../lib/categories";
-import type { Category, Entry, SortMode, ViewMode } from "../lib/types";
+import { ALL_CATEGORIES } from "../data/categories";
+import type { Category, Entry, SortMode, ViewMode } from "../data/types";
 import { loadStoredTheme, type Theme } from "./theme";
 
 export const MIN_DEPTH = 1;
