@@ -1,20 +1,17 @@
-import type React from "react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { DetailPanel } from "./panels/DetailPanel/DetailPanel";
-import { Legend } from "./components/Legend";
-import { ListView } from "./components/ListView";
-import { ErrorView, ScanningView } from "./components/ScanningView";
-import { Sidebar, SidebarSection } from "./components/Sidebar";
-import { StatsRow } from "./components/StatsRow";
-import { Sunburst } from "./components/Sunburst";
-import { Tooltip } from "./components/Tooltip";
-import { Topbar } from "./components/Topbar";
-import { Treemap } from "./components/Treemap";
-import { ViewTabs } from "./components/ViewTabs";
-import { ResizeHandle } from "./components/ResizeHandle";
-import { fetchScan, requestRescan, type ScanInfo, type ScanMeta } from "./api/scan";
+import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import type { ScanMeta } from "./api/scan";
 import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./data/hierarchy";
 import type { Category, Entry } from "./data/types";
+import { useDrillOutKey } from "./hooks/useDrillOutKey";
+import { useScanPolling } from "./hooks/useScanPolling";
+import { DetailPanel } from "./panels/DetailPanel/DetailPanel";
+import { Legend } from "./panels/Legend";
+import { StatsRow } from "./panels/StatsRow";
+import { Tooltip } from "./panels/Tooltip";
+import { ErrorView, ScanningView } from "./shell/ScanningView";
+import { ResizeHandle } from "./shell/ResizeHandle";
+import { Sidebar, SidebarSection } from "./shell/Sidebar";
+import { Topbar } from "./shell/Topbar";
 import { useAppState } from "./state/appState";
 import {
   clampColumn,
@@ -23,63 +20,16 @@ import {
   persistColumnWidths,
 } from "./state/columnWidths";
 import { persistTheme } from "./state/theme";
+import { ListView } from "./views/ListView";
+import { Sunburst } from "./views/Sunburst";
+import { Treemap } from "./views/Treemap/Treemap";
+import { ViewTabs } from "./views/ViewTabs";
 
 const TREEMAP_PADDING = 0.1;
 const TREEMAP_RADIUS = 1;
 
-const POLL_INTERVAL_MS = 500;
-
 export function App() {
-  const [scan, setScan] = useState<ScanInfo>({
-    status: "scanning",
-    elapsed_ms: 0,
-    items_scanned: 0,
-    scan_root: "",
-  });
-  // Bumping this restarts the polling effect, used right after a manual rescan.
-  const [pollEpoch, setPollEpoch] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    let timeoutId: number | undefined;
-
-    async function tick() {
-      try {
-        const info = await fetchScan();
-        if (cancelled) return;
-        setScan(info);
-        if (info.status === "scanning") {
-          timeoutId = window.setTimeout(tick, POLL_INTERVAL_MS);
-        }
-      } catch (err) {
-        if (cancelled) return;
-        setScan({
-          status: "error",
-          message: err instanceof Error ? err.message : String(err),
-          scan_root: "",
-        });
-      }
-    }
-
-    tick();
-    return () => {
-      cancelled = true;
-      if (timeoutId) clearTimeout(timeoutId);
-    };
-  }, [pollEpoch]);
-
-  function rescan() {
-    requestRescan().catch(() => {
-      // The next poll will surface any error.
-    });
-    setScan((prev) => ({
-      status: "scanning",
-      elapsed_ms: 0,
-      items_scanned: 0,
-      scan_root: prev.scan_root,
-    }));
-    setPollEpoch((n) => n + 1);
-  }
+  const { scan, rescan } = useScanPolling();
 
   if (scan.status === "scanning") {
     return (
@@ -173,17 +123,10 @@ function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
 
   const detailNode = selectedNode ?? root;
 
-  // Drill out via Esc / Backspace.
-  useEffect(() => {
-    function onKey(e: KeyboardEvent) {
-      if ((e.target as HTMLElement | null)?.tagName === "INPUT") return;
-      if ((e.key === "Escape" || e.key === "Backspace") && state.rootPath.length > 0) {
-        dispatch({ type: "navigateTo", path: state.rootPath.slice(0, -1) });
-      }
-    }
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+  const drillOut = useCallback(() => {
+    dispatch({ type: "navigateTo", path: state.rootPath.slice(0, -1) });
   }, [dispatch, state.rootPath]);
+  useDrillOutKey(state.rootPath, drillOut);
 
   function handleSelect(node: TreeNode) {
     const path = node.ancestors().reverse().map((n) => n.data.name);
@@ -217,7 +160,7 @@ function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
           {
             "--left-col": `${columns.left}px`,
             "--right-col": `${columns.right}px`,
-          } as React.CSSProperties
+          } as CSSProperties
         }
       >
         <DetailPanel
@@ -264,7 +207,7 @@ function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
               maxDepth={state.depthByView.sunburst}
               onSelect={handleSelect}
               onDrillIn={handleDrillIn}
-              onUp={() => dispatch({ type: "navigateTo", path: state.rootPath.slice(0, -1) })}
+              onUp={drillOut}
               onHover={(node, cursor) => setHover({ node, cursor })}
             />
           ) : (
