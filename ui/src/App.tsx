@@ -1,6 +1,6 @@
 import type React from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { DetailPanel } from "./components/DetailPanel";
+import { DetailPanel } from "./panels/DetailPanel/DetailPanel";
 import { Legend } from "./components/Legend";
 import { ListView } from "./components/ListView";
 import { ErrorView, ScanningView } from "./components/ScanningView";
