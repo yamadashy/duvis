@@ -12,7 +12,7 @@ import { Topbar } from "./components/Topbar";
 import { Treemap } from "./components/Treemap";
 import { ViewTabs } from "./components/ViewTabs";
 import { ResizeHandle } from "./components/ResizeHandle";
-import { fetchScan, requestRescan, type ScanInfo, type ScanMeta } from "./lib/data";
+import { fetchScan, requestRescan, type ScanInfo, type ScanMeta } from "./api/scan";
 import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./data/hierarchy";
 import type { Category, Entry } from "./data/types";
 import { useAppState } from "./state/appState";

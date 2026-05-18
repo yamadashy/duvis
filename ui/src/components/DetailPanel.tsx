@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode, useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { revealInFolder } from "../api/reveal";
 import { categoryMeta, categoryVar } from "../data/categories";
 import { humanSize, pct, relTime } from "../data/format";
 import type { TreeNode } from "../data/hierarchy";
@@ -395,19 +396,9 @@ function RevealButton({ segments }: { segments: readonly string[] }) {
   async function reveal() {
     setState("idle");
     try {
-      const res = await fetch("/reveal", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ segments }),
-      });
-      if (res.ok) {
-        setState("ok");
-        setTimeout(() => setState("idle"), 1500);
-      } else {
-        setState("error");
-        console.error("reveal failed:", res.status, await res.text());
-        setTimeout(() => setState("idle"), 2500);
-      }
+      await revealInFolder(segments);
+      setState("ok");
+      setTimeout(() => setState("idle"), 1500);
     } catch (err) {
       setState("error");
       console.error("reveal request failed:", err);
