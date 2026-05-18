@@ -2,7 +2,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
 import { ErrorBoundary } from "./components/ErrorBoundary";
-import { loadStoredTheme } from "./state";
+import { loadStoredTheme } from "./state/theme";
 import "./styles/tokens.css";
 import "./styles/globals.css";
 

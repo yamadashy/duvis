@@ -1,67 +1,7 @@
 import { useReducer } from "react";
-import { ALL_CATEGORIES } from "./lib/categories";
-import type { Category, Entry, SortMode, ViewMode } from "./lib/types";
-
-export type Theme = "dark" | "light";
-
-const THEME_STORAGE_KEY = "duvis.theme";
-
-export function loadStoredTheme(): Theme {
-  try {
-    const v = localStorage.getItem(THEME_STORAGE_KEY);
-    if (v === "dark" || v === "light") return v;
-  } catch {
-    // ignore (private mode etc.)
-  }
-  return "light";
-}
-
-export function persistTheme(theme: Theme): void {
-  try {
-    localStorage.setItem(THEME_STORAGE_KEY, theme);
-  } catch {
-    // ignore
-  }
-}
-
-const COLUMN_WIDTHS_STORAGE_KEY = "duvis.columnWidths";
-
-export interface ColumnWidths {
-  left: number;
-  right: number;
-}
-
-export const COLUMN_DEFAULTS: ColumnWidths = { left: 304, right: 232 };
-export const COLUMN_MIN = 180;
-export const COLUMN_MAX = 640;
-
-export function loadStoredColumnWidths(): ColumnWidths {
-  try {
-    const v = localStorage.getItem(COLUMN_WIDTHS_STORAGE_KEY);
-    if (v) {
-      const parsed = JSON.parse(v) as Partial<ColumnWidths>;
-      return {
-        left: clampColumn(parsed.left ?? COLUMN_DEFAULTS.left),
-        right: clampColumn(parsed.right ?? COLUMN_DEFAULTS.right),
-      };
-    }
-  } catch {
-    // ignore
-  }
-  return { ...COLUMN_DEFAULTS };
-}
-
-export function persistColumnWidths(w: ColumnWidths): void {
-  try {
-    localStorage.setItem(COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(w));
-  } catch {
-    // ignore
-  }
-}
-
-export function clampColumn(n: number): number {
-  return Math.max(COLUMN_MIN, Math.min(COLUMN_MAX, Math.round(n)));
-}
+import { ALL_CATEGORIES } from "../lib/categories";
+import type { Category, Entry, SortMode, ViewMode } from "../lib/types";
+import { loadStoredTheme, type Theme } from "./theme";
 
 export const MIN_DEPTH = 1;
 // Each view has its own ceiling. Deep treemap is now safe — layoutTreemap

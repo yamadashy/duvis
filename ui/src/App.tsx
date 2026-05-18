@@ -15,14 +15,14 @@ import { ResizeHandle } from "./components/ResizeHandle";
 import { fetchScan, requestRescan, type ScanInfo, type ScanMeta } from "./lib/data";
 import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./lib/treemap";
 import type { Category, Entry } from "./lib/types";
+import { useAppState } from "./state/appState";
 import {
   clampColumn,
   type ColumnWidths,
   loadStoredColumnWidths,
   persistColumnWidths,
-  persistTheme,
-  useAppState,
-} from "./state";
+} from "./state/columnWidths";
+import { persistTheme } from "./state/theme";
 
 const TREEMAP_PADDING = 0.1;
 const TREEMAP_RADIUS = 1;

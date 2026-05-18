@@ -1,5 +1,5 @@
 import type { ViewMode } from "../lib/types";
-import { MAX_DEPTH_BY_VIEW, MIN_DEPTH } from "../state";
+import { MAX_DEPTH_BY_VIEW, MIN_DEPTH } from "../state/appState";
 import "./ViewTabs.css";
 
 interface ViewTabsProps {
