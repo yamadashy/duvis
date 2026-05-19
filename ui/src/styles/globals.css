@@ -67,6 +67,16 @@ button:focus-visible,
   flex-direction: column;
   min-height: 0;
 }
+/* Shared by Treemap, Sunburst, ListView — the visualization area inside
+   .stats-wrap. CSS Modules can't share local classes across modules, so
+   this kept-global className lives here. */
+.view-wrap {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--bg);
+}
 
 /* Column drag handle — sits between the panes. */
 .resize-handle {
@@ -88,21 +98,119 @@ button:focus-visible,
   right: -2px;
 }
 
-/* ---- scrollbars ---- */
-.sidebar::-webkit-scrollbar,
-.detail::-webkit-scrollbar {
-  width: 6px;
+/* Shared button widget used by DetailPanel actions, the
+   ScanningView's "Try again" button, and HintWrap children. Kept
+   global so all three callers can use a plain `className="btn"`
+   without needing a shared CSS Module. */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: var(--r-2);
+  font-size: 12px;
+  border: 1px solid var(--line-2);
+  background: var(--bg-2);
+  color: var(--fg);
+  white-space: nowrap;
+  min-width: 0;
+  transition: all 0.12s var(--ease);
 }
-.sidebar::-webkit-scrollbar-track,
-.detail::-webkit-scrollbar-track {
-  background: transparent;
-}
-.sidebar::-webkit-scrollbar-thumb,
-.detail::-webkit-scrollbar-thumb {
+.btn:hover:not(:disabled) {
   background: var(--bg-3);
+  border-color: var(--line-strong);
+}
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.btn.primary {
+  background: var(--accent);
+  color: var(--accent-fg);
+  border-color: var(--accent);
+}
+.btn.primary:hover {
+  filter: brightness(1.1);
+}
+.btn svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* Hover hint for the disabled "Move to trash" button and similar.
+   Rendered via a portal at document.body and positioned with
+   `position: fixed` from the wrapper's bounding rect, so it can't be
+   clipped by panel overflow and isn't trapped behind any treemap
+   stacking context. */
+.hint-wrap {
+  /* `display: flex` (not inline-flex) so the wrapper stretches to fill
+     the grid cell — otherwise the disabled trash button ends up
+     narrower than its peers. The inner button stretches via `flex: 1`. */
+  display: flex;
+}
+.hint-wrap > .btn {
+  flex: 1;
+}
+.hint-tip {
+  position: fixed;
+  /* `left`/`top` come from inline style (button center, button top).
+     The transform anchors the tip's bottom-center on that point so it
+     floats just above the button. */
+  transform: translate(-50%, -100%);
+  z-index: 9999;
+  width: 260px;
+  padding: 10px 12px;
+  background: var(--bg-1);
+  border: 1px solid var(--line-2);
+  border-radius: var(--r-3);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--fg-dim);
+  text-align: left;
+  pointer-events: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 0 1px rgba(255, 255, 255, 0.02) inset;
+}
+[data-theme="light"] .hint-tip {
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+.hint-tip strong {
+  color: var(--fg);
+  font-weight: 500;
+}
+.hint-tip code {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  padding: 1px 4px;
   border-radius: 3px;
+  background: var(--bg-2);
+  color: var(--fg);
 }
-.sidebar::-webkit-scrollbar-thumb:hover,
-.detail::-webkit-scrollbar-thumb:hover {
-  background: var(--line-strong);
+.hint-tip-list {
+  list-style: none;
+  margin: 6px 0 4px 0;
+  padding: 0;
 }
+.hint-tip-list li {
+  margin: 3px 0;
+  padding-left: 10px;
+  position: relative;
+}
+.hint-tip-list li::before {
+  content: "•";
+  position: absolute;
+  left: 0;
+  color: var(--fg-faint);
+}
+.hint-tip-foot {
+  display: block;
+  margin-top: 6px;
+  padding-top: 6px;
+  border-top: 1px solid var(--line);
+  color: var(--fg-faint);
+}
+
+/* Scrollbar rules for `.sidebar` and `.detail` moved into the
+   respective CSS Modules (Sidebar.module.css, DetailPanel.module.css)
+   so the hashed local classnames can match the webkit pseudo-element
+   selectors. */

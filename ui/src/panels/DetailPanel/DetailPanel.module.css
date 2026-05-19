@@ -1,0 +1,197 @@
+.detail {
+  border-right: 1px solid var(--line);
+  background: var(--bg-1);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+.detail::-webkit-scrollbar {
+  width: 6px;
+}
+.detail::-webkit-scrollbar-track {
+  background: transparent;
+}
+.detail::-webkit-scrollbar-thumb {
+  background: var(--bg-3);
+  border-radius: 3px;
+}
+.detail::-webkit-scrollbar-thumb:hover {
+  background: var(--line-strong);
+}
+.detail-head {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid var(--line);
+}
+.detail-crumbs {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--fg-dim);
+  margin-bottom: 10px;
+  line-height: 1.4;
+}
+.detail-crumbs-icon {
+  width: 12px;
+  height: 12px;
+  margin-right: 4px;
+  color: var(--fg-faint);
+  flex-shrink: 0;
+}
+.detail-crumb {
+  padding: 2px 5px;
+  margin: -2px -5px;
+  border-radius: 3px;
+  cursor: pointer;
+  background: none;
+  border: 0;
+  font: inherit;
+  color: inherit;
+  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+  word-break: break-all;
+}
+.detail-crumb:hover {
+  background: var(--bg-2);
+  color: var(--fg);
+}
+.detail-crumb.last {
+  color: var(--fg);
+  cursor: default;
+}
+.detail-crumb-sep {
+  color: var(--fg-faint);
+  user-select: none;
+  padding: 0 1px;
+}
+.detail-size {
+  font-family: var(--font-mono);
+  font-size: 28px;
+  font-weight: 500;
+  letter-spacing: -0.02em;
+  color: var(--fg);
+  line-height: 1.1;
+}
+.detail-size-pct {
+  font-size: 12px;
+  color: var(--fg-mute);
+  margin-left: 6px;
+}
+.detail-cat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 8px;
+}
+.detail-cat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 8px;
+  background: var(--bg-2);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg);
+  text-transform: capitalize;
+}
+.detail-cat-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+}
+.detail-section {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--line);
+}
+.detail-section:last-child {
+  border-bottom: 0;
+}
+.detail-section-title {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--fg-dim);
+  margin-bottom: 10px;
+}
+.detail-meta {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 12px;
+  font-size: 12px;
+}
+.detail-meta-key {
+  color: var(--fg-mute);
+}
+.detail-meta-val {
+  font-family: var(--font-mono);
+  color: var(--fg);
+  font-variant-numeric: tabular-nums;
+}
+
+.detail-children {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.detail-child {
+  display: grid;
+  grid-template-columns: 8px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  margin: 0 -8px;
+  border-radius: var(--r-2);
+  cursor: pointer;
+  background: none;
+  border: 0;
+  text-align: left;
+  font-family: inherit;
+  color: inherit;
+  transition: background 0.12s var(--ease);
+}
+.detail-child:hover {
+  background: var(--bg-2);
+}
+.detail-child-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 2px;
+}
+.detail-child-name {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--fg);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.detail-child-name svg {
+  width: 10px;
+  height: 10px;
+  color: var(--fg-dim);
+  flex-shrink: 0;
+}
+.detail-child-size {
+  font-size: 11px;
+  color: var(--fg-mute);
+}
+
+/* Two-up grid: the detail panel is narrow, so a single-row flex of 4
+   buttons would either overflow or wrap each label onto multiple lines.
+   2 columns keep the labels readable at the default left-column width. */
+.action-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+/* .btn, .hint-wrap, .hint-tip moved to styles/globals.css — they're
+   used by DetailPanel actions, ScanningView (Try again), and HintWrap
+   (portal tooltip), and CSS Modules would otherwise force a separate
+   module per consumer. */
