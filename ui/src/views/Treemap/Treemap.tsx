@@ -48,13 +48,16 @@ export function Treemap(props: TreemapProps) {
     return () => ro.disconnect();
   }, []);
 
-  let parents: TreeNode[] = [];
-  let leaves: TreeNode[] = [];
-  if (size && size.w > 0 && size.h > 0) {
-    const out = layoutTreemap(root, size.w, size.h, PAD_TOP, treemapPadding, maxDepth);
-    parents = out.parents;
-    leaves = out.leaves;
-  }
+  // Memoize the layout pass: hover and selection changes re-render the
+  // <Treemap> but they don't change any of the layout inputs, so without
+  // this cache every cell hover would force the full d3 treemap squarify
+  // pass over the whole tree.
+  const { parents, leaves } = useMemo(() => {
+    if (!size || size.w <= 0 || size.h <= 0) {
+      return { parents: [] as TreeNode[], leaves: [] as TreeNode[] };
+    }
+    return layoutTreemap(root, size.w, size.h, PAD_TOP, treemapPadding, maxDepth);
+  }, [root, size, treemapPadding, maxDepth]);
 
   // Normalize the query once per render rather than per-cell. Treemap
   // can render thousands of leaves; the previous helper toLowerCase'd

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { revealInFolder } from "../../api/reveal";
 import type { TreeNode } from "../../data/hierarchy";
 import styles from "./DetailPanel.module.css";
@@ -124,17 +124,43 @@ function CopyJsonButton({
 
 function RevealButton({ segments }: { segments: readonly string[] }) {
   const [state, setState] = useState<"idle" | "ok" | "error">("idle");
+  // Hold the pending revert-to-idle timer so we can cancel it both on
+  // unmount and on rapid successive clicks. Without this the user could
+  // see the label snap back to "idle" mid-flash after a second reveal,
+  // and an outstanding timer could try to setState on an unmounted
+  // component (React warning) when the panel switches selections.
+  const timerRef = useRef<number | null>(null);
+
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) {
+        window.clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    },
+    [],
+  );
 
   async function reveal() {
+    if (timerRef.current !== null) {
+      window.clearTimeout(timerRef.current);
+      timerRef.current = null;
+    }
     setState("idle");
     try {
       await revealInFolder(segments);
       setState("ok");
-      setTimeout(() => setState("idle"), 1500);
+      timerRef.current = window.setTimeout(() => {
+        setState("idle");
+        timerRef.current = null;
+      }, 1500);
     } catch (err) {
       setState("error");
       console.error("reveal request failed:", err);
-      setTimeout(() => setState("idle"), 2500);
+      timerRef.current = window.setTimeout(() => {
+        setState("idle");
+        timerRef.current = null;
+      }, 2500);
     }
   }
 

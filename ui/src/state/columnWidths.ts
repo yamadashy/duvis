@@ -19,14 +19,22 @@ export function loadStoredColumnWidths(): ColumnWidths {
     if (v) {
       const parsed = JSON.parse(v) as Partial<ColumnWidths>;
       return {
-        left: clampColumn(parsed.left ?? COLUMN_DEFAULTS.left),
-        right: clampColumn(parsed.right ?? COLUMN_DEFAULTS.right),
+        left: clampColumn(finiteOrDefault(parsed.left, COLUMN_DEFAULTS.left)),
+        right: clampColumn(finiteOrDefault(parsed.right, COLUMN_DEFAULTS.right)),
       };
     }
   } catch {
     // ignore
   }
   return { ...COLUMN_DEFAULTS };
+}
+
+// Guard against the persisted JSON containing strings, NaN, or other
+// non-finite values (older versions, manual edits, schema drift). Letting
+// those reach `clampColumn` would produce `NaN`, which then bleeds into
+// the CSS variable and collapses the panel column.
+function finiteOrDefault(v: unknown, fallback: number): number {
+  return typeof v === "number" && Number.isFinite(v) ? v : fallback;
 }
 
 export function persistColumnWidths(w: ColumnWidths): void {
