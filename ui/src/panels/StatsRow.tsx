@@ -1,6 +1,6 @@
 import { humanSize, pct } from "../data/format";
 import type { CategoryAggregates } from "../data/hierarchy";
-import "./StatsRow.css";
+import styles from "./StatsRow.module.css";
 
 interface StatsRowProps {
   agg: CategoryAggregates;
@@ -9,25 +9,25 @@ interface StatsRowProps {
 
 export function StatsRow({ agg, itemCount }: StatsRowProps) {
   return (
-    <div className="stats">
-      <div className="stat">
-        <div className="stat-label">Total scanned</div>
-        <div className="stat-value tabular">{humanSize(agg.total)}</div>
-        <div className="stat-sub">
+    <div className={styles.stats}>
+      <div className={styles.stat}>
+        <div className={styles.statLabel}>Total scanned</div>
+        <div className={`${styles.statValue} tabular`}>{humanSize(agg.total)}</div>
+        <div className={styles.statSub}>
           <span className="mono tabular">{itemCount.toLocaleString()}</span> items
         </div>
       </div>
 
-      <div className="stat">
-        <div className="stat-label">Files</div>
-        <div className="stat-value tabular">{agg.fileCount.toLocaleString()}</div>
-        <div className="stat-sub">leaf entries</div>
+      <div className={styles.stat}>
+        <div className={styles.statLabel}>Files</div>
+        <div className={`${styles.statValue} tabular`}>{agg.fileCount.toLocaleString()}</div>
+        <div className={styles.statSub}>leaf entries</div>
       </div>
 
-      <div className="stat">
-        <div className="stat-label">Stale (&gt; 90d)</div>
-        <div className="stat-value tabular">{humanSize(agg.stale)}</div>
-        <div className="stat-sub">
+      <div className={styles.stat}>
+        <div className={styles.statLabel}>Stale (&gt; 90d)</div>
+        <div className={`${styles.statValue} tabular`}>{humanSize(agg.stale)}</div>
+        <div className={styles.statSub}>
           <span className="mono">{pct(agg.stale, agg.total)}</span> untouched
         </div>
       </div>

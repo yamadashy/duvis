@@ -3,7 +3,7 @@ import { humanSize, pct } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import { ActionRow } from "./actions";
 import { Breadcrumbs } from "./Breadcrumbs";
-import "./DetailPanel.css";
+import styles from "./DetailPanel.module.css";
 import { MetadataGrid } from "./MetadataGrid";
 import { TopChildren } from "./TopChildren";
 
@@ -36,17 +36,17 @@ export function DetailPanel(props: DetailPanelProps) {
   const actionSegments = [...rootPath, ...inViewSegments];
 
   return (
-    <aside className="detail" aria-label="Selection details">
-      <div className="detail-head">
+    <aside className={styles.detail} aria-label="Selection details">
+      <div className={styles.detailHead}>
         <Breadcrumbs segments={fullSegments} onNavigateTo={onNavigateTo} />
 
-        <div className="detail-size tabular">
+        <div className={`${styles.detailSize} tabular`}>
           {humanSize(node.value ?? 0)}
-          <span className="detail-size-pct">{pct(node.value ?? 0, total)} of root</span>
+          <span className={styles.detailSizePct}>{pct(node.value ?? 0, total)} of root</span>
         </div>
-        <div className="detail-cat-row">
-          <span className="detail-cat-chip">
-            <span className="detail-cat-chip-dot" style={{ background: categoryVar(cat) }} />
+        <div className={styles.detailCatRow}>
+          <span className={styles.detailCatChip}>
+            <span className={styles.detailCatChipDot} style={{ background: categoryVar(cat) }} />
             {meta.label}
           </span>
         </div>
@@ -56,7 +56,7 @@ export function DetailPanel(props: DetailPanelProps) {
 
       <MetadataGrid node={node} />
 
-      <div className="detail-section">
+      <div className={styles.detailSection}>
         <ActionRow node={node} scanRoot={scanRoot} segments={actionSegments} total={total} />
       </div>
     </aside>

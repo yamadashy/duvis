@@ -1,4 +1,4 @@
-import "./ScanningView.css";
+import styles from "./ScanningView.module.css";
 
 interface ScanningViewProps {
   scanRoot: string;
@@ -10,27 +10,27 @@ export function ScanningView({ scanRoot, elapsedMs, itemsScanned }: ScanningView
   const seconds = Math.floor(elapsedMs / 1000);
   const rate = elapsedMs > 0 ? Math.round((itemsScanned / elapsedMs) * 1000) : 0;
   return (
-    <div className="scanning-view">
-      <div className="scanning-card">
-        <div className="scanning-spinner" aria-hidden="true" />
-        <div className="scanning-title">Scanning…</div>
-        <div className="scanning-path mono">{scanRoot}</div>
-        <div className="scanning-stats mono tabular">
-          <span className="scanning-stat">
-            <span className="scanning-stat-value">{itemsScanned.toLocaleString()}</span>
-            <span className="scanning-stat-label">items</span>
+    <div className={styles.scanningView}>
+      <div className={styles.scanningCard}>
+        <div className={styles.scanningSpinner} aria-hidden="true" />
+        <div className={styles.scanningTitle}>Scanning…</div>
+        <div className={`${styles.scanningPath} mono`}>{scanRoot}</div>
+        <div className={`${styles.scanningStats} mono tabular`}>
+          <span className={styles.scanningStat}>
+            <span className={styles.scanningStatValue}>{itemsScanned.toLocaleString()}</span>
+            <span className={styles.scanningStatLabel}>items</span>
           </span>
-          <span className="scanning-stat-sep" aria-hidden="true" />
-          <span className="scanning-stat">
-            <span className="scanning-stat-value">{seconds}s</span>
-            <span className="scanning-stat-label">elapsed</span>
+          <span className={styles.scanningStatSep} aria-hidden="true" />
+          <span className={styles.scanningStat}>
+            <span className={styles.scanningStatValue}>{seconds}s</span>
+            <span className={styles.scanningStatLabel}>elapsed</span>
           </span>
           {rate > 0 ? (
             <>
-              <span className="scanning-stat-sep" aria-hidden="true" />
-              <span className="scanning-stat">
-                <span className="scanning-stat-value">{rate.toLocaleString()}</span>
-                <span className="scanning-stat-label">items/s</span>
+              <span className={styles.scanningStatSep} aria-hidden="true" />
+              <span className={styles.scanningStat}>
+                <span className={styles.scanningStatValue}>{rate.toLocaleString()}</span>
+                <span className={styles.scanningStatLabel}>items/s</span>
               </span>
             </>
           ) : null}
@@ -48,11 +48,11 @@ interface ErrorViewProps {
 
 export function ErrorView({ scanRoot, message, onRescan }: ErrorViewProps) {
   return (
-    <div className="scanning-view">
-      <div className="scanning-card">
-        <div className="scanning-title scanning-title-error">Scan failed</div>
-        <div className="scanning-path mono">{scanRoot}</div>
-        <div className="scanning-error">{message}</div>
+    <div className={styles.scanningView}>
+      <div className={styles.scanningCard}>
+        <div className={`${styles.scanningTitle} ${styles.scanningTitleError}`}>Scan failed</div>
+        <div className={`${styles.scanningPath} mono`}>{scanRoot}</div>
+        <div className={styles.scanningError}>{message}</div>
         <button type="button" className="btn primary" onClick={onRescan}>
           Try again
         </button>

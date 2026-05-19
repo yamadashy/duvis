@@ -3,6 +3,7 @@ import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import { PARENT_HEADER_MIN_HEIGHT_PX } from "../../data/treemapLayout";
 import { fitParentLabel } from "./label";
+import styles from "./Treemap.module.css";
 
 /** Height of the parent header strip in pixels. Must match what the
  *  layout pass reserves via paddingTop. */
@@ -41,7 +42,7 @@ export function ParentFrame({
   return (
     <g
       transform={`translate(${node.x0},${node.y0})`}
-      className="tm-parent"
+      className={styles.tmParent}
       style={{ cursor: "pointer" }}
       onClick={onSelect}
       onDoubleClick={onDrillIn}
@@ -49,7 +50,7 @@ export function ParentFrame({
       onMouseMove={onHoverMove}
       onMouseLeave={onHoverLeave}
     >
-      <rect className="tm-parent-rect" width={w} height={h} rx={radius} />
+      <rect className={styles.tmParentRect} width={w} height={h} rx={radius} />
       {hasHeader ? (
         <>
           <rect width={w} height={PAD_TOP} fill="var(--bg-2)" opacity={0.4} rx={radius} />
@@ -59,7 +60,7 @@ export function ParentFrame({
         </>
       ) : null}
       {showLabel ? (
-        <text className="tm-parent-label" x={8} y={12} fill="var(--fg)">
+        <text className={styles.tmParentLabel} x={8} y={12} fill="var(--fg)">
           <tspan>{nameDisplay}</tspan>
           {showSize ? (
             <tspan dx={6} opacity={0.5} fontWeight={400}>

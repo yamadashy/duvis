@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { revealInFolder } from "../../api/reveal";
 import type { TreeNode } from "../../data/hierarchy";
+import styles from "./DetailPanel.module.css";
 import { HintWrap } from "./HintWrap";
 import { buildEntryPayload, joinPath } from "./helpers";
 import { useCopyButton } from "./useCopyButton";
@@ -18,7 +19,7 @@ interface ActionRowProps {
  *    intentionally disabled — duvis is read-only). */
 export function ActionRow({ node, scanRoot, segments, total }: ActionRowProps) {
   return (
-    <div className="action-row">
+    <div className={styles.actionRow}>
       <CopyPathButton scanRoot={scanRoot} segments={segments} />
       <CopyJsonButton node={node} scanRoot={scanRoot} segments={segments} total={total} />
       <RevealButton segments={segments} />

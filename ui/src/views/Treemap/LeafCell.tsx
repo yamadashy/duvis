@@ -3,6 +3,7 @@ import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import type { Category } from "../../data/types";
 import { cn, trim } from "./label";
+import styles from "./Treemap.module.css";
 
 interface LeafProps {
   node: TreeNode;
@@ -44,7 +45,7 @@ export function LeafCell(props: LeafProps) {
   return (
     <g
       transform={`translate(${node.x0},${node.y0})`}
-      className="tm-node"
+      className={styles.tmNode}
       data-dim={dim}
       data-selected={isSelected}
       style={{ cursor: node.children ? "pointer" : "default" }}
@@ -55,7 +56,7 @@ export function LeafCell(props: LeafProps) {
       onMouseLeave={onHoverLeave}
     >
       <rect
-        className="tm-node-rect"
+        className={styles.tmNodeRect}
         width={w}
         height={h}
         rx={radius}
@@ -67,17 +68,21 @@ export function LeafCell(props: LeafProps) {
       ) : null}
       {showName ? (
         <>
-          <text className={cn("tm-label", !lightFill && "light")} x={6} y={14}>
-            <tspan className="tm-label-name">{trim(node.data.name, Math.floor(w / 6.5))}</tspan>
+          <text className={cn(styles.tmLabel, !lightFill && styles.light)} x={6} y={14}>
+            <tspan className={styles.tmLabelName}>{trim(node.data.name, Math.floor(w / 6.5))}</tspan>
           </text>
           {showSize ? (
-            <text className={cn("tm-label tm-label-size", !lightFill && "light")} x={6} y={28}>
+            <text
+              className={cn(styles.tmLabel, styles.tmLabelSize, !lightFill && styles.light)}
+              x={6}
+              y={28}
+            >
               {humanSize(node.value ?? 0)}
             </text>
           ) : null}
         </>
       ) : showSmallName ? (
-        <text className={cn("tm-label", !lightFill && "light")} x={4} y={11} fontSize={10}>
+        <text className={cn(styles.tmLabel, !lightFill && styles.light)} x={4} y={11} fontSize={10}>
           {trim(node.data.name, Math.floor(w / 5.5))}
         </text>
       ) : null}

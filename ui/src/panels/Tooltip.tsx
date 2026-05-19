@@ -2,7 +2,7 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { categoryMeta, categoryVar } from "../data/categories";
 import { humanSize, pct, relTime } from "../data/format";
 import type { TreeNode } from "../data/hierarchy";
-import "./Tooltip.css";
+import styles from "./Tooltip.module.css";
 
 interface TooltipProps {
   node: TreeNode | null;
@@ -56,7 +56,7 @@ export function Tooltip({ node, cursor, total, rootPath, rootName }: TooltipProp
 
   return (
     <div
-      className="tooltip"
+      className={styles.tooltip}
       ref={ref}
       role="tooltip"
       data-show={show}
@@ -64,13 +64,13 @@ export function Tooltip({ node, cursor, total, rootPath, rootName }: TooltipProp
     >
       {node ? (
         <>
-          <div className="tt-head">
-            <span className="tt-cat-dot" style={{ background: categoryVar(cat) }} />
-            <span className="tt-name">{node.data.name}</span>
+          <div className={styles.ttHead}>
+            <span className={styles.ttCatDot} style={{ background: categoryVar(cat) }} />
+            <span className={styles.ttName}>{node.data.name}</span>
           </div>
-          <div className="tt-path">
+          <div className={styles.ttPath}>
             <svg
-              className="tt-path-icon"
+              className={styles.ttPathIcon}
               viewBox="0 0 12 12"
               fill="none"
               stroke="currentColor"
@@ -81,23 +81,23 @@ export function Tooltip({ node, cursor, total, rootPath, rootName }: TooltipProp
             </svg>
             <span>{path}</span>
           </div>
-          <div className="tt-rows">
-            <span className="tt-key">Size</span>
-            <span className="tt-val">{humanSize(node.value ?? 0)}</span>
-            <span className="tt-key">% of root</span>
-            <span className="tt-val">{pct(node.value ?? 0, total)}</span>
-            <span className="tt-key">Category</span>
-            <span className="tt-val cat-name">{meta.label}</span>
-            <span className="tt-key">Modified</span>
-            <span className="tt-val">{relTime(days)}</span>
+          <div className={styles.ttRows}>
+            <span className={styles.ttKey}>Size</span>
+            <span className={styles.ttVal}>{humanSize(node.value ?? 0)}</span>
+            <span className={styles.ttKey}>% of root</span>
+            <span className={styles.ttVal}>{pct(node.value ?? 0, total)}</span>
+            <span className={styles.ttKey}>Category</span>
+            <span className={`${styles.ttVal} ${styles.catName}`}>{meta.label}</span>
+            <span className={styles.ttKey}>Modified</span>
+            <span className={styles.ttVal}>{relTime(days)}</span>
             {hasChildren ? (
               <>
-                <span className="tt-key">Items</span>
-                <span className="tt-val">{node.descendants().length - 1}</span>
+                <span className={styles.ttKey}>Items</span>
+                <span className={styles.ttVal}>{node.descendants().length - 1}</span>
               </>
             ) : null}
           </div>
-          <div className="tt-foot">
+          <div className={styles.ttFoot}>
             <span>{hasChildren ? "double-click to drill in" : "click to inspect"}</span>
           </div>
         </>

@@ -2,7 +2,7 @@ import { Fragment, type MouseEvent } from "react";
 import { CATEGORIES, type CategoryMeta, categoryVar } from "../data/categories";
 import { humanSize, pct } from "../data/format";
 import type { Category } from "../data/types";
-import "./Legend.css";
+import styles from "./Legend.module.css";
 
 interface LegendProps {
   byCategory: Readonly<Record<string, number>>;
@@ -33,20 +33,20 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
       <button
         type="button"
         key={c.key}
-        className="legend-row"
+        className={styles.legendRow}
         data-active={isActive}
         onClick={(e: MouseEvent) => onToggle(c.key, e.shiftKey, visible)}
         title={`${c.label} — ${c.desc}`}
       >
-        <span className="legend-swatch" style={{ background: categoryVar(c.key) }} />
-        <span className="legend-label">{c.label}</span>
-        <span className="legend-size mono tabular">{humanSize(size)}</span>
-        <span className="legend-pct mono" style={{ fontSize: 10, color: "var(--fg-dim)" }}>
+        <span className={styles.legendSwatch} style={{ background: categoryVar(c.key) }} />
+        <span className={styles.legendLabel}>{c.label}</span>
+        <span className={`${styles.legendSize} mono tabular`}>{humanSize(size)}</span>
+        <span className={`${styles.legendPct} mono`} style={{ fontSize: 10, color: "var(--fg-dim)" }}>
           {pct(size, total)}
         </span>
-        <div className="legend-bar">
+        <div className={styles.legendBar}>
           <div
-            className="legend-bar-fill"
+            className={styles.legendBarFill}
             style={{ width: pct(size, total), background: categoryVar(c.key) }}
           />
         </div>
@@ -55,11 +55,11 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
   }
 
   return (
-    <div className="legend">
+    <div className={styles.legend}>
       {core.map(row)}
       {extended.length > 0 ? (
         <Fragment>
-          <div className="legend-divider" aria-hidden="true">
+          <div className={styles.legendDivider} aria-hidden="true">
             Extended categories
           </div>
           {extended.map(row)}

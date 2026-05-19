@@ -1,6 +1,6 @@
 import type { ViewMode } from "../data/types";
 import { MAX_DEPTH_BY_VIEW, MIN_DEPTH } from "../state/appState";
-import "./ViewTabs.css";
+import styles from "./ViewTabs.module.css";
 
 interface ViewTabsProps {
   view: ViewMode;
@@ -53,13 +53,13 @@ export function ViewTabs({ view, itemCount, depth, onChange, onDepthChange }: Vi
   // Depth doesn't apply to the flat list view.
   const showDepth = view !== "list";
   return (
-    <div className="view-tabs-bar">
-      <div className="seg" role="tablist" aria-label="View mode">
+    <div className={styles.viewTabsBar}>
+      <div className={styles.seg} role="tablist" aria-label="View mode">
         {TABS.map((t) => (
           <button
             type="button"
             key={t.value}
-            className="seg-btn"
+            className={styles.segBtn}
             role="tab"
             aria-pressed={view === t.value}
             onClick={() => onChange(t.value)}
@@ -69,10 +69,10 @@ export function ViewTabs({ view, itemCount, depth, onChange, onDepthChange }: Vi
           </button>
         ))}
       </div>
-      <div className="view-tabs-meta">
+      <div className={styles.viewTabsMeta}>
         {showDepth ? (
-          <label className="depth-control" title="Levels of nesting to render">
-            <span className="depth-control-label">depth</span>
+          <label className={styles.depthControl} title="Levels of nesting to render">
+            <span className={styles.depthControlLabel}>depth</span>
             <input
               type="range"
               min={MIN_DEPTH}
@@ -81,7 +81,7 @@ export function ViewTabs({ view, itemCount, depth, onChange, onDepthChange }: Vi
               value={depth}
               onChange={(e) => onDepthChange(Number(e.target.value))}
             />
-            <span className="depth-control-value mono tabular">{depth}</span>
+            <span className={`${styles.depthControlValue} mono tabular`}>{depth}</span>
           </label>
         ) : null}
         <span className="mono tabular">{itemCount.toLocaleString()} items</span>

@@ -6,7 +6,7 @@ import { humanSize } from "../data/format";
 import type { TreeNode } from "../data/hierarchy";
 import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../data/search";
 import type { Category, Entry } from "../data/types";
-import "./Sunburst.css";
+import styles from "./Sunburst.module.css";
 
 interface SunburstProps {
   root: TreeNode;
@@ -70,7 +70,7 @@ export function Sunburst(props: SunburstProps) {
   );
 
   if (!size || size.w === 0 || size.h === 0) {
-    return <div className="treemap-wrap" ref={wrapRef} />;
+    return <div className="view-wrap" ref={wrapRef} />;
   }
 
   const cx = size.w / 2;
@@ -114,8 +114,8 @@ export function Sunburst(props: SunburstProps) {
   }
 
   return (
-    <div className="treemap-wrap" ref={wrapRef}>
-      <svg className="sunburst-svg" viewBox={`0 0 ${size.w} ${size.h}`}>
+    <div className="view-wrap" ref={wrapRef}>
+      <svg className={styles.sunburstSvg} viewBox={`0 0 ${size.w} ${size.h}`}>
         <g transform={`translate(${cx},${cy})`}>
           {visible.map((d, i) => {
             const angleSpan = d.x1 - d.x0;
@@ -153,7 +153,7 @@ export function Sunburst(props: SunburstProps) {
               const dark = LIGHT_FILL_CATEGORIES.has(cat);
               label = (
                 <text
-                  className={`sb-label${dark ? " dark" : ""}`}
+                  className={dark ? `${styles.sbLabel} ${styles.dark}` : styles.sbLabel}
                   transform={`translate(${x},${y}) rotate(${rotateDeg + flip})`}
                   dy="0.35em"
                 >
@@ -165,7 +165,7 @@ export function Sunburst(props: SunburstProps) {
             return (
               <g key={`${i}-${d.data.name}`}>
                 <path
-                  className="sb-arc"
+                  className={styles.sbArc}
                   d={path}
                   fill={categoryVar(cat)}
                   fillOpacity={baseOpacity}
@@ -199,14 +199,14 @@ export function Sunburst(props: SunburstProps) {
             }}
           />
 
-          <text className="sb-center-name" dy="-0.2em">
+          <text className={styles.sbCenterName} dy="-0.2em">
             {trim(root.data.name + (root.data.children ? "/" : ""), 18)}
           </text>
-          <text className="sb-center-size" dy="1.1em">
+          <text className={styles.sbCenterSize} dy="1.1em">
             {humanSize(root.value ?? 0)}
           </text>
           {rootPathLength > 0 ? (
-            <text className="sb-center-hint" dy="2.6em">
+            <text className={styles.sbCenterHint} dy="2.6em">
               ← click to go up
             </text>
           ) : null}

@@ -15,6 +15,14 @@ export default defineConfig({
       "@": path.resolve(__dirname, "src"),
     },
   },
+  css: {
+    modules: {
+      // Expose kebab-case classes as camelCase accessors (`styles.tmParent`
+      // for `.tm-parent`) and only that — keeps a single canonical name
+      // per class in the d.ts.
+      localsConvention: "camelCaseOnly",
+    },
+  },
   build: {
     target: "es2022",
     cssCodeSplit: false,

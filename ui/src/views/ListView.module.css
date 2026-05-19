@@ -43,9 +43,7 @@
 .list-head-cell[data-active="true"] {
   color: var(--fg);
 }
-.list-col-size,
-.list-col-pct,
-.list-col-modified {
+.list-col-right {
   justify-content: flex-end;
 }
 .list-row {

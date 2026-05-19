@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import "./Sidebar.css";
+import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
   children: ReactNode;
@@ -7,7 +7,7 @@ interface SidebarProps {
 
 export function Sidebar({ children }: SidebarProps) {
   return (
-    <aside className="sidebar" aria-label="Filters and sort">
+    <aside className={styles.sidebar} aria-label="Filters and sort">
       {children}
     </aside>
   );
@@ -21,11 +21,11 @@ interface SectionProps {
 
 export function SidebarSection({ title, action, children }: SectionProps) {
   return (
-    <div className="side-section">
-      <div className="side-title">
+    <div className={styles.sideSection}>
+      <div className={styles.sideTitle}>
         <span>{title}</span>
         {action ? (
-          <button type="button" className="side-title-action" onClick={action.onClick}>
+          <button type="button" className={styles.sideTitleAction} onClick={action.onClick}>
             {action.label}
           </button>
         ) : null}

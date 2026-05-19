@@ -1,4 +1,5 @@
 import { Fragment } from "react";
+import styles from "./DetailPanel.module.css";
 
 interface BreadcrumbsProps {
   segments: readonly string[];
@@ -9,9 +10,9 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ segments, onNavigateTo }: BreadcrumbsProps) {
   return (
-    <div className="detail-crumbs" aria-label="Path">
+    <div className={styles.detailCrumbs} aria-label="Path">
       <svg
-        className="detail-crumbs-icon"
+        className={styles.detailCrumbsIcon}
         viewBox="0 0 12 12"
         fill="none"
         stroke="currentColor"
@@ -25,16 +26,16 @@ export function Breadcrumbs({ segments, onNavigateTo }: BreadcrumbsProps) {
         return (
           <Fragment key={`${i}-${name}`}>
             {i > 0 ? (
-              <span className="detail-crumb-sep" aria-hidden="true">
+              <span className={styles.detailCrumbSep} aria-hidden="true">
                 /
               </span>
             ) : null}
             {isLast ? (
-              <span className="detail-crumb last">{name}</span>
+              <span className={`${styles.detailCrumb} ${styles.last}`}>{name}</span>
             ) : (
               <button
                 type="button"
-                className="detail-crumb"
+                className={styles.detailCrumb}
                 onClick={() => onNavigateTo(segments.slice(1, i + 1))}
               >
                 {name}

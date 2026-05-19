@@ -1,6 +1,7 @@
 import { categoryVar } from "../../data/categories";
 import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
+import styles from "./DetailPanel.module.css";
 import { FileIcon } from "./FileIcon";
 
 interface TopChildrenProps {
@@ -17,9 +18,9 @@ export function TopChildren({ node, onSelect, onDrillIn }: TopChildrenProps) {
   if (topChildren.length === 0) return null;
 
   return (
-    <div className="detail-section">
-      <div className="detail-section-title">Top children</div>
-      <div className="detail-children">
+    <div className={styles.detailSection}>
+      <div className={styles.detailSectionTitle}>Top children</div>
+      <div className={styles.detailChildren}>
         {topChildren.map((c, i) => {
           const cat = c.data.category;
           const isDir = !!c.children && c.children.length > 0;
@@ -27,17 +28,17 @@ export function TopChildren({ node, onSelect, onDrillIn }: TopChildrenProps) {
             <button
               type="button"
               key={`${i}-${c.data.name}`}
-              className="detail-child"
+              className={styles.detailChild}
               title={isDir ? "Drill into this folder" : "Inspect file"}
               onClick={() => (isDir ? onDrillIn(c) : onSelect(c))}
             >
-              <span className="detail-child-dot" style={{ background: categoryVar(cat) }} />
-              <span className="detail-child-name">
+              <span className={styles.detailChildDot} style={{ background: categoryVar(cat) }} />
+              <span className={styles.detailChildName}>
                 <FileIcon isDir={isDir} />
                 {c.data.name}
                 {isDir ? "/" : ""}
               </span>
-              <span className="detail-child-size mono tabular">
+              <span className={`${styles.detailChildSize} mono tabular`}>
                 {humanSize(c.value ?? 0)}
               </span>
             </button>

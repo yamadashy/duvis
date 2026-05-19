@@ -1,5 +1,5 @@
 import { humanSize } from "../data/format";
-import "./Topbar.css";
+import styles from "./Topbar.module.css";
 
 interface TopbarProps {
   rootName: string;
@@ -21,9 +21,9 @@ export function Topbar({
   onRescan,
 }: TopbarProps) {
   return (
-    <div className="topbar">
-      <div className="brand">
-        <div className="brand-mark" aria-hidden="true">
+    <div className={styles.topbar}>
+      <div className={styles.brand}>
+        <div className={styles.brandMark} aria-hidden="true">
           <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
             <rect x="2" y="2" width="7" height="7" fill="rgba(255,255,255,.95)" rx="1" />
             <rect x="10" y="2" width="4" height="4" fill="rgba(255,255,255,.7)" rx="1" />
@@ -32,26 +32,26 @@ export function Topbar({
             <rect x="6" y="10" width="8" height="4" fill="rgba(255,255,255,.85)" rx="1" />
           </svg>
         </div>
-        <span className="brand-name">duvis</span>
+        <span className={styles.brandName}>duvis</span>
       </div>
 
-      <div className="topbar-meta">
-        <span className="tm-path" title="Scanned root">
+      <div className={styles.topbarMeta}>
+        <span className={styles.tmPath} title="Scanned root">
           <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M1 5l5-3.5L11 5v5.5a.5.5 0 0 1-.5.5H1.5a.5.5 0 0 1-.5-.5z" />
           </svg>
           {rootName}
         </span>
-        <span className="tm-sep" aria-hidden="true" />
-        <span className="tm-stat">
-          <span className="tm-stat-key">total</span>
+        <span className={styles.tmSep} aria-hidden="true" />
+        <span className={styles.tmStat}>
+          <span className={styles.tmStatKey}>total</span>
           {humanSize(rootSize)}
         </span>
       </div>
 
-      <div className="topbar-search">
+      <div className={styles.topbarSearch}>
         <svg
-          className="topbar-search-icon"
+          className={styles.topbarSearchIcon}
           viewBox="0 0 12 12"
           fill="none"
           stroke="currentColor"
@@ -63,7 +63,7 @@ export function Topbar({
         </svg>
         <input
           type="search"
-          className="topbar-search-input"
+          className={styles.topbarSearchInput}
           placeholder="Search names…"
           value={searchQuery}
           onChange={(e) => onSearchChange(e.target.value)}
@@ -72,7 +72,7 @@ export function Topbar({
         {searchQuery ? (
           <button
             type="button"
-            className="topbar-search-clear"
+            className={styles.topbarSearchClear}
             onClick={() => onSearchChange("")}
             title="Clear search"
             aria-label="Clear search"
@@ -82,10 +82,10 @@ export function Topbar({
         ) : null}
       </div>
 
-      <div className="toolbar">
+      <div className={styles.toolbar}>
         <button
           type="button"
-          className="icon-btn"
+          className={styles.iconBtn}
           onClick={onRescan}
           title="Rescan"
           aria-label="Rescan"
@@ -97,7 +97,7 @@ export function Topbar({
         </button>
         <button
           type="button"
-          className="icon-btn"
+          className={styles.iconBtn}
           onClick={onToggleTheme}
           title={`Switch to ${theme === "dark" ? "light" : "dark"} theme`}
           aria-label="Toggle theme"

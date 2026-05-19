@@ -1,22 +1,23 @@
 import { relTime } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
+import styles from "./DetailPanel.module.css";
 
 export function MetadataGrid({ node }: { node: TreeNode }) {
   const days = node.data.modified_days_ago;
   return (
-    <div className="detail-section">
-      <div className="detail-section-title">Metadata</div>
-      <div className="detail-meta">
-        <span className="detail-meta-key">Type</span>
-        <span className="detail-meta-val">{node.children ? "directory" : "file"}</span>
-        <span className="detail-meta-key">Modified</span>
-        <span className="detail-meta-val">{relTime(days)}</span>
-        <span className="detail-meta-key">Items</span>
-        <span className="detail-meta-val">
+    <div className={styles.detailSection}>
+      <div className={styles.detailSectionTitle}>Metadata</div>
+      <div className={styles.detailMeta}>
+        <span className={styles.detailMetaKey}>Type</span>
+        <span className={styles.detailMetaVal}>{node.children ? "directory" : "file"}</span>
+        <span className={styles.detailMetaKey}>Modified</span>
+        <span className={styles.detailMetaVal}>{relTime(days)}</span>
+        <span className={styles.detailMetaKey}>Items</span>
+        <span className={styles.detailMetaVal}>
           {node.children ? (node.descendants().length - 1).toLocaleString() : "—"}
         </span>
-        <span className="detail-meta-key">Depth from root</span>
-        <span className="detail-meta-val">{node.depth}</span>
+        <span className={styles.detailMetaKey}>Depth from root</span>
+        <span className={styles.detailMetaVal}>{node.depth}</span>
       </div>
     </div>
   );

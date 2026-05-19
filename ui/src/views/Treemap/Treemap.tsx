@@ -6,7 +6,7 @@ import type { Category } from "../../data/types";
 import { LeafCell } from "./LeafCell";
 import { nodesEqual } from "./label";
 import { PAD_TOP, ParentFrame } from "./ParentFrame";
-import "./Treemap.css";
+import styles from "./Treemap.module.css";
 
 interface TreemapProps {
   root: TreeNode;
@@ -62,9 +62,9 @@ export function Treemap(props: TreemapProps) {
   const loweredQuery = useMemo(() => normalizeSearchQuery(searchQuery), [searchQuery]);
 
   return (
-    <div className="treemap-wrap" ref={wrapRef}>
+    <div className="view-wrap" ref={wrapRef}>
       <svg
-        className="treemap-svg"
+        className={styles.treemapSvg}
         viewBox={size ? `0 0 ${size.w} ${size.h}` : undefined}
         preserveAspectRatio="none"
       >
@@ -80,7 +80,7 @@ export function Treemap(props: TreemapProps) {
           </pattern>
         </defs>
 
-        <g className="tm-parents">
+        <g>
           {parents.map((p, i) => (
             <ParentFrame
               key={`p-${i}-${p.data.name}`}
@@ -95,7 +95,7 @@ export function Treemap(props: TreemapProps) {
           ))}
         </g>
 
-        <g className="tm-leaves">
+        <g>
           {leaves.map((n, i) => (
             <LeafCell
               key={`l-${i}-${n.data.name}`}
