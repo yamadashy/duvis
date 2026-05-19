@@ -1,7 +1,7 @@
 import { useReducer } from "react";
 import { ALL_CATEGORIES } from "../data/categories";
 import type { Category, Entry, SortMode, ViewMode } from "../data/types";
-import { loadStoredTheme, type Theme } from "./theme";
+import { type Theme, loadStoredTheme } from "./theme";
 
 export const MIN_DEPTH = 1;
 // Each view has its own ceiling. Deep treemap is now safe — layoutTreemap

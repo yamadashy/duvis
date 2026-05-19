@@ -15,7 +15,14 @@ const TABS: ReadonlyArray<{ value: ViewMode; label: string; icon: JSX.Element }>
     value: "treemap",
     label: "Treemap",
     icon: (
-      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 16 16"
+        width="12"
+        height="12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
         <rect x="1.5" y="1.5" width="9" height="6" />
         <rect x="11" y="1.5" width="3.5" height="3" />
         <rect x="11" y="5" width="3.5" height="2.5" />
@@ -28,7 +35,14 @@ const TABS: ReadonlyArray<{ value: ViewMode; label: string; icon: JSX.Element }>
     value: "sunburst",
     label: "Sunburst",
     icon: (
-      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 16 16"
+        width="12"
+        height="12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
         <circle cx="8" cy="8" r="6.5" />
         <circle cx="8" cy="8" r="3.5" />
         <line x1="8" y1="1.5" x2="8" y2="14.5" />
@@ -40,7 +54,14 @@ const TABS: ReadonlyArray<{ value: ViewMode; label: string; icon: JSX.Element }>
     value: "list",
     label: "List",
     icon: (
-      <svg viewBox="0 0 16 16" width="12" height="12" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 16 16"
+        width="12"
+        height="12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+      >
         <line x1="2" y1="4" x2="14" y2="4" />
         <line x1="2" y1="8" x2="14" y2="8" />
         <line x1="2" y1="12" x2="14" y2="12" />

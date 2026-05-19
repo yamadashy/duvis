@@ -1,6 +1,6 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ScanMeta } from "./api/scan";
-import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./data/hierarchy";
+import { type TreeNode, aggregate, buildHierarchy, nodeAtPath } from "./data/hierarchy";
 import type { Category, Entry } from "./data/types";
 import { useDrillOutKey } from "./hooks/useDrillOutKey";
 import { useScanPolling } from "./hooks/useScanPolling";
@@ -8,14 +8,14 @@ import { DetailPanel } from "./panels/DetailPanel/DetailPanel";
 import { Legend } from "./panels/Legend";
 import { StatsRow } from "./panels/StatsRow";
 import { Tooltip } from "./panels/Tooltip";
-import { ErrorView, ScanningView } from "./shell/ScanningView";
 import { ResizeHandle } from "./shell/ResizeHandle";
+import { ErrorView, ScanningView } from "./shell/ScanningView";
 import { Sidebar, SidebarSection } from "./shell/Sidebar";
 import { Topbar } from "./shell/Topbar";
 import { useAppState } from "./state/appState";
 import {
-  clampColumn,
   type ColumnWidths,
+  clampColumn,
   loadStoredColumnWidths,
   persistColumnWidths,
 } from "./state/columnWidths";
@@ -115,7 +115,10 @@ function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
     const target = state.selectedPath;
     return (
       root.descendants().find((n) => {
-        const path = n.ancestors().reverse().map((a) => a.data.name);
+        const path = n
+          .ancestors()
+          .reverse()
+          .map((a) => a.data.name);
         return path.length === target.length && path.every((p, i) => p === target[i]);
       }) ?? null
     );
@@ -129,14 +132,20 @@ function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
   useDrillOutKey(state.rootPath, drillOut);
 
   function handleSelect(node: TreeNode) {
-    const path = node.ancestors().reverse().map((n) => n.data.name);
+    const path = node
+      .ancestors()
+      .reverse()
+      .map((n) => n.data.name);
     dispatch({ type: "select", path });
   }
 
   function handleDrillIn(node: TreeNode) {
     if (!node.children || node.children.length === 0) return;
     // Path from data root, excluding the synthetic root name.
-    const fullPath = node.ancestors().reverse().map((n) => n.data.name);
+    const fullPath = node
+      .ancestors()
+      .reverse()
+      .map((n) => n.data.name);
     // node.ancestors() top is the current `root` (sliced), so prepend stored rootPath.
     const newRootPath = [...state.rootPath, ...fullPath.slice(1)];
     dispatch({ type: "navigateTo", path: newRootPath });
@@ -237,11 +246,9 @@ function Loaded({ data, meta, scanRoot, onRescan }: LoadedProps) {
               byCategory={agg.byCategory}
               total={agg.total}
               active={state.filterCategories}
-              onToggle={(
-                category: Category,
-                solo: boolean,
-                visible: ReadonlySet<Category>,
-              ) => dispatch({ type: "toggleCategory", category, solo, visible })}
+              onToggle={(category: Category, solo: boolean, visible: ReadonlySet<Category>) =>
+                dispatch({ type: "toggleCategory", category, solo, visible })
+              }
             />
           </SidebarSection>
         </Sidebar>

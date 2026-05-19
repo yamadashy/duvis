@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { fetchScan, requestRescan, type ScanInfo } from "../api/scan";
+import { type ScanInfo, fetchScan, requestRescan } from "../api/scan";
 
 const POLL_INTERVAL_MS = 500;
 

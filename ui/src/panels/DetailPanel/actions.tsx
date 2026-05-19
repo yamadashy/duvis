@@ -39,12 +39,7 @@ function CopyPathButton({
   const fullPath = joinPath(scanRoot, segments);
   const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy path";
   return (
-    <button
-      type="button"
-      className="btn"
-      onClick={() => run(fullPath)}
-      title={`Copy ${fullPath}`}
-    >
+    <button type="button" className="btn" onClick={() => run(fullPath)} title={`Copy ${fullPath}`}>
       <svg
         viewBox="0 0 12 12"
         fill="none"
@@ -104,8 +99,8 @@ function CopyJsonButton({
             ) : null}
           </ul>
           <span className="hint-tip-foot">
-            Mirrors the CLI <code>--json</code> per-entry shape. The subtree
-            (<code>children</code>) is omitted.
+            Mirrors the CLI <code>--json</code> per-entry shape. The subtree (<code>children</code>)
+            is omitted.
           </span>
         </>
       }
@@ -166,9 +161,8 @@ function TrashButton() {
         <>
           <strong>duvis is read-only by design.</strong>
           <br />
-          It visualizes disk usage but never deletes anything. To clean up,
-          move files to the Trash yourself via Finder, Explorer, <code>rm</code>,
-          or a tool like <code>trash</code> CLI.
+          It visualizes disk usage but never deletes anything. To clean up, move files to the Trash
+          yourself via Finder, Explorer, <code>rm</code>, or a tool like <code>trash</code> CLI.
         </>
       }
     >

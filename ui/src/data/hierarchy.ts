@@ -1,4 +1,4 @@
-import { hierarchy, type HierarchyRectangularNode } from "d3-hierarchy";
+import { type HierarchyRectangularNode, hierarchy } from "d3-hierarchy";
 import type { Entry, SortMode } from "./types";
 
 // After treemap layout, nodes carry x0/x1/y0/y1 in addition to size info.

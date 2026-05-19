@@ -34,8 +34,17 @@ const COLUMNS: ReadonlyArray<{
 ];
 
 export function ListView(props: ListViewProps) {
-  const { root, selected, filterCategories, searchQuery, sort, onSelect, onDrillIn, onSort, onHover } =
-    props;
+  const {
+    root,
+    selected,
+    filterCategories,
+    searchQuery,
+    sort,
+    onSelect,
+    onDrillIn,
+    onSort,
+    onHover,
+  } = props;
 
   const total = root.value ?? 0;
   // Normalize the query once per render rather than per-row.
@@ -57,9 +66,10 @@ export function ListView(props: ListViewProps) {
         <div className={styles.listHead}>
           {COLUMNS.map((c) => {
             const active = c.sortAs && c.sortAs === sort;
-            const cls = c.align === "right"
-              ? `${styles.listHeadCell} ${styles.listColRight}`
-              : styles.listHeadCell;
+            const cls =
+              c.align === "right"
+                ? `${styles.listHeadCell} ${styles.listColRight}`
+                : styles.listHeadCell;
             return (
               <button
                 type="button"
@@ -84,7 +94,8 @@ export function ListView(props: ListViewProps) {
           const days = n.data.modified_days_ago ?? 0;
           const isDir = !!n.children && n.children.length > 0;
           const ancestors = n.ancestors().reverse().slice(1, -1);
-          const pathStr = ancestors.length > 0 ? `${ancestors.map((a) => a.data.name).join("/")}/` : "";
+          const pathStr =
+            ancestors.length > 0 ? `${ancestors.map((a) => a.data.name).join("/")}/` : "";
           const widthPct = ((n.value ?? 0) / maxVal) * 100;
 
           return (

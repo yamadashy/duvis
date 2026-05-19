@@ -1,9 +1,9 @@
-import { categoryVar, LIGHT_FILL_CATEGORIES } from "../../data/categories";
+import { LIGHT_FILL_CATEGORIES, categoryVar } from "../../data/categories";
 import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import type { Category } from "../../data/types";
-import { cn, trim } from "./label";
 import styles from "./Treemap.module.css";
+import { cn, trim } from "./label";
 
 interface LeafProps {
   node: TreeNode;
@@ -69,7 +69,9 @@ export function LeafCell(props: LeafProps) {
       {showName ? (
         <>
           <text className={cn(styles.tmLabel, !lightFill && styles.light)} x={6} y={14}>
-            <tspan className={styles.tmLabelName}>{trim(node.data.name, Math.floor(w / 6.5))}</tspan>
+            <tspan className={styles.tmLabelName}>
+              {trim(node.data.name, Math.floor(w / 6.5))}
+            </tspan>
           </text>
           {showSize ? (
             <text

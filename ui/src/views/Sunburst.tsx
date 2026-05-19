@@ -1,7 +1,7 @@
-import { hierarchy, type HierarchyRectangularNode, partition } from "d3-hierarchy";
+import { type HierarchyRectangularNode, hierarchy, partition } from "d3-hierarchy";
 import { arc as d3arc } from "d3-shape";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { categoryVar, LIGHT_FILL_CATEGORIES } from "../data/categories";
+import { LIGHT_FILL_CATEGORIES, categoryVar } from "../data/categories";
 import { humanSize } from "../data/format";
 import type { TreeNode } from "../data/hierarchy";
 import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../data/search";
@@ -20,7 +20,6 @@ interface SunburstProps {
   onUp: () => void;
   onHover: (node: TreeNode | null, evt: { clientX: number; clientY: number } | null) => void;
 }
-
 
 type PartitionNode = HierarchyRectangularNode<Entry>;
 

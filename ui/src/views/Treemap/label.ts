@@ -5,8 +5,14 @@ import type { TreeNode } from "../../data/hierarchy";
  *  React-rendered `selected` reference no longer matches the new layout's
  *  nodes. Compare by name path so the selection ring follows the file. */
 export function nodesEqual(a: TreeNode, b: TreeNode): boolean {
-  const pathA = a.ancestors().map((n) => n.data.name).join("/");
-  const pathB = b.ancestors().map((n) => n.data.name).join("/");
+  const pathA = a
+    .ancestors()
+    .map((n) => n.data.name)
+    .join("/");
+  const pathB = b
+    .ancestors()
+    .map((n) => n.data.name)
+    .join("/");
   return pathA === pathB;
 }
 
@@ -28,12 +34,7 @@ export function trim(s: string, n: number): string {
  *  padding + the dot, then split the budget between name and size text.
  *  Dropping the size text once the name budget would shrink under 4
  *  chars keeps the result legible at small widths. */
-export function fitParentLabel(
-  name: string,
-  size: string,
-  width: number,
-  showDot: boolean,
-) {
+export function fitParentLabel(name: string, size: string, width: number, showDot: boolean) {
   // 8px left padding; 16px reserved on the right for the dot when visible
   // (4px otherwise).
   const reservedRight = showDot ? 16 : 4;

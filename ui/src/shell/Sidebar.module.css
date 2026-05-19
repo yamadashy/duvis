@@ -101,7 +101,5 @@
   border-radius: 50%;
   background: transparent;
   transform: scale(0);
-  transition:
-    transform 0.15s var(--ease),
-    background 0.15s var(--ease);
+  transition: transform 0.15s var(--ease), background 0.15s var(--ease);
 }

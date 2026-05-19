@@ -1,6 +1,6 @@
 import { treemap } from "d3-hierarchy";
-import type { Entry } from "./types";
 import type { TreeNode } from "./hierarchy";
+import type { Entry } from "./types";
 
 export interface LaidOutTree {
   parents: TreeNode[];
@@ -53,9 +53,7 @@ export function layoutTreemap(
   // the depth limit AND has its own children to host. Otherwise it is a leaf
   // cell. Sort parents shallow-first so SVG paint order layers them correctly.
   const parents = visible
-    .filter(
-      (n): n is TreeNode => n.depth < max && !!n.children && n.children.length > 0,
-    )
+    .filter((n): n is TreeNode => n.depth < max && !!n.children && n.children.length > 0)
     .filter(isRenderable)
     .sort((a, b) => a.depth - b.depth);
 

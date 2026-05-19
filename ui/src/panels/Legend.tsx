@@ -17,9 +17,7 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
   // one entry of that category is present, so they don't add noise to a
   // typical project root but pop into view when relevant.
   const core = CATEGORIES.filter((c) => c.tier === "core");
-  const extended = CATEGORIES.filter(
-    (c) => c.tier === "extended" && (byCategory[c.key] ?? 0) > 0,
-  );
+  const extended = CATEGORIES.filter((c) => c.tier === "extended" && (byCategory[c.key] ?? 0) > 0);
   // Hand the reducer the set of categories the user can actually see, so
   // it can detect "every visible category is off" and reset, instead of
   // getting stuck because hidden extended categories are still in the
@@ -41,7 +39,7 @@ export function Legend({ byCategory, total, active, onToggle }: LegendProps) {
         <span className={styles.legendSwatch} style={{ background: categoryVar(c.key) }} />
         <span className={styles.legendLabel}>{c.label}</span>
         <span className={`${styles.legendSize} mono tabular`}>{humanSize(size)}</span>
-        <span className={`${styles.legendPct} mono`} style={{ fontSize: 10, color: "var(--fg-dim)" }}>
+        <span className="mono" style={{ fontSize: 10, color: "var(--fg-dim)" }}>
           {pct(size, total)}
         </span>
         <div className={styles.legendBar}>

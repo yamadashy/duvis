@@ -2,8 +2,8 @@ import { categoryVar } from "../../data/categories";
 import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import { PARENT_HEADER_MIN_HEIGHT_PX } from "../../data/treemapLayout";
-import { fitParentLabel } from "./label";
 import styles from "./Treemap.module.css";
+import { fitParentLabel } from "./label";
 
 /** Height of the parent header strip in pixels. Must match what the
  *  layout pass reserves via paddingTop. */

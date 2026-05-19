@@ -36,13 +36,9 @@ export class ErrorBoundary extends Component<Props, State> {
             overflow: "auto",
           }}
         >
-          <div style={{ color: "#ef4444", fontSize: 14, marginBottom: 12 }}>
-            duvis UI crashed
-          </div>
+          <div style={{ color: "#ef4444", fontSize: 14, marginBottom: 12 }}>duvis UI crashed</div>
           <div style={{ marginBottom: 12 }}>{this.state.error.message}</div>
-          <div style={{ color: "#9aa0ad", fontSize: 11 }}>
-            {this.state.error.stack}
-          </div>
+          <div style={{ color: "#9aa0ad", fontSize: 11 }}>{this.state.error.stack}</div>
           {this.state.info ? (
             <div style={{ color: "#9aa0ad", fontSize: 11, marginTop: 12 }}>
               {this.state.info.componentStack}
