@@ -17,6 +17,14 @@ export function useCopyButton() {
   // Skip the post-await `setState` in that case to avoid React's
   // "update on unmounted component" warning.
   const mountedRef = useRef(true);
+  // Monotonic op counter: each `run()` invocation bumps it and captures
+  // the new value. After `await copyText(...)` returns we check the
+  // captured value against the current ref — if a newer click bumped it
+  // in the meantime, this completion is stale and must not clobber the
+  // newer click's "ok"/"error" label. Clipboard reads/writes are normally
+  // fast (and we already cancel the revert timer on a new click), so the
+  // window is small, but the cost of the guard is trivial.
+  const opRef = useRef(0);
 
   useEffect(
     () => () => {
@@ -34,13 +42,14 @@ export function useCopyButton() {
       window.clearTimeout(timerRef.current);
       timerRef.current = null;
     }
+    const op = ++opRef.current;
     setState("idle");
     const ok = await copyText(text);
-    if (!mountedRef.current) return;
+    if (!mountedRef.current || op !== opRef.current) return;
     setState(ok ? "ok" : "error");
     timerRef.current = window.setTimeout(
       () => {
-        if (!mountedRef.current) return;
+        if (!mountedRef.current || op !== opRef.current) return;
         setState("idle");
         timerRef.current = null;
       },

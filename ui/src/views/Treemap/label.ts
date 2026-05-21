@@ -1,19 +1,22 @@
 import type { TreeNode } from "../../data/hierarchy";
 
+/** Stable identifier for a TreeNode based on its full ancestry path.
+ *  d3-hierarchy rebuilds node references on every re-layout (sort change,
+ *  data slice change), so identity comparisons would remount every cell.
+ *  The ancestry name path is stable across re-layouts. */
+export function nodeKey(node: TreeNode): string {
+  return node
+    .ancestors()
+    .map((n) => n.data.name)
+    .join("/");
+}
+
 /** Treemap cells get keyed by full ancestry path, not object identity:
  *  re-layouts after a sort change rebuild the d3 hierarchy, so the
  *  React-rendered `selected` reference no longer matches the new layout's
  *  nodes. Compare by name path so the selection ring follows the file. */
 export function nodesEqual(a: TreeNode, b: TreeNode): boolean {
-  const pathA = a
-    .ancestors()
-    .map((n) => n.data.name)
-    .join("/");
-  const pathB = b
-    .ancestors()
-    .map((n) => n.data.name)
-    .join("/");
-  return pathA === pathB;
+  return nodeKey(a) === nodeKey(b);
 }
 
 /** Tiny conditional-class joiner (avoids pulling in clsx for one helper). */

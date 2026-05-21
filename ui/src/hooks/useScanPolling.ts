@@ -23,6 +23,11 @@ export function useScanPolling(): UseScanPollingResult {
   // Bumping this restarts the polling effect, used right after a manual rescan.
   const [pollEpoch, setPollEpoch] = useState(0);
 
+  // pollEpoch is an intentional re-run trigger — its value is never read
+  // inside the effect, only its identity change forces React to re-run
+  // and start a fresh tick loop after a manual rescan. Dropping it from
+  // the deps would defeat the rescan flow.
+  // biome-ignore lint/correctness/useExhaustiveDependencies: see above
   useEffect(() => {
     let cancelled = false;
     let timeoutId: number | undefined;

@@ -67,7 +67,10 @@ function CopyJsonButton({
   total: number;
 }) {
   const { state, run } = useCopyButton();
-  const isDir = !!node.children && node.children.length > 0;
+  // Mirror buildEntryPayload's own dir test so the tooltip's "fields
+  // included" list (which lists `child_count` / `file_count` / `dir_count`
+  // only for dirs) matches the actual payload, including for empty dirs.
+  const isDir = node.data.is_dir;
   const text = JSON.stringify(buildEntryPayload(node, scanRoot, segments, total), null, 2);
   const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy JSON";
   return (
@@ -168,7 +171,13 @@ function RevealButton({ segments }: { segments: readonly string[] }) {
 
   return (
     <button type="button" className="btn" onClick={reveal} title="Open in your file manager">
-      <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+      <svg
+        viewBox="0 0 12 12"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.5"
+        aria-hidden="true"
+      >
         <path d="M1.5 3.5a1 1 0 0 1 1-1h2l1 1h4a1 1 0 0 1 1 1V9a1 1 0 0 1-1 1h-7a1 1 0 0 1-1-1z" />
         <path d="M5 6.5l1.5 1.5L9 5.5" />
       </svg>
@@ -193,7 +202,13 @@ function TrashButton() {
       }
     >
       <button type="button" className="btn" disabled aria-disabled="true">
-        <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+        <svg
+          viewBox="0 0 12 12"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          aria-hidden="true"
+        >
           <path d="M2 3.5h8" strokeLinecap="round" />
           <path d="M3 3.5V10a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V3.5" />
           <path d="M5 3.5V2.5a1 1 0 0 1 1-1h0a1 1 0 0 1 1 1v1" />

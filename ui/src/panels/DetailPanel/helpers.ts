@@ -56,7 +56,12 @@ export function buildEntryPayload(
   segments: readonly string[],
   total: number,
 ): Record<string, unknown> {
-  const isDir = !!node.children && node.children.length > 0;
+  // Use the authoritative `is_dir` field straight from the scanner so
+  // empty directories (no children) aren't misclassified as files. The
+  // `node.children` array, populated by d3-hierarchy, is `undefined` for
+  // leaves regardless of whether the source Entry was a file or an empty
+  // directory.
+  const isDir = node.data.is_dir;
   const size = node.value ?? 0;
 
   // Match `precompute_subtree_counts` in src/output/mod.rs: file leaves
@@ -65,9 +70,8 @@ export function buildEntryPayload(
   let fileCount = 0;
   let dirCount = 0;
   node.each((n) => {
-    const nIsLeaf = !n.children || n.children.length === 0;
-    if (nIsLeaf) fileCount += 1;
-    else dirCount += 1;
+    if (n.data.is_dir) dirCount += 1;
+    else fileCount += 1;
   });
 
   const payload: Record<string, unknown> = {
