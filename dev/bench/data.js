@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1778323564859,
+  "lastUpdate": 1779377657651,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -1080,6 +1080,51 @@ window.BENCHMARK_DATA = {
             "range": "±6.67",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 444.74ms, Q3: 451.4ms\nMin: 443.52ms, Max: 477.91ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "d1c5611ee0145062e635b48cb313e36a09981c5f",
+          "message": "fix(ci): use --max-depth in perf benchmark (was --depth)\n\nThe benchmark script was passing `--depth 1` to duvis, which clap\nrejected with \"unexpected argument\" — every run aborted before\nmeasuring anything, the workflow had been failing silently on every\npush to main since PR #25 (2026-05-17).\n\nThe CLI option has always been `--max-depth` (see `--help`); the\nbenchmark script was just out of sync with it. Local repro:\n\n  $ duvis /tmp --depth 1\n  error: unexpected argument '--depth' found\n\n  $ BENCH_RUNS=3 node .github/scripts/perf-benchmark-history/bench-run.mjs .\n  darwin: median=26.01ms (±1ms)\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-22T00:30:00+09:00",
+          "tree_id": "e72be0092da8d92f2a7c92d14e5645429e7b10ce",
+          "url": "https://github.com/yamadashy/duvis/commit/d1c5611ee0145062e635b48cb313e36a09981c5f"
+        },
+        "date": 1779377657347,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 71.17,
+            "range": "±38.48",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 62.45ms, Q3: 100.92ms\nMin: 54.98ms, Max: 163.38ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 72,
+            "range": "±6.86",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 65.65ms, Q3: 72.51ms\nMin: 62.99ms, Max: 73.7ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 454.59,
+            "range": "±8.05",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 450.68ms, Q3: 458.73ms\nMin: 449.24ms, Max: 484.9ms"
           }
         ]
       }
