@@ -73,6 +73,10 @@
   gap: 2px;
 }
 .view-tabs-bar .seg-btn {
+  /* `font: inherit` first to reset button user-agent styles, then
+     `font-size` to override just the size. The previous order had `font:
+     inherit` after `font-size`, which silently clobbered the 12px. */
+  font: inherit;
   padding: 4px 10px;
   font-size: 12px;
   color: var(--fg-mute);
@@ -84,7 +88,6 @@
   transition: all 0.12s var(--ease);
   background: none;
   border: 0;
-  font: inherit;
 }
 .view-tabs-bar .seg-btn:hover {
   color: var(--fg);

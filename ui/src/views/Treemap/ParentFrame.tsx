@@ -40,6 +40,9 @@ export function ParentFrame({
   const { nameDisplay, showSize } = fitParentLabel(node.data.name, sizeText, w, showDot);
 
   return (
+    // See LeafCell — full keyboard nav across all treemap cells is a
+    // dedicated UX project.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: see LeafCell
     <g
       transform={`translate(${node.x0},${node.y0})`}
       className={styles.tmParent}

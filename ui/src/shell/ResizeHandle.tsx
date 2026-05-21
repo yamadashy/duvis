@@ -32,16 +32,34 @@ export function ResizeHandle({ onDrag }: ResizeHandleProps) {
     };
   }, [onDrag]);
 
+  function nudge(dx: number) {
+    if (dx !== 0) onDrag(dx);
+  }
+
   return (
     <div
       className="resize-handle"
       role="separator"
       aria-orientation="vertical"
+      aria-label="Resize column"
+      // tabIndex makes the separator reachable via keyboard, satisfying
+      // useFocusableInteractive. Arrow Left/Right shifts the column by
+      // 8px steps so non-mouse users can still adjust the layout.
+      tabIndex={0}
       onMouseDown={(e) => {
         e.preventDefault();
         draggingRef.current = { lastX: e.clientX };
         document.body.style.cursor = "col-resize";
         document.body.style.userSelect = "none";
+      }}
+      onKeyDown={(e) => {
+        if (e.key === "ArrowLeft") {
+          e.preventDefault();
+          nudge(-8);
+        } else if (e.key === "ArrowRight") {
+          e.preventDefault();
+          nudge(8);
+        }
       }}
     />
   );

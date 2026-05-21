@@ -99,7 +99,7 @@ export function Sunburst(props: SunburstProps) {
   function findInRoot(p: PartitionNode): TreeNode | null {
     const path: string[] = [];
     let n: PartitionNode | null = p;
-    while (n && n.parent) {
+    while (n?.parent) {
       path.unshift(n.data.name);
       n = n.parent as PartitionNode | null;
     }
@@ -114,7 +114,13 @@ export function Sunburst(props: SunburstProps) {
 
   return (
     <div className="view-wrap" ref={wrapRef}>
-      <svg className={styles.sunburstSvg} viewBox={`0 0 ${size.w} ${size.h}`}>
+      <svg
+        className={styles.sunburstSvg}
+        viewBox={`0 0 ${size.w} ${size.h}`}
+        role="img"
+        aria-label="Sunburst chart of file sizes by directory"
+      >
+        <title>Sunburst chart of file sizes by directory</title>
         <g transform={`translate(${cx},${cy})`}>
           {visible.map((d, i) => {
             const angleSpan = d.x1 - d.x0;
@@ -163,6 +169,7 @@ export function Sunburst(props: SunburstProps) {
 
             return (
               <g key={`${i}-${d.data.name}`}>
+                {/* biome-ignore lint/a11y/useKeyWithClickEvents: see LeafCell — sunburst arcs share the treemap-wide keyboard-nav limitation */}
                 <path
                   className={styles.sbArc}
                   d={path}
@@ -177,7 +184,7 @@ export function Sunburst(props: SunburstProps) {
                     if (live) onSelect(live);
                   }}
                   onDoubleClick={() => {
-                    if (live && live.children && live.children.length > 0) {
+                    if (live?.children && live.children.length > 0) {
                       onDrillIn(live);
                     }
                   }}
@@ -187,6 +194,7 @@ export function Sunburst(props: SunburstProps) {
             );
           })}
 
+          {/* biome-ignore lint/a11y/useKeyWithClickEvents: drilling out via the center circle is a mouse affordance; keyboard users use Esc/Backspace (useDrillOutKey) for the same action */}
           <circle
             r={innerHole - 4}
             fill="var(--bg-1)"

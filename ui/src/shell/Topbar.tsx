@@ -24,7 +24,7 @@ export function Topbar({
     <div className={styles.topbar}>
       <div className={styles.brand}>
         <div className={styles.brandMark} aria-hidden="true">
-          <svg viewBox="0 0 16 16" width="14" height="14" fill="none">
+          <svg viewBox="0 0 16 16" width="14" height="14" fill="none" aria-hidden="true">
             <rect x="2" y="2" width="7" height="7" fill="rgba(255,255,255,.95)" rx="1" />
             <rect x="10" y="2" width="4" height="4" fill="rgba(255,255,255,.7)" rx="1" />
             <rect x="10" y="7" width="4" height="2" fill="rgba(255,255,255,.5)" rx="1" />
@@ -37,7 +37,13 @@ export function Topbar({
 
       <div className={styles.topbarMeta}>
         <span className={styles.tmPath} title="Scanned root">
-          <svg viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg
+            viewBox="0 0 12 12"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
             <path d="M1 5l5-3.5L11 5v5.5a.5.5 0 0 1-.5.5H1.5a.5.5 0 0 1-.5-.5z" />
           </svg>
           {rootName}
@@ -90,7 +96,13 @@ export function Topbar({
           title="Rescan"
           aria-label="Rescan"
         >
-          <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+          <svg
+            viewBox="0 0 16 16"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            aria-hidden="true"
+          >
             <path d="M2 8a6 6 0 0 1 10.5-4M14 8a6 6 0 0 1-10.5 4" />
             <path d="M11.5 1.5V4h-2.5M4.5 14.5V12H7" />
           </svg>
@@ -103,12 +115,24 @@ export function Topbar({
           aria-label="Toggle theme"
         >
           {theme === "dark" ? (
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
               <circle cx="8" cy="8" r="3" />
               <path d="M8 1v1.5M8 13.5V15M3.05 3.05l1.06 1.06M11.89 11.89l1.06 1.06M1 8h1.5M13.5 8H15M3.05 12.95l1.06-1.06M11.89 4.11l1.06-1.06" />
             </svg>
           ) : (
-            <svg viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <svg
+              viewBox="0 0 16 16"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.5"
+              aria-hidden="true"
+            >
               <path d="M13.5 9.5A6 6 0 0 1 6.5 2.5a6 6 0 1 0 7 7z" />
             </svg>
           )}

@@ -22,6 +22,7 @@ const TABS: ReadonlyArray<{ value: ViewMode; label: string; icon: JSX.Element }>
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
+        aria-hidden="true"
       >
         <rect x="1.5" y="1.5" width="9" height="6" />
         <rect x="11" y="1.5" width="3.5" height="3" />
@@ -42,6 +43,7 @@ const TABS: ReadonlyArray<{ value: ViewMode; label: string; icon: JSX.Element }>
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
+        aria-hidden="true"
       >
         <circle cx="8" cy="8" r="6.5" />
         <circle cx="8" cy="8" r="3.5" />
@@ -61,6 +63,7 @@ const TABS: ReadonlyArray<{ value: ViewMode; label: string; icon: JSX.Element }>
         fill="none"
         stroke="currentColor"
         strokeWidth="1.5"
+        aria-hidden="true"
       >
         <line x1="2" y1="4" x2="14" y2="4" />
         <line x1="2" y1="8" x2="14" y2="8" />

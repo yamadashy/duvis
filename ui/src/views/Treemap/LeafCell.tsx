@@ -43,6 +43,12 @@ export function LeafCell(props: LeafProps) {
   const showSmallName = !showName && w > 30 && h > 14;
 
   return (
+    // Full keyboard nav over potentially thousands of treemap cells is a
+    // substantial UX design problem (focus model, arrow-key traversal,
+    // viewport scrolling) that belongs in a dedicated PR. The detail
+    // panel + breadcrumbs + Esc/Backspace already give keyboard users a
+    // path to navigate via the data tree.
+    // biome-ignore lint/a11y/useKeyWithClickEvents: see comment above
     <g
       transform={`translate(${node.x0},${node.y0})`}
       className={styles.tmNode}
