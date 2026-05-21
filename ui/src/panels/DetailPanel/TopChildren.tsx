@@ -23,7 +23,7 @@ export function TopChildren({ node, onSelect, onDrillIn }: TopChildrenProps) {
       <div className={styles.detailChildren}>
         {topChildren.map((c, i) => {
           const cat = c.data.category;
-          const isDir = !!c.children && c.children.length > 0;
+          const isDir = c.data.is_dir;
           return (
             <button
               type="button"

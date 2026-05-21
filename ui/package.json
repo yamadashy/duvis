@@ -9,6 +9,8 @@
     "build": "tsc -b && vite build",
     "build:prebuilt": "npm run build && node scripts/copy-to-prebuilt.mjs",
     "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
     "typecheck": "tsc -b --noEmit",
     "lint": "biome check src",
     "format": "biome format --write src"
@@ -30,6 +32,7 @@
     "@vitejs/plugin-react": "^4.7.0",
     "typescript": "^5.9.3",
     "vite": "^6.4.2",
-    "vite-plugin-singlefile": "^2.3.3"
+    "vite-plugin-singlefile": "^2.3.3",
+    "vitest": "^4.1.7"
   }
 }

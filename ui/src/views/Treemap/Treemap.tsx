@@ -6,7 +6,7 @@ import type { Category } from "../../data/types";
 import { LeafCell } from "./LeafCell";
 import { PAD_TOP, ParentFrame } from "./ParentFrame";
 import styles from "./Treemap.module.css";
-import { nodesEqual } from "./label";
+import { nodeKey, nodesEqual } from "./label";
 
 interface TreemapProps {
   root: TreeNode;
@@ -70,7 +70,10 @@ export function Treemap(props: TreemapProps) {
         className={styles.treemapSvg}
         viewBox={size ? `0 0 ${size.w} ${size.h}` : undefined}
         preserveAspectRatio="none"
+        role="img"
+        aria-label="Treemap of file sizes by directory"
       >
+        <title>Treemap of file sizes by directory</title>
         <defs>
           <pattern
             id="stale-pattern"
@@ -84,9 +87,9 @@ export function Treemap(props: TreemapProps) {
         </defs>
 
         <g>
-          {parents.map((p, i) => (
+          {parents.map((p) => (
             <ParentFrame
-              key={`p-${i}-${p.data.name}`}
+              key={`p-${nodeKey(p)}`}
               node={p}
               radius={treemapRadius}
               onSelect={() => onSelect(p)}
@@ -99,9 +102,9 @@ export function Treemap(props: TreemapProps) {
         </g>
 
         <g>
-          {leaves.map((n, i) => (
+          {leaves.map((n) => (
             <LeafCell
-              key={`l-${i}-${n.data.name}`}
+              key={`l-${nodeKey(n)}`}
               node={n}
               radius={treemapRadius}
               dim={!isActive(n, filterCategories) || !nameMatchesSearch(n, loweredQuery)}
