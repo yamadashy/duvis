@@ -1,14 +1,26 @@
+import type { HierarchyNode } from "d3-hierarchy";
 import type { TreeNode } from "../../data/hierarchy";
+import type { Entry } from "../../data/types";
 
-/** Stable identifier for a TreeNode based on its full ancestry path.
- *  d3-hierarchy rebuilds node references on every re-layout (sort change,
+/** Stable identifier for a d3-hierarchy node based on its full ancestry
+ *  path. d3 rebuilds node references on every re-layout (sort change,
  *  data slice change), so identity comparisons would remount every cell.
- *  The ancestry name path is stable across re-layouts. */
-export function nodeKey(node: TreeNode): string {
-  return node
-    .ancestors()
-    .map((n) => n.data.name)
-    .join("/");
+ *  The ancestry name path is stable across re-layouts.
+ *
+ *  Implementation walks parent pointers directly: a previous version used
+ *  `ancestors().map().join()` which is called per cell per render (Treemap
+ *  + Sunburst can both produce thousands), and each call allocated an
+ *  array of N nodes + an array of N strings before joining. The while
+ *  loop just concatenates as it walks. Accepts both rectangular and
+ *  partition variants since both extend HierarchyNode<Entry>. */
+export function nodeKey(node: HierarchyNode<Entry>): string {
+  let key = node.data.name;
+  let cur = node.parent;
+  while (cur) {
+    key = `${cur.data.name}/${key}`;
+    cur = cur.parent;
+  }
+  return key;
 }
 
 /** Treemap cells get keyed by full ancestry path, not object identity:

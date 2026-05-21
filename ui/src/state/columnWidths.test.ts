@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { clampColumn, COLUMN_MAX, COLUMN_MIN } from "./columnWidths";
+import { COLUMN_MAX, COLUMN_MIN, clampColumn } from "./columnWidths";
 
 describe("clampColumn", () => {
   it("clamps to COLUMN_MIN at the low end", () => {

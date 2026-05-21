@@ -1,12 +1,7 @@
 import { hierarchy } from "d3-hierarchy";
 import { describe, expect, it } from "vitest";
 import type { TreeNode } from "./hierarchy";
-import {
-  buildSubtreeMatchSet,
-  isActive,
-  nameMatchesSearch,
-  normalizeSearchQuery,
-} from "./search";
+import { buildSubtreeMatchSet, isActive, nameMatchesSearch, normalizeSearchQuery } from "./search";
 import type { Category, Entry } from "./types";
 
 const make = (data: Entry): TreeNode =>

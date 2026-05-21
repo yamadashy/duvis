@@ -7,6 +7,7 @@ import type { TreeNode } from "../data/hierarchy";
 import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../data/search";
 import type { Category, Entry } from "../data/types";
 import styles from "./Sunburst.module.css";
+import { nodeKey } from "./Treemap/label";
 
 interface SunburstProps {
   root: TreeNode;
@@ -122,7 +123,7 @@ export function Sunburst(props: SunburstProps) {
       >
         <title>Sunburst chart of file sizes by directory</title>
         <g transform={`translate(${cx},${cy})`}>
-          {visible.map((d, i) => {
+          {visible.map((d) => {
             const angleSpan = d.x1 - d.x0;
             if (angleSpan < 0.005) return null;
             const cat: Category = d.data.category;
@@ -168,7 +169,7 @@ export function Sunburst(props: SunburstProps) {
             }
 
             return (
-              <g key={`${i}-${d.data.name}`}>
+              <g key={`a-${nodeKey(d)}`}>
                 {/* biome-ignore lint/a11y/useKeyWithClickEvents: see LeafCell — sunburst arcs share the treemap-wide keyboard-nav limitation */}
                 <path
                   className={styles.sbArc}
