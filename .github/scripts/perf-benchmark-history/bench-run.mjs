@@ -43,7 +43,7 @@ for (let i = 0; i < 10; i++) {
 // Warm-up runs so the OS page cache and JIT-y bits are stable.
 for (let i = 0; i < 3; i++) {
   try {
-    execFileSync(bin, [fixture, '--depth', '1'], { stdio: 'ignore' });
+    execFileSync(bin, [fixture, '--max-depth', '1'], { stdio: 'ignore' });
   } catch {}
 }
 
@@ -52,7 +52,7 @@ const times = [];
 for (let i = 0; i < runs; i++) {
   try {
     const start = process.hrtime.bigint();
-    execFileSync(bin, [fixture, '--depth', '1'], { stdio: 'ignore' });
+    execFileSync(bin, [fixture, '--max-depth', '1'], { stdio: 'ignore' });
     const elapsedNs = process.hrtime.bigint() - start;
     times.push(Number(elapsedNs) / 1e6); // ms
   } catch (e) {
