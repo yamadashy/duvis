@@ -10,7 +10,7 @@ interface BreadcrumbsProps {
 
 export function Breadcrumbs({ segments, onNavigateTo }: BreadcrumbsProps) {
   return (
-    <div className={styles.detailCrumbs} aria-label="Path">
+    <nav className={styles.detailCrumbs} aria-label="Path">
       <svg
         className={styles.detailCrumbsIcon}
         viewBox="0 0 12 12"
@@ -24,6 +24,7 @@ export function Breadcrumbs({ segments, onNavigateTo }: BreadcrumbsProps) {
       {segments.map((name, i) => {
         const isLast = i === segments.length - 1;
         return (
+          // biome-ignore lint/suspicious/noArrayIndexKey: path segments can repeat (e.g. src/src/foo), index disambiguates
           <Fragment key={`${i}-${name}`}>
             {i > 0 ? (
               <span className={styles.detailCrumbSep} aria-hidden="true">
@@ -44,6 +45,6 @@ export function Breadcrumbs({ segments, onNavigateTo }: BreadcrumbsProps) {
           </Fragment>
         );
       })}
-    </div>
+    </nav>
   );
 }

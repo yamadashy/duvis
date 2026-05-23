@@ -92,13 +92,17 @@
 .view-tabs-bar .seg-btn:hover {
   color: var(--fg);
 }
-.view-tabs-bar .seg-btn[aria-pressed="true"] {
+.view-tabs-bar .seg-btn[aria-selected="true"] {
   background: var(--bg);
   color: var(--fg);
-  box-shadow: 0 0 0 1px var(--line-2), 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 0 0 1px var(--line-2),
+    0 1px 2px rgba(0, 0, 0, 0.2);
 }
-[data-theme="light"] .view-tabs-bar .seg-btn[aria-pressed="true"] {
-  box-shadow: 0 0 0 1px var(--line-2), 0 1px 2px rgba(0, 0, 0, 0.04);
+[data-theme="light"] .view-tabs-bar .seg-btn[aria-selected="true"] {
+  box-shadow:
+    0 0 0 1px var(--line-2),
+    0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .view-empty-state {

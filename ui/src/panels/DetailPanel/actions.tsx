@@ -28,13 +28,7 @@ export function ActionRow({ node, scanRoot, segments, total }: ActionRowProps) {
   );
 }
 
-function CopyPathButton({
-  scanRoot,
-  segments,
-}: {
-  scanRoot: string;
-  segments: readonly string[];
-}) {
+function CopyPathButton({ scanRoot, segments }: { scanRoot: string; segments: readonly string[] }) {
   const { state, run } = useCopyButton();
   const fullPath = joinPath(scanRoot, segments);
   const label = state === "ok" ? "Copied" : state === "error" ? "Failed" : "Copy path";

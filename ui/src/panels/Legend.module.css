@@ -25,15 +25,15 @@
 .legend-row[data-active="false"] {
   opacity: 0.4;
 }
-.legend-row[data-active="false"] .legend-swatch {
-  filter: grayscale(0.8);
-}
 
 .legend-swatch {
   width: 10px;
   height: 10px;
   border-radius: 3px;
   flex-shrink: 0;
+}
+.legend-row[data-active="false"] .legend-swatch {
+  filter: grayscale(0.8);
 }
 .legend-label {
   font-size: 12px;

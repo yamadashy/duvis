@@ -49,7 +49,9 @@
   border: 0;
   font: inherit;
   color: inherit;
-  transition: background 0.12s var(--ease), color 0.12s var(--ease);
+  transition:
+    background 0.12s var(--ease),
+    color 0.12s var(--ease);
   word-break: break-all;
 }
 .detail-crumb:hover {

@@ -27,6 +27,7 @@ export function TopChildren({ node, onSelect, onDrillIn }: TopChildrenProps) {
           return (
             <button
               type="button"
+              // biome-ignore lint/suspicious/noArrayIndexKey: ranks are stable per detail panel render, names can collide
               key={`${i}-${c.data.name}`}
               className={styles.detailChild}
               title={isDir ? "Drill into this folder" : "Inspect file"}
