@@ -48,7 +48,7 @@ anyhow = "1.0.102"
 rayon = "1.12.0"
 axum = { version = "0.8.9", optional = true }
 tokio = { version = "1.52.3", features = ["rt-multi-thread", "macros"], optional = true }
-open = { version = "5.3.4", optional = true }
+open = { version = "5.3.5", optional = true }
 # Compiled glob matchers for `--name` filters. `GlobSet` lets us test a
 # filename against several patterns in one walk-step without rebuilding
 # the matcher per entry.
@@ -58,7 +58,7 @@ globset = "0.4.18"
 libc = "0.2.186"
 
 [dev-dependencies]
-assert_cmd = "2.2.1"
+assert_cmd = "2.2.2"
 http-body-util = "0.1.3"
 insta = { version = "1.47.2", features = ["filters"] }
 predicates = "3.1.4"
