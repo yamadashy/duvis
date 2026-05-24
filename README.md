@@ -31,8 +31,10 @@
 Every entry is auto-tagged by category — `cache`, `build`, `log`, `vcs`, `media`, `ide` — so *"what's eating my disk?"* shows up at a glance. duvis only **shows** you the picture; deleting is your call to make with your own tools.
 
 <p align="center">
-  <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" width="49%" />
-  <img src="./docs/screenshots/sunburst-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a sunburst view of the same ~/ghq scan with concentric rings colored by category, the inner ring dominated by build output (red) and outer rings spreading into per-repo subdirectories" width="49%" />
+  <img src="./docs/screenshots/treemap-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a treemap of ~/ghq with category-colored cells (cache in orange, build output in red, version control in green) and a sidebar with per-category totals" />
+</p>
+<p align="center">
+  <img src="./docs/screenshots/sunburst-dark.png" alt="duvis running locally at 127.0.0.1:7515, showing a sunburst view of the same ~/ghq scan with concentric rings colored by category, the inner ring dominated by build output (red) and outer rings spreading into per-repo subdirectories" />
 </p>
 
 ## 🚀 Quick Start
