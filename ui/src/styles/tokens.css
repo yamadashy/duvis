@@ -5,10 +5,11 @@
 
 :root {
   /* type */
-  --font-sans: "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial,
-    sans-serif;
-  --font-mono: "Geist Mono", "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Mono",
-    "Roboto Mono", Menlo, Consolas, monospace;
+  --font-sans:
+    "Geist", "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+  --font-mono:
+    "Geist Mono", "JetBrains Mono", "SF Mono", ui-monospace, "Cascadia Mono", "Roboto Mono", Menlo,
+    Consolas, monospace;
 
   /* shape */
   --r-1: 4px;

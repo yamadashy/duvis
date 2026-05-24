@@ -1,11 +1,11 @@
 import { categoryMeta, categoryVar } from "../../data/categories";
 import { humanSize, pct } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
+import { ActionRow } from "./actions";
 import { Breadcrumbs } from "./Breadcrumbs";
 import styles from "./DetailPanel.module.css";
 import { MetadataGrid } from "./MetadataGrid";
 import { TopChildren } from "./TopChildren";
-import { ActionRow } from "./actions";
 
 interface DetailPanelProps {
   node: TreeNode;

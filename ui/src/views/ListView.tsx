@@ -101,6 +101,7 @@ export function ListView(props: ListViewProps) {
           return (
             <button
               type="button"
+              // biome-ignore lint/suspicious/noArrayIndexKey: rows are sorted by size each render, names can collide
               key={`${i}-${n.data.name}`}
               className={styles.listRow}
               data-dim={!active}

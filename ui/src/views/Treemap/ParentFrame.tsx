@@ -2,8 +2,8 @@ import { categoryVar } from "../../data/categories";
 import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import { PARENT_HEADER_MIN_HEIGHT_PX } from "../../data/treemapLayout";
-import styles from "./Treemap.module.css";
 import { fitParentLabel } from "./label";
+import styles from "./Treemap.module.css";
 
 /** Height of the parent header strip in pixels. Must match what the
  *  layout pass reserves via paddingTop. */
@@ -40,9 +40,6 @@ export function ParentFrame({
   const { nameDisplay, showSize } = fitParentLabel(node.data.name, sizeText, w, showDot);
 
   return (
-    // See LeafCell — full keyboard nav across all treemap cells is a
-    // dedicated UX project.
-    // biome-ignore lint/a11y/useKeyWithClickEvents: see LeafCell
     <g
       transform={`translate(${node.x0},${node.y0})`}
       className={styles.tmParent}

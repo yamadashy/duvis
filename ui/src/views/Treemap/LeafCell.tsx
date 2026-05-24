@@ -1,9 +1,9 @@
-import { LIGHT_FILL_CATEGORIES, categoryVar } from "../../data/categories";
+import { categoryVar, LIGHT_FILL_CATEGORIES } from "../../data/categories";
 import { humanSize } from "../../data/format";
 import type { TreeNode } from "../../data/hierarchy";
 import type { Category } from "../../data/types";
-import styles from "./Treemap.module.css";
 import { cn, trim } from "./label";
+import styles from "./Treemap.module.css";
 
 interface LeafProps {
   node: TreeNode;
@@ -43,12 +43,6 @@ export function LeafCell(props: LeafProps) {
   const showSmallName = !showName && w > 30 && h > 14;
 
   return (
-    // Full keyboard nav over potentially thousands of treemap cells is a
-    // substantial UX design problem (focus model, arrow-key traversal,
-    // viewport scrolling) that belongs in a dedicated PR. The detail
-    // panel + breadcrumbs + Esc/Backspace already give keyboard users a
-    // path to navigate via the data tree.
-    // biome-ignore lint/a11y/useKeyWithClickEvents: see comment above
     <g
       transform={`translate(${node.x0},${node.y0})`}
       className={styles.tmNode}

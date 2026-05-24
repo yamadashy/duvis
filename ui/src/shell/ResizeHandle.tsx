@@ -37,11 +37,13 @@ export function ResizeHandle({ onDrag }: ResizeHandleProps) {
   }
 
   return (
+    // biome-ignore lint/a11y/useSemanticElements: <hr> cannot be interactive; we need a focusable + mouse-draggable separator
     <div
       className="resize-handle"
       role="separator"
       aria-orientation="vertical"
       aria-label="Resize column"
+      aria-valuenow={0}
       // tabIndex makes the separator reachable via keyboard, satisfying
       // useFocusableInteractive. Arrow Left/Right shifts the column by
       // 8px steps so non-mouse users can still adjust the layout.

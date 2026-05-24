@@ -4,9 +4,9 @@ import { isActive, nameMatchesSearch, normalizeSearchQuery } from "../../data/se
 import { layoutTreemap } from "../../data/treemapLayout";
 import type { Category } from "../../data/types";
 import { LeafCell } from "./LeafCell";
+import { nodeKey, nodesEqual } from "./label";
 import { PAD_TOP, ParentFrame } from "./ParentFrame";
 import styles from "./Treemap.module.css";
-import { nodeKey, nodesEqual } from "./label";
 
 interface TreemapProps {
   root: TreeNode;

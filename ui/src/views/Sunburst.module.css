@@ -5,7 +5,9 @@
 }
 .sb-arc {
   cursor: pointer;
-  transition: opacity 0.15s var(--ease), filter 0.12s var(--ease);
+  transition:
+    opacity 0.15s var(--ease),
+    filter 0.12s var(--ease);
 }
 .sb-arc:hover {
   filter: brightness(1.18) saturate(1.05);

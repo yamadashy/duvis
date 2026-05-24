@@ -1,6 +1,6 @@
 import { type CSSProperties, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { ScanMeta } from "./api/scan";
-import { type TreeNode, aggregate, buildHierarchy, nodeAtPath } from "./data/hierarchy";
+import { aggregate, buildHierarchy, nodeAtPath, type TreeNode } from "./data/hierarchy";
 import type { Category, Entry } from "./data/types";
 import { useDrillOutKey } from "./hooks/useDrillOutKey";
 import { useScanPolling } from "./hooks/useScanPolling";

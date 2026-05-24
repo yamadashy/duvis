@@ -1,3 +1,4 @@
+import type { JSX } from "react";
 import type { ViewMode } from "../data/types";
 import { MAX_DEPTH_BY_VIEW, MIN_DEPTH } from "../state/appState";
 import styles from "./ViewTabs.module.css";
@@ -85,7 +86,7 @@ export function ViewTabs({ view, itemCount, depth, onChange, onDepthChange }: Vi
             key={t.value}
             className={styles.segBtn}
             role="tab"
-            aria-pressed={view === t.value}
+            aria-selected={view === t.value}
             onClick={() => onChange(t.value)}
           >
             {t.icon}

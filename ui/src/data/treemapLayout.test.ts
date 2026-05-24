@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildHierarchy } from "./hierarchy";
-import { PARENT_HEADER_MIN_HEIGHT_PX, layoutTreemap } from "./treemapLayout";
+import { layoutTreemap, PARENT_HEADER_MIN_HEIGHT_PX } from "./treemapLayout";
 import type { Entry } from "./types";
 
 const sample: Entry = {

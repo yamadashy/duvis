@@ -1,7 +1,7 @@
 import { type HierarchyRectangularNode, hierarchy, partition } from "d3-hierarchy";
 import { arc as d3arc } from "d3-shape";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { LIGHT_FILL_CATEGORIES, categoryVar } from "../data/categories";
+import { type JSX, useEffect, useMemo, useRef, useState } from "react";
+import { categoryVar, LIGHT_FILL_CATEGORIES } from "../data/categories";
 import { humanSize } from "../data/format";
 import type { TreeNode } from "../data/hierarchy";
 import { buildSubtreeMatchSet, isActive, normalizeSearchQuery } from "../data/search";
@@ -170,7 +170,6 @@ export function Sunburst(props: SunburstProps) {
 
             return (
               <g key={`a-${nodeKey(d)}`}>
-                {/* biome-ignore lint/a11y/useKeyWithClickEvents: see LeafCell — sunburst arcs share the treemap-wide keyboard-nav limitation */}
                 <path
                   className={styles.sbArc}
                   d={path}
@@ -195,7 +194,6 @@ export function Sunburst(props: SunburstProps) {
             );
           })}
 
-          {/* biome-ignore lint/a11y/useKeyWithClickEvents: drilling out via the center circle is a mouse affordance; keyboard users use Esc/Backspace (useDrillOutKey) for the same action */}
           <circle
             r={innerHole - 4}
             fill="var(--bg-1)"
