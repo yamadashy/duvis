@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779535836245,
+  "lastUpdate": 1779721423877,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -1215,6 +1215,51 @@ window.BENCHMARK_DATA = {
             "range": "±75.05",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 517.92ms, Q3: 592.97ms\nMin: 509.78ms, Max: 627.54ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "b617a0cf6fcd02a2bc888b655b8c8c3f918944c0",
+          "message": "Merge pull request #32 from yamadashy/claude/duvis-toon-compression-xErPN\n\nfeat(output): Add --toon format for token-efficient LLM output",
+          "timestamp": "2026-05-25T23:59:51+09:00",
+          "tree_id": "73609d3295e1116e100f2914e98542ac26d02562",
+          "url": "https://github.com/yamadashy/duvis/commit/b617a0cf6fcd02a2bc888b655b8c8c3f918944c0"
+        },
+        "date": 1779721423499,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 52.84,
+            "range": "±9.6",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 48.61ms, Q3: 58.21ms\nMin: 46.97ms, Max: 129.02ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 55.71,
+            "range": "±0.66",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 55.36ms, Q3: 56.02ms\nMin: 54.7ms, Max: 56.38ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 534.41,
+            "range": "±101.38",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 527.93ms, Q3: 629.31ms\nMin: 521.67ms, Max: 715.16ms"
           }
         ]
       }
