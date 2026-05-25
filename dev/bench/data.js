@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1779721423877,
+  "lastUpdate": 1779721762626,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -1260,6 +1260,51 @@ window.BENCHMARK_DATA = {
             "range": "±101.38",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 527.93ms, Q3: 629.31ms\nMin: 521.67ms, Max: 715.16ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "distinct": true,
+          "id": "f4c64ca7fa0fa9f672fc567ebe5b22c611179317",
+          "message": "chore(release): v0.1.8\n\nPatch release rolling up post-v0.1.7 work. No breaking changes to the\nexisting wire formats — JSON / NDJSON / data.json / --largest remain\nbyte-identical for unchanged inputs.\n\nHighlights:\n\n- feat(render): `--toon` output format (#32) — emits the same\n  {meta, tree} DTO as `--json` but encoded in TOON\n  (Token-Oriented Object Notation) for ~30-50% fewer tokens when\n  feeding the dump to an LLM. Works with `--largest` for a flat,\n  tabular representation. Both renderers share `json::build_root()`\n  and `largest::build_largest_root()` so tree shaping cannot drift\n  between formats.\n- fix(ui) (#31): adapt to React 19 / TypeScript 6 / biome 2 / Vite 8\n  majors. TS 6 `baseUrl` deprecation was failing build.rs → tsc →\n  every Rust CI job; React 19 removed the global JSX namespace;\n  biome 2 added several a11y / CSS rules. All addressed without\n  user-visible UI changes.\n- fix(deps) (#29, #30): cargo non-major + actions/checkout v6 bumps.\n- fix(ci): perf-benchmark-history script was passing `--depth`\n  (renamed to `--max-depth` in the CLI long ago); silent matrix\n  failure that pre-dated v0.1.7. Now green again.\n- docs(readme): added a sunburst hero screenshot stacked under the\n  existing treemap one so the \"treemap, sunburst, and list views\"\n  pitch in the intro is actually shown.\n\nCo-Authored-By: Claude Opus 4.7 (1M context) <noreply@anthropic.com>",
+          "timestamp": "2026-05-26T00:06:56+09:00",
+          "tree_id": "42e1441219dea879b4b7c75d00b5b7227facc866",
+          "url": "https://github.com/yamadashy/duvis/commit/f4c64ca7fa0fa9f672fc567ebe5b22c611179317"
+        },
+        "date": 1779721762152,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 110.4,
+            "range": "±60.14",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 74.19ms, Q3: 134.33ms\nMin: 52.37ms, Max: 205.87ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 56.73,
+            "range": "±11.11",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 55.92ms, Q3: 67.03ms\nMin: 55.11ms, Max: 75.11ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 464.47,
+            "range": "±22.83",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 455.34ms, Q3: 478.17ms\nMin: 450.01ms, Max: 562.38ms"
           }
         ]
       }
