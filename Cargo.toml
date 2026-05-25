@@ -53,6 +53,11 @@ open = { version = "5.3.5", optional = true }
 # filename against several patterns in one walk-step without rebuilding
 # the matcher per entry.
 globset = "0.4.18"
+# TOON (Token-Oriented Object Notation) encoder for the `--toon` output.
+# Default features pull in a full CLI/TUI (clap, ratatui, image, syntect,
+# ...) we don't need — `default-features = false` keeps just the library
+# + its serde integration.
+toon-format = { version = "0.5.0", default-features = false }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2.186"

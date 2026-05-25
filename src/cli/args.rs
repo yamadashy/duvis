@@ -23,7 +23,7 @@ use super::help::HELP_TEXT;
     command(group(
         ArgGroup::new("output")
             .multiple(false)
-            .args(["json", "ndjson", "summary", "ui"])
+            .args(["json", "toon", "ndjson", "summary", "ui"])
     ))
 )]
 #[cfg_attr(
@@ -31,7 +31,7 @@ use super::help::HELP_TEXT;
     command(group(
         ArgGroup::new("output")
             .multiple(false)
-            .args(["json", "ndjson", "summary"])
+            .args(["json", "toon", "ndjson", "summary"])
     ))
 )]
 pub(super) struct Cli {
@@ -48,6 +48,14 @@ pub(super) struct Cli {
     /// --ndjson, --summary, and --ui.
     #[arg(long, help_heading = "Output Format")]
     pub json: bool,
+
+    /// Emit the same `{meta, tree}` data as --json, encoded in TOON
+    /// (Token-Oriented Object Notation) — an indentation-based, tabular
+    /// format that costs fewer LLM tokens than JSON. Combines with
+    /// --largest. Mutually exclusive with --json, --ndjson, --summary,
+    /// and --ui.
+    #[arg(long, help_heading = "Output Format")]
+    pub toon: bool,
 
     /// Stream entries as newline-delimited JSON (one record per line).
     /// First line is `{type:"meta",...}`, subsequent lines are
@@ -107,8 +115,8 @@ pub(super) struct Cli {
     pub reverse: bool,
 
     /// Show the N largest entries (files and directories) globally as a
-    /// flat list ordered by size. Combines with --json / --ndjson for
-    /// structured output. Mutually exclusive with --summary and --ui
+    /// flat list ordered by size. Combines with --json / --toon / --ndjson
+    /// for structured output. Mutually exclusive with --summary and --ui
     /// (those are different views, not just different formats).
     #[cfg_attr(feature = "ui", arg(
         long,
@@ -281,13 +289,13 @@ pub(super) struct Cli {
     #[cfg_attr(feature = "ui", arg(
         long,
         value_name = "NAME",
-        conflicts_with_all = ["ndjson", "summary", "ui", "largest"],
+        conflicts_with_all = ["toon", "ndjson", "summary", "ui", "largest"],
         help_heading = "Diagnostics"
     ))]
     #[cfg_attr(not(feature = "ui"), arg(
         long,
         value_name = "NAME",
-        conflicts_with_all = ["ndjson", "summary", "largest"],
+        conflicts_with_all = ["toon", "ndjson", "summary", "largest"],
         help_heading = "Diagnostics"
     ))]
     pub explain_category: Option<String>,

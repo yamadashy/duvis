@@ -40,8 +40,8 @@ Usage:
   duvis --explain-category <NAME>
 
 duvis is strictly read-only — it never deletes anything and never recommends what to delete.
-The default output is a colorized terminal tree. Pass --summary, --json, --ndjson, --largest,
-or --ui to get a different view of the same scan.
+The default output is a colorized terminal tree. Pass --summary, --json, --toon, --ndjson,
+--largest, or --ui to get a different view of the same scan.
 
 Display options
   -d, --max-depth <N>     Maximum depth to display. Affects display only — sizes always sum
@@ -57,12 +57,15 @@ Display options
 
 Output formats (mutually exclusive; default = colorized terminal tree)
       --json              Structured JSON tree to stdout. Shape: `{meta, tree}`.
+      --toon              Same `{meta, tree}` data as --json, encoded in TOON — an
+                          indentation-based, tabular format that costs fewer LLM tokens.
+                          Combines with --largest.
       --ndjson            Newline-delimited JSON, one entry per line, in DFS pre-order.
                           Designed for jq / streaming agents.
       --summary           Per-category size summary (cache / build / log / media / vcs /
                           ide / other).
       --largest <N>       Flat list of the N largest entries globally, ordered by size.
-                          Combines with --json / --ndjson for structured output.
+                          Combines with --json / --toon / --ndjson for structured output.
       --ui                Browser UI with treemap, sunburst, and list views. Starts an
                           embedded HTTP server (default port 7515).
       --port <PORT>       Port for the --ui HTTP server. Default: 7515. Falls back to a
@@ -116,7 +119,7 @@ Usage:
   duvis --explain-category <NAME>
 
 duvis is strictly read-only — it never deletes anything and never recommends what to delete.
-The default output is a colorized terminal tree. Pass --summary, --json, --ndjson,
+The default output is a colorized terminal tree. Pass --summary, --json, --toon, --ndjson,
 or --largest to get a different view of the same scan.
 
 Display options
@@ -133,12 +136,15 @@ Display options
 
 Output formats (mutually exclusive; default = colorized terminal tree)
       --json              Structured JSON tree to stdout. Shape: `{meta, tree}`.
+      --toon              Same `{meta, tree}` data as --json, encoded in TOON — an
+                          indentation-based, tabular format that costs fewer LLM tokens.
+                          Combines with --largest.
       --ndjson            Newline-delimited JSON, one entry per line, in DFS pre-order.
                           Designed for jq / streaming agents.
       --summary           Per-category size summary (cache / build / log / media / vcs /
                           ide / other).
       --largest <N>       Flat list of the N largest entries globally, ordered by size.
-                          Combines with --json / --ndjson for structured output.
+                          Combines with --json / --toon / --ndjson for structured output.
 
 Filters (AND-combined; affect display only, not totals)
       --category <CAT>    Restrict to one or more categories. Repeatable / CSV:
