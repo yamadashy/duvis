@@ -115,8 +115,8 @@ pub(super) struct Cli {
     pub reverse: bool,
 
     /// Show the N largest entries (files and directories) globally as a
-    /// flat list ordered by size. Combines with --json / --ndjson for
-    /// structured output. Mutually exclusive with --summary and --ui
+    /// flat list ordered by size. Combines with --json / --toon / --ndjson
+    /// for structured output. Mutually exclusive with --summary and --ui
     /// (those are different views, not just different formats).
     #[cfg_attr(feature = "ui", arg(
         long,

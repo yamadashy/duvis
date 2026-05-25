@@ -65,7 +65,7 @@ Output formats (mutually exclusive; default = colorized terminal tree)
       --summary           Per-category size summary (cache / build / log / media / vcs /
                           ide / other).
       --largest <N>       Flat list of the N largest entries globally, ordered by size.
-                          Combines with --json / --ndjson for structured output.
+                          Combines with --json / --toon / --ndjson for structured output.
       --ui                Browser UI with treemap, sunburst, and list views. Starts an
                           embedded HTTP server (default port 7515).
       --port <PORT>       Port for the --ui HTTP server. Default: 7515. Falls back to a
@@ -144,7 +144,7 @@ Output formats (mutually exclusive; default = colorized terminal tree)
       --summary           Per-category size summary (cache / build / log / media / vcs /
                           ide / other).
       --largest <N>       Flat list of the N largest entries globally, ordered by size.
-                          Combines with --json / --ndjson for structured output.
+                          Combines with --json / --toon / --ndjson for structured output.
 
 Filters (AND-combined; affect display only, not totals)
       --category <CAT>    Restrict to one or more categories. Repeatable / CSV:
