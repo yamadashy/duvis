@@ -28,6 +28,10 @@ use crate::wire::largest::{
 pub(crate) enum LargestFormat {
     Text,
     Json,
+    /// Same `{meta, largest: [...]}` payload as `Json`, encoded in TOON.
+    /// The flat, uniform `largest` array is the case TOON compresses best
+    /// (one header naming the fields, then one comma-separated row each).
+    Toon,
     Ndjson,
 }
 
@@ -117,6 +121,7 @@ pub(crate) fn write(
     match format {
         LargestFormat::Text => write_text(&rows, config, n, total_entries, out)?,
         LargestFormat::Json => write_json(entry, &rows, config, n, total_entries, out)?,
+        LargestFormat::Toon => write_toon(entry, &rows, config, n, total_entries, out)?,
         LargestFormat::Ndjson => write_ndjson(entry, &rows, config, n, total_entries, out)?,
     }
     Ok(())
@@ -218,6 +223,24 @@ fn build_entry(row: &Row<'_>, counts: &SubtreeCounts) -> WireLargestEntry {
     }
 }
 
+/// Build the `{meta, largest: [...]}` wire root shared by the JSON and
+/// TOON largest outputs. Both serialize the identical DTO; only the
+/// encoder differs.
+fn build_largest_root<'a>(
+    tree_root: &Entry,
+    rows: &[Row<'_>],
+    config: &'a RenderConfig<'a>,
+    n_requested: usize,
+    total_entries: u64,
+) -> WireLargestRoot<'a> {
+    let counts = precompute_subtree_counts(tree_root);
+    let entries: Vec<WireLargestEntry> = rows.iter().map(|r| build_entry(r, &counts)).collect();
+    WireLargestRoot {
+        meta: WireLargestMeta::from_config(config, n_requested, total_entries),
+        largest: entries,
+    }
+}
+
 fn write_json(
     tree_root: &Entry,
     rows: &[Row<'_>],
@@ -226,13 +249,23 @@ fn write_json(
     total_entries: u64,
     out: &mut impl Write,
 ) -> Result<()> {
-    let counts = precompute_subtree_counts(tree_root);
-    let entries: Vec<WireLargestEntry> = rows.iter().map(|r| build_entry(r, &counts)).collect();
-    let root = WireLargestRoot {
-        meta: WireLargestMeta::from_config(config, n_requested, total_entries),
-        largest: entries,
-    };
+    let root = build_largest_root(tree_root, rows, config, n_requested, total_entries);
     serde_json::to_writer_pretty(&mut *out, &root)?;
+    writeln!(out)?;
+    Ok(())
+}
+
+fn write_toon(
+    tree_root: &Entry,
+    rows: &[Row<'_>],
+    config: &RenderConfig,
+    n_requested: usize,
+    total_entries: u64,
+    out: &mut impl Write,
+) -> Result<()> {
+    let root = build_largest_root(tree_root, rows, config, n_requested, total_entries);
+    let encoded = toon_format::encode_default(&root)?;
+    out.write_all(encoded.as_bytes())?;
     writeln!(out)?;
     Ok(())
 }

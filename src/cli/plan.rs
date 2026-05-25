@@ -83,6 +83,8 @@ pub(super) fn from_cli(cli: Cli) -> Result<RunPlan> {
         // (clap enforces). Format follows the (orthogonal) format flag.
         let format = if cli.json {
             LargestFormat::Json
+        } else if cli.toon {
+            LargestFormat::Toon
         } else if cli.ndjson {
             LargestFormat::Ndjson
         } else {
@@ -91,6 +93,8 @@ pub(super) fn from_cli(cli: Cli) -> Result<RunPlan> {
         RenderMode::Largest { n, format }
     } else if cli.json {
         RenderMode::Json
+    } else if cli.toon {
+        RenderMode::Toon
     } else if cli.ndjson {
         RenderMode::Ndjson
     } else if cli.summary {

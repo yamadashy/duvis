@@ -3,6 +3,7 @@ mod json;
 mod largest;
 mod ndjson;
 mod summary;
+mod toon;
 mod tree;
 
 use std::collections::HashMap;
@@ -94,6 +95,9 @@ pub(crate) fn select_top_refs<'a>(
 pub(crate) enum RenderMode {
     Tree,
     Json,
+    /// Same `{meta, tree}` payload as `Json`, encoded in TOON for fewer
+    /// LLM tokens.
+    Toon,
     Ndjson,
     Summary,
     /// Flat list of the N largest entries. The format (text / JSON /
@@ -193,6 +197,7 @@ pub(crate) fn write(
     match mode {
         RenderMode::Tree => tree::write(entry, config, out)?,
         RenderMode::Json => json::write(entry, config, out)?,
+        RenderMode::Toon => toon::write(entry, config, out)?,
         RenderMode::Ndjson => ndjson::write(entry, config, out)?,
         RenderMode::Summary => summary::write(entry, config, out)?,
         RenderMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,

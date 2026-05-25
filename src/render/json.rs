@@ -89,7 +89,11 @@ fn build(
     }
 }
 
-pub(crate) fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Result<()> {
+/// Build the `{meta, tree}` wire root shared by `--json` and `--toon`.
+/// Both formats serialize the exact same DTO; only the encoder differs,
+/// so the tree-shaping logic (depth / top / filter clipping, subtree
+/// counts) lives here in one place.
+pub(crate) fn build_root<'a>(entry: &Entry, config: &'a RenderConfig<'a>) -> WireTreeRoot<'a> {
     let counts = precompute_subtree_counts(entry);
     let visible_map = if config.filter.is_empty() {
         None
@@ -105,10 +109,14 @@ pub(crate) fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) 
         &counts,
         visible_map.as_ref(),
     );
-    let root = WireTreeRoot {
+    WireTreeRoot {
         meta: WireMeta::from_config(config),
         tree,
-    };
+    }
+}
+
+pub(crate) fn write(entry: &Entry, config: &RenderConfig, out: &mut impl Write) -> Result<()> {
+    let root = build_root(entry, config);
     serde_json::to_writer_pretty(&mut *out, &root)?;
     writeln!(out)?;
     Ok(())

@@ -137,6 +137,33 @@ fn json_format_is_valid_and_classifies() {
 }
 
 #[test]
+fn toon_format_round_trips_to_the_same_data_as_json() {
+    let fixture = build_fixture();
+    // `--toon` must carry the exact same `{meta, tree}` payload as `--json`,
+    // just in a more token-efficient encoding. Decode it back to a JSON
+    // value and assert the same invariants the JSON test checks.
+    let toon = run_duvis(fixture.path(), &["--toon", "--sort", "name"]);
+    // TOON is not JSON: it should not parse as JSON, but should parse as TOON.
+    assert!(serde_json::from_str::<serde_json::Value>(&toon).is_err());
+
+    let value: serde_json::Value =
+        toon_format::decode_default(&toon).expect("--toon output decodes as TOON");
+    let meta = value.get("meta").expect("missing meta");
+    assert_eq!(meta["wire_version"], 2);
+    assert_eq!(meta["hardlinks"], "count-once");
+
+    let tree = value.get("tree").expect("missing tree");
+    assert_eq!(tree["relative_path"], ".");
+    assert_eq!(tree["depth"], 0);
+    assert!(tree["file_count"].as_u64().unwrap() > 0);
+    assert!(tree["dir_count"].as_u64().unwrap() > 0);
+
+    let dump = value.to_string();
+    assert!(dump.contains("node_modules"), "missing node_modules");
+    assert!(dump.contains("build"), "missing build category");
+}
+
+#[test]
 fn ndjson_emits_meta_then_pre_order_entries() {
     let fixture = build_fixture();
     let stdout = run_duvis(fixture.path(), &["--ndjson", "--sort", "name"]);
@@ -185,6 +212,17 @@ fn conflicting_format_flags_are_rejected() {
     Command::cargo_bin("duvis")
         .unwrap()
         .args(["--ndjson", "--summary", "."])
+        .assert()
+        .failure();
+    // --toon is a format peer of --json: also exclusive with the others.
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--toon", "--json", "."])
+        .assert()
+        .failure();
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--toon", "--ndjson", "."])
         .assert()
         .failure();
     // --largest conflicts with --summary and --ui (different views).
