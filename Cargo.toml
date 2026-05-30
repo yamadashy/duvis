@@ -43,7 +43,7 @@ ui = ["dep:axum", "dep:tokio", "dep:open"]
 [dependencies]
 clap = { version = "4.6.1", features = ["derive"] }
 serde = { version = "1.0.228", features = ["derive"] }
-serde_json = "1.0.149"
+serde_json = "1.0.150"
 anyhow = "1.0.102"
 rayon = "1.12.0"
 axum = { version = "0.8.9", optional = true }
