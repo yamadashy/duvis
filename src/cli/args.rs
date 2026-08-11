@@ -14,32 +14,53 @@ use super::help::HELP_TEXT;
 
 #[derive(Parser)]
 #[command(name = "duvis", version, override_help = HELP_TEXT)]
-// Output formats are mutually exclusive; tree is the default when none of
-// --json / --ndjson / --summary / --ui is given. The arg group lists
-// `ui` only when the feature is on, so a no-default-features build
-// doesn't trip on a clap reference to a missing argument.
+// Two independent axes, one ArgGroup each.
+//
+//   view   — *what* is computed: tree (default) / summary / largest / ui
+//   format — *how* it is encoded: text (default) / json / toon / ndjson
+//
+// Members of a group are mutually exclusive, but the groups don't
+// constrain each other, so `--summary --json` is a valid combination.
+// Before v0.2.0 both axes shared a single group, which made the summary
+// view unreachable in any structured format while `--largest --json`
+// worked — the inconsistency this split removes.
+//
+// `ui` is listed in the view group only when the feature is on, so a
+// no-default-features build doesn't trip on a clap reference to a
+// missing argument. `--ui` additionally conflicts with the format flags
+// (declared on the arg itself) because it serves a browser, not stdout.
 #[cfg_attr(
     feature = "ui",
     command(group(
-        ArgGroup::new("output")
+        ArgGroup::new("view")
             .multiple(false)
-            .args(["json", "toon", "ndjson", "summary", "ui"])
+            .args(["summary", "largest", "ui"])
     ))
 )]
 #[cfg_attr(
     not(feature = "ui"),
     command(group(
-        ArgGroup::new("output")
+        ArgGroup::new("view")
             .multiple(false)
-            .args(["json", "toon", "ndjson", "summary"])
+            .args(["summary", "largest"])
     ))
 )]
+#[command(group(
+    ArgGroup::new("format")
+        .multiple(false)
+        .args(["json", "toon", "ndjson"])
+))]
 pub(super) struct Cli {
-    /// Target file or directory to scan. Defaults to "." (current directory)
-    /// when at least one flag is given. Running `duvis` with no arguments
-    /// at all prints --help instead.
-    #[arg(default_value = ".", value_name = "PATH")]
-    pub path: PathBuf,
+    /// Target file or directory to scan. Defaults to "." (current
+    /// directory) when at least one flag is given; running `duvis` with
+    /// no arguments at all prints --help instead.
+    ///
+    /// Deliberately an `Option` with no clap `default_value`: the default
+    /// is applied in `plan.rs`. That keeps "the user actually typed a
+    /// PATH" distinguishable, which is what lets `--explain-category`
+    /// reject a PATH instead of accepting and ignoring it.
+    #[arg(value_name = "PATH")]
+    pub path: Option<PathBuf>,
 
     // ----- Output Format ----------------------------------------------------
     /// Emit a structured JSON tree to stdout. Top-level shape is
@@ -65,17 +86,25 @@ pub(super) struct Cli {
     #[arg(long, help_heading = "Output Format")]
     pub ndjson: bool,
 
+    // ----- Views ------------------------------------------------------------
     /// Print a per-category size summary (cache / build / log / media /
-    /// vcs / ide / other). Mutually exclusive with --json, --ndjson,
-    /// and --ui.
-    #[arg(long, help_heading = "Output Format")]
+    /// vcs / ide / other). Combines with --json / --toon / --ndjson for
+    /// structured output. Mutually exclusive with --largest and --ui.
+    #[arg(long, help_heading = "Views")]
     pub summary: bool,
 
     /// Open a browser UI with treemap, sunburst, and list views. Starts an
-    /// embedded HTTP server (default port 7515; see --port) and launches
-    /// your default browser. Mutually exclusive with --json and --summary.
+    /// embedded HTTP server (see --port) and launches your default
+    /// browser.
+    ///
+    /// Serves a browser rather than stdout, so it conflicts with every
+    /// format flag and with the display limits the server doesn't apply.
     #[cfg(feature = "ui")]
-    #[arg(long, help_heading = "Output Format")]
+    #[arg(
+        long,
+        conflicts_with_all = ["json", "toon", "ndjson", "max_depth", "top"],
+        help_heading = "Views"
+    )]
     pub ui: bool,
 
     // ----- Display ----------------------------------------------------------
@@ -117,21 +146,14 @@ pub(super) struct Cli {
     /// Show the N largest entries (files and directories) globally as a
     /// flat list ordered by size. Combines with --json / --toon / --ndjson
     /// for structured output. Mutually exclusive with --summary and --ui
-    /// (those are different views, not just different formats).
-    #[cfg_attr(feature = "ui", arg(
+    /// via the `view` group — those are different views, not just
+    /// different formats.
+    #[arg(
         long,
         value_name = "N",
         value_parser = positive_usize,
-        conflicts_with_all = ["summary", "ui"],
-        help_heading = "Display Options"
-    ))]
-    #[cfg_attr(not(feature = "ui"), arg(
-        long,
-        value_name = "N",
-        value_parser = positive_usize,
-        conflicts_with = "summary",
-        help_heading = "Display Options"
-    ))]
+        help_heading = "Views"
+    )]
     pub largest: Option<usize>,
 
     /// How to attribute bytes to hardlinked files. `count-once` (default)
@@ -272,30 +294,55 @@ pub(super) struct Cli {
     // ----- UI Server --------------------------------------------------------
     /// Port for the --ui HTTP server (default 7515). Falls back to a free
     /// OS-assigned port if busy.
+    ///
+    /// `requires` makes the dependency on --ui a parse error rather than
+    /// a flag that quietly does nothing: `duvis . --port 8080` is
+    /// rejected. And the default lives in `plan.rs`, not in a clap
+    /// `default_value` — a defaulted arg counts as present, which would
+    /// make `requires` demand --ui on every run.
     #[cfg(feature = "ui")]
     #[arg(
         long,
-        default_value = "7515",
         value_name = "PORT",
+        requires = "ui",
         help_heading = "UI Server Options"
     )]
-    pub port: u16,
+    pub port: Option<u16>,
 
     // ----- Diagnostics ------------------------------------------------------
     /// Explain how a name would be classified, without scanning. Prints
     /// both interpretations (as-directory / as-file) and the rule that
-    /// matched. Combine with --json for structured output. Useful when
-    /// you see a category in a scan and want to know why.
+    /// matched. Useful when you see a category in a scan and want to know
+    /// why.
+    ///
+    /// This is a query against the classifier rule table, not a view of a
+    /// scan: it never touches the filesystem. So it rejects PATH and
+    /// every scan-shaped flag rather than accepting them and producing
+    /// output that ignored them. `--json` is the one format it renders
+    /// (a two-field record has nothing for TOON's tabular encoding or
+    /// NDJSON's streaming to do), so the other two are rejected as well.
     #[cfg_attr(feature = "ui", arg(
         long,
         value_name = "NAME",
-        conflicts_with_all = ["toon", "ndjson", "summary", "ui", "largest"],
+        conflicts_with_all = [
+            "path", "toon", "ndjson",
+            "summary", "largest", "ui",
+            "max_depth", "top", "reverse",
+            "category", "type", "min_size", "name",
+            "changed_within", "changed_before",
+        ],
         help_heading = "Diagnostics"
     ))]
     #[cfg_attr(not(feature = "ui"), arg(
         long,
         value_name = "NAME",
-        conflicts_with_all = ["toon", "ndjson", "summary", "largest"],
+        conflicts_with_all = [
+            "path", "toon", "ndjson",
+            "summary", "largest",
+            "max_depth", "top", "reverse",
+            "category", "type", "min_size", "name",
+            "changed_within", "changed_before",
+        ],
         help_heading = "Diagnostics"
     ))]
     pub explain_category: Option<String>,
@@ -312,5 +359,14 @@ fn positive_usize(s: &str) -> Result<usize, String> {
         Err("must be ≥ 1".to_string())
     } else {
         Ok(n)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn positive_usize_rejects_zero_and_accepts_one() {
+        assert!(super::positive_usize("0").is_err());
+        assert_eq!(super::positive_usize("1").unwrap(), 1);
     }
 }

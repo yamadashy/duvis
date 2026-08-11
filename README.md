@@ -76,8 +76,14 @@ duvis ~/projects --largest 10
 duvis ~/projects --json --largest 10
 duvis ~/projects --ndjson --largest 10 | jq -c '. | select(.type == "entry")'
 
+# Category summary as JSON (every view accepts every format)
+duvis ~/projects --summary --json
+
 # Open browser UI with an interactive treemap
 duvis ~/projects --ui
+
+# ...on a different port
+duvis ~/projects --ui --port 8080
 ```
 
 ### Options
@@ -88,10 +94,10 @@ duvis ~/projects --ui
 | `-n, --top <N>` | Show only the top N entries by size |
 | `--json` | Output as a single JSON document with `meta` + `tree` |
 | `--ndjson` | Stream entries as newline-delimited JSON (one record per line) |
-| `--largest <N>` | Flat list of the N largest entries (files + dirs) ordered by size. Combines with `--json` / `--ndjson`. |
+| `--largest <N>` | Flat list of the N largest entries (files + dirs) ordered by size |
 | `--summary` | Show a per-category size summary |
 | `--ui` | Open browser UI with treemap visualization |
-| `--port <PORT>` | Port for UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. |
+| `--port <PORT>` | Port for the UI server (default: `7515`, [see below](#why-port-7515)). Falls back to a free port if busy. Requires `--ui`. |
 | `--sort <size\|name>` | Sort order (default: `size`) |
 | `--reverse` | Reverse sort order |
 | `--hardlinks <count-once\|count-each>` | How to attribute bytes to hardlinked files (default: `count-once`, matches `du`). |
@@ -112,7 +118,18 @@ only what's *shown* is filtered.
 | `--changed-within <DURATION>` | Modified within the past `Nd` / `Nw` / `Nm` / `Ny` (m=30d, y=365d). |
 | `--changed-before <DURATION>` | Modified more than `<DURATION>` ago. Combine with `--changed-within` for a window. |
 
-`--json` / `--ndjson` / `--summary` / `--ui` are mutually exclusive; pass at most one. With none, the default tree view is shown. `--largest <N>` is a separate view (mutually exclusive with `--summary` / `--ui`) that pairs orthogonally with `--json` / `--ndjson` for structured output. Filters compose with every view.
+#### Views and formats are independent
+
+There are two separate choices, and they combine freely:
+
+- **View** — *what* is computed: the default tree, `--summary`, `--largest <N>`, or `--ui`. Mutually exclusive; pass at most one.
+- **Format** — *how* it is encoded: the default text, `--json`, `--toon`, or `--ndjson`. Mutually exclusive; pass at most one.
+
+So `duvis . --summary --json` is a category rollup as JSON, and `duvis . --largest 10 --ndjson` is a flat top-10 stream. Filters compose with every view.
+
+`--ui` is the exception: it serves a browser rather than stdout, so it takes no format flag, no filters, and no display limits — those are rejected rather than silently ignored, since the browser has its own controls.
+
+> **Changed in v0.2.0.** `--summary` used to be exclusive with `--json` / `--ndjson`, so the category rollup was unreachable in any structured format even though `--largest` combined with them fine. Splitting the two axes removes that inconsistency. `--port` now requires `--ui` instead of being silently ignored without it.
 
 ### Output examples
 

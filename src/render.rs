@@ -14,9 +14,20 @@ use crate::entry::Entry;
 use crate::filter::Filter;
 use crate::scan::{HardlinkPolicy, ScanCounts};
 
-// Re-export the one render submodule item the cli plan layer references
-// by name, so submodules can stay private.
-pub(crate) use largest::LargestFormat;
+/// How a view is encoded. Orthogonal to *which* view is rendered — every
+/// view (tree / summary / largest) accepts every format. Keeping the two
+/// axes separate is what lets `--summary --json` work; folding them into
+/// one enum is what made it an error before v0.2.0.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum OutputFormat {
+    /// Human-readable stdout. The default for every view.
+    Text,
+    Json,
+    /// Same payload as [`OutputFormat::Json`], encoded in TOON for fewer
+    /// LLM tokens.
+    Toon,
+    Ndjson,
+}
 
 pub(crate) struct RenderConfig<'a> {
     pub(crate) max_depth: Option<usize>,
@@ -88,25 +99,19 @@ pub(crate) fn select_top_refs<'a>(
     }
 }
 
-/// Which structured / human output mode to render. Selected by clap's
-/// mutually-exclusive ArgGroup + per-flag conflicts, so exactly one
-/// variant reaches the dispatcher.
+/// Which view to render, and in which format. The view comes from the
+/// `view` ArgGroup (`--summary` / `--largest` / `--ui`), the format from
+/// the `format` ArgGroup (`--json` / `--toon` / `--ndjson`); the two are
+/// independent, so every combination below is reachable.
 #[derive(Debug, Clone, Copy)]
 pub(crate) enum RenderMode {
-    Tree,
-    Json,
-    /// Same `{meta, tree}` payload as `Json`, encoded in TOON for fewer
-    /// LLM tokens.
-    Toon,
-    Ndjson,
-    Summary,
-    /// Flat list of the N largest entries. The format (text / JSON /
-    /// NDJSON) is decided by which format flag was passed alongside
-    /// `--largest` — see [`largest::LargestFormat`].
-    Largest {
-        n: usize,
-        format: largest::LargestFormat,
-    },
+    /// Hierarchical view. `Text` is the colorized terminal tree; the
+    /// structured formats emit `{meta, tree}`.
+    Tree { format: OutputFormat },
+    /// Per-category size rollup.
+    Summary { format: OutputFormat },
+    /// Flat list of the N largest entries.
+    Largest { n: usize, format: OutputFormat },
 }
 
 /// Bumped when the structured (JSON / NDJSON) wire format makes a
@@ -195,11 +200,13 @@ pub(crate) fn write(
     out: &mut impl Write,
 ) -> anyhow::Result<()> {
     match mode {
-        RenderMode::Tree => tree::write(entry, config, out)?,
-        RenderMode::Json => json::write(entry, config, out)?,
-        RenderMode::Toon => toon::write(entry, config, out)?,
-        RenderMode::Ndjson => ndjson::write(entry, config, out)?,
-        RenderMode::Summary => summary::write(entry, config, out)?,
+        RenderMode::Tree { format } => match format {
+            OutputFormat::Text => tree::write(entry, config, out)?,
+            OutputFormat::Json => json::write(entry, config, out)?,
+            OutputFormat::Toon => toon::write(entry, config, out)?,
+            OutputFormat::Ndjson => ndjson::write(entry, config, out)?,
+        },
+        RenderMode::Summary { format } => summary::write(entry, config, format, out)?,
         RenderMode::Largest { n, format } => largest::write(entry, config, n, format, out)?,
     }
     Ok(())

@@ -198,44 +198,95 @@ fn ndjson_emits_meta_then_pre_order_entries() {
 
 #[test]
 fn conflicting_format_flags_are_rejected() {
-    // --json / --ndjson / --summary / --ui are exclusive via clap ArgGroup.
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--json", "--summary", "."])
-        .assert()
-        .failure();
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--json", "--ndjson", "."])
-        .assert()
-        .failure();
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--ndjson", "--summary", "."])
-        .assert()
-        .failure();
-    // --toon is a format peer of --json: also exclusive with the others.
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--toon", "--json", "."])
-        .assert()
-        .failure();
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--toon", "--ndjson", "."])
-        .assert()
-        .failure();
-    // --largest conflicts with --summary and --ui (different views).
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--largest", "5", "--summary", "."])
-        .assert()
-        .failure();
-    Command::cargo_bin("duvis")
-        .unwrap()
-        .args(["--largest", "5", "--ui", "."])
-        .assert()
-        .failure();
+    // --json / --toon / --ndjson are one axis: pick at most one.
+    for pair in [
+        ["--json", "--ndjson"],
+        ["--toon", "--json"],
+        ["--toon", "--ndjson"],
+    ] {
+        Command::cargo_bin("duvis")
+            .unwrap()
+            .args([pair[0], pair[1], "."])
+            .assert()
+            .failure();
+    }
+}
+
+#[test]
+fn conflicting_view_flags_are_rejected() {
+    // --summary / --largest / --ui are the other axis. Each pair asks for
+    // two different things to be computed, so clap rejects it.
+    for pair in [
+        vec!["--largest", "5", "--summary"],
+        vec!["--largest", "5", "--ui"],
+        vec!["--summary", "--ui"],
+    ] {
+        let mut args = pair.clone();
+        args.push(".");
+        Command::cargo_bin("duvis")
+            .unwrap()
+            .args(&args)
+            .assert()
+            .failure();
+    }
+}
+
+#[test]
+fn views_and_formats_combine_freely() {
+    // The point of splitting the two ArgGroups: a view and a format are
+    // independent choices. Before v0.2.0 `--summary --json` was rejected
+    // while `--largest --json` worked, which taught users a rule that
+    // wasn't real.
+    let fixture = build_fixture();
+    for format in ["--json", "--toon", "--ndjson"] {
+        Command::cargo_bin("duvis")
+            .unwrap()
+            .args(["--summary", format])
+            .arg(fixture.path())
+            .assert()
+            .success();
+    }
+}
+
+#[test]
+fn summary_json_emits_meta_and_category_rollup() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(fixture.path(), &["--summary", "--json"]);
+    let v: serde_json::Value =
+        serde_json::from_str(&stdout).expect("--summary --json should be valid JSON");
+    assert_eq!(v["meta"]["wire_version"], 2);
+    // The rollup total is the sum of the buckets, and both are present.
+    let total = v["meta"]["total"].as_u64().expect("meta.total missing");
+    let buckets = v["summary"].as_array().expect("summary array missing");
+    assert!(!buckets.is_empty(), "expected category buckets: {stdout}");
+    let summed: u64 = buckets.iter().map(|b| b["size"].as_u64().unwrap()).sum();
+    assert_eq!(total, summed, "meta.total must equal the bucket sum");
+    // A rollup, not a hierarchy.
+    assert!(v.get("tree").is_none(), "summary must not carry a tree");
+    // Sorted largest-first.
+    let sizes: Vec<u64> = buckets
+        .iter()
+        .map(|b| b["size"].as_u64().unwrap())
+        .collect();
+    let mut sorted = sizes.clone();
+    sorted.sort_unstable_by(|a, b| b.cmp(a));
+    assert_eq!(sizes, sorted, "buckets should be size-descending");
+}
+
+#[test]
+fn summary_ndjson_streams_meta_then_categories() {
+    let fixture = build_fixture();
+    let stdout = run_duvis(fixture.path(), &["--summary", "--ndjson"]);
+    let lines: Vec<serde_json::Value> = stdout
+        .lines()
+        .filter(|l| !l.trim().is_empty())
+        .map(|l| serde_json::from_str(l).expect("each NDJSON line must parse"))
+        .collect();
+    assert!(lines.len() >= 2, "expected meta + categories: {stdout}");
+    assert_eq!(lines[0]["type"], "meta");
+    for line in &lines[1..] {
+        assert_eq!(line["type"], "category");
+    }
 }
 
 #[test]
@@ -465,6 +516,37 @@ fn filter_ui_combo_is_rejected_with_error() {
 }
 
 #[test]
+fn ui_rejects_display_limits_it_would_not_apply() {
+    // Same rule as the filters above, applied to the two flags that used
+    // to slip through: the UI server never received --max-depth / --top,
+    // so accepting them meant accepting a flag that did nothing.
+    for flag in [["--max-depth", "2"], ["--top", "3"]] {
+        Command::cargo_bin("duvis")
+            .unwrap()
+            .args(["--ui", flag[0], flag[1], "."])
+            .assert()
+            .failure();
+    }
+}
+
+// Asserts on the exact stderr text, so it only holds when the `ui`
+// feature is compiled in; without it clap just reports an unknown
+// argument.
+#[cfg(feature = "ui")]
+#[test]
+fn port_without_ui_is_rejected_rather_than_ignored() {
+    // `--port` only means something to the UI server. Declaring the
+    // dependency with clap's `requires` turns "flag that quietly does
+    // nothing" into a parse error.
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["--port", "8080", "."])
+        .assert()
+        .failure()
+        .stderr(predicates::str::contains("--ui"));
+}
+
+#[test]
 fn explain_category_text_lists_both_interpretations() {
     // No PATH argument: --explain-category short-circuits before any
     // scanning, so the value of PATH should be irrelevant.
@@ -508,6 +590,37 @@ fn explain_category_json_emits_structured_payload() {
     assert_eq!(v["as_file"]["reason"]["needle"], "data.img.raw");
     assert_eq!(v["as_directory"]["category"], "other");
     assert_eq!(v["as_directory"]["reason"]["kind"], "default");
+}
+
+#[test]
+fn explain_category_rejects_a_path_instead_of_ignoring_it() {
+    // --explain-category is a query against the rule table and never
+    // scans. It used to accept a PATH and drop it on the floor, which
+    // looked like the path had been consulted.
+    Command::cargo_bin("duvis")
+        .unwrap()
+        .args(["/etc", "--explain-category", "foo.log"])
+        .assert()
+        .failure();
+}
+
+#[test]
+fn explain_category_rejects_scan_shaped_flags() {
+    for extra in [
+        vec!["--max-depth", "2"],
+        vec!["--top", "3"],
+        vec!["--min-size", "1M"],
+        vec!["--category", "cache"],
+        vec!["--reverse"],
+    ] {
+        let mut args = vec!["--explain-category", "node_modules"];
+        args.extend(extra.iter().copied());
+        Command::cargo_bin("duvis")
+            .unwrap()
+            .args(&args)
+            .assert()
+            .failure();
+    }
 }
 
 #[test]
