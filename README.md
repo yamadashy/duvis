@@ -94,6 +94,7 @@ duvis ~/projects --ui --port 8080
 | `-n, --top <N>` | Show only the top N entries by size |
 | `--json` | Output as a single JSON document with `meta` + `tree` |
 | `--ndjson` | Stream entries as newline-delimited JSON (one record per line) |
+| `--toon` | Same payload as `--json`, encoded in TOON — fewer LLM tokens |
 | `--largest <N>` | Flat list of the N largest entries (files + dirs) ordered by size |
 | `--summary` | Show a per-category size summary |
 | `--ui` | Open browser UI with treemap visualization |

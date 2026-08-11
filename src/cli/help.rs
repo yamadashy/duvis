@@ -76,7 +76,8 @@ Output formats (mutually exclusive; default = human-readable text)
       --ndjson            Newline-delimited JSON, one record per line. Designed for jq /
                           streaming agents.
 
-  Views and formats are independent: every view accepts every format.
+  Views and formats are independent: every stdout view (tree / --summary / --largest)
+  accepts every format. --ui is the exception — it drives a browser, not stdout.
 
 Filters (AND-combined; affect display only, not totals; rejected with --ui)
       --category <CAT>    Restrict to one or more categories. Repeatable / CSV:

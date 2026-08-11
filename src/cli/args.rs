@@ -63,26 +63,26 @@ pub(super) struct Cli {
     pub path: Option<PathBuf>,
 
     // ----- Output Format ----------------------------------------------------
-    /// Emit a structured JSON tree to stdout. Top-level shape is
-    /// `{meta, tree}`; `meta` carries `scan_root`, `wire_version`,
-    /// `hardlinks`, scan counters, etc. Mutually exclusive with
-    /// --ndjson, --summary, and --ui.
+    /// Emit structured JSON to stdout. Shape is `{meta, tree}` for the
+    /// default view, or `{meta, summary}` / `{meta, largest}` when paired
+    /// with those views; `meta` carries `scan_root`, `wire_version`,
+    /// `hardlinks`, scan counters, etc. Mutually exclusive with the other
+    /// formats (--toon, --ndjson) and with --ui.
     #[arg(long, help_heading = "Output Format")]
     pub json: bool,
 
-    /// Emit the same `{meta, tree}` data as --json, encoded in TOON
-    /// (Token-Oriented Object Notation) — an indentation-based, tabular
-    /// format that costs fewer LLM tokens than JSON. Combines with
-    /// --largest. Mutually exclusive with --json, --ndjson, --summary,
-    /// and --ui.
+    /// Emit the same data as --json, encoded in TOON (Token-Oriented
+    /// Object Notation) — an indentation-based, tabular format that costs
+    /// fewer LLM tokens than JSON. Mutually exclusive with the other
+    /// formats (--json, --ndjson) and with --ui.
     #[arg(long, help_heading = "Output Format")]
     pub toon: bool,
 
-    /// Stream entries as newline-delimited JSON (one record per line).
-    /// First line is `{type:"meta",...}`, subsequent lines are
-    /// `{type:"entry",...}` in DFS pre-order. Designed for jq /
-    /// streaming agents. Mutually exclusive with --json, --summary,
-    /// and --ui.
+    /// Stream records as newline-delimited JSON (one per line). First
+    /// line is `{type:"meta",...}`; the rest are entries in DFS pre-order,
+    /// or category rollups under --summary. Designed for jq / streaming
+    /// agents. Mutually exclusive with the other formats (--json, --toon)
+    /// and with --ui.
     #[arg(long, help_heading = "Output Format")]
     pub ndjson: bool,
 
