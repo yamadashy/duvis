@@ -4,10 +4,15 @@ use anyhow::Result;
 
 use crate::entry::SortOrder;
 use crate::filter::{Filter, FilterInputs};
-use crate::render::{LargestFormat, RenderMode};
+use crate::render::{OutputFormat, RenderMode};
 use crate::scan::HardlinkPolicy;
 
 use super::args::Cli;
+
+/// Port the browser UI binds to when `--port` isn't given. Falls back to
+/// a free OS-assigned port if this one is busy.
+#[cfg(feature = "ui")]
+const DEFAULT_UI_PORT: u16 = 7515;
 
 /// What the binary should do once `Cli` has been parsed. Each variant
 /// carries only the fields its dispatch needs — no further inspection
@@ -56,13 +61,30 @@ pub(super) fn from_cli(cli: Cli) -> Result<RunPlan> {
         });
     }
 
-    let path = cli.path.canonicalize().unwrap_or(cli.path.clone());
+    // clap owns the "exactly one of these" rule via the `format` group,
+    // so the first match wins without any further exclusivity checking.
+    let format = if cli.json {
+        OutputFormat::Json
+    } else if cli.toon {
+        OutputFormat::Toon
+    } else if cli.ndjson {
+        OutputFormat::Ndjson
+    } else {
+        OutputFormat::Text
+    };
+
+    // PATH carries no clap default so `--explain-category` can reject an
+    // explicit one; the default lands here instead.
+    let path = cli.path.unwrap_or_else(|| PathBuf::from("."));
+    let path = path.canonicalize().unwrap_or(path);
 
     #[cfg(feature = "ui")]
     if cli.ui {
         return Ok(RunPlan::Ui {
             path,
-            port: cli.port,
+            // Default lives here rather than in clap so `--port` stays
+            // absent-unless-typed, which is what `requires = "ui"` needs.
+            port: cli.port.unwrap_or(DEFAULT_UI_PORT),
             sort: cli.sort,
             reverse: cli.reverse,
             hardlinks: cli.hardlinks,
@@ -78,29 +100,15 @@ pub(super) fn from_cli(cli: Cli) -> Result<RunPlan> {
         changed_before: cli.changed_before,
     })?;
 
+    // The view axis. `--ui` already returned above; the remaining three
+    // are mutually exclusive via the `view` group, so this is a straight
+    // pick rather than a precedence chain.
     let mode = if let Some(n) = cli.largest {
-        // --largest is a view, mutually exclusive with --summary and --ui
-        // (clap enforces). Format follows the (orthogonal) format flag.
-        let format = if cli.json {
-            LargestFormat::Json
-        } else if cli.toon {
-            LargestFormat::Toon
-        } else if cli.ndjson {
-            LargestFormat::Ndjson
-        } else {
-            LargestFormat::Text
-        };
         RenderMode::Largest { n, format }
-    } else if cli.json {
-        RenderMode::Json
-    } else if cli.toon {
-        RenderMode::Toon
-    } else if cli.ndjson {
-        RenderMode::Ndjson
     } else if cli.summary {
-        RenderMode::Summary
+        RenderMode::Summary { format }
     } else {
-        RenderMode::Tree
+        RenderMode::Tree { format }
     };
 
     Ok(RunPlan::Scan(ScanPlan {

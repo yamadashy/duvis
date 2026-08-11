@@ -40,8 +40,9 @@ Usage:
   duvis --explain-category <NAME>
 
 duvis is strictly read-only — it never deletes anything and never recommends what to delete.
-The default output is a colorized terminal tree. Pass --summary, --json, --toon, --ndjson,
---largest, or --ui to get a different view of the same scan.
+The default output is a colorized terminal tree. Pick a different *view* with --summary,
+--largest, or --ui, and a different *format* with --json, --toon, or --ndjson. The two
+combine freely: `--summary --json` is a category rollup as JSON.
 
 Display options
   -d, --max-depth <N>     Maximum depth to display. Affects display only — sizes always sum
@@ -55,21 +56,28 @@ Display options
                           `du`). count-each inflates totals when many links share an inode
                           (e.g. pnpm stores). Unix only.
 
-Output formats (mutually exclusive; default = colorized terminal tree)
-      --json              Structured JSON tree to stdout. Shape: `{meta, tree}`.
-      --toon              Same `{meta, tree}` data as --json, encoded in TOON — an
-                          indentation-based, tabular format that costs fewer LLM tokens.
-                          Combines with --largest.
-      --ndjson            Newline-delimited JSON, one entry per line, in DFS pre-order.
-                          Designed for jq / streaming agents.
-      --summary           Per-category size summary (cache / build / log / media / vcs /
+Views (mutually exclusive; default = hierarchical tree)
+      --summary           Per-category size rollup (cache / build / log / media / vcs /
                           ide / other).
       --largest <N>       Flat list of the N largest entries globally, ordered by size.
-                          Combines with --json / --toon / --ndjson for structured output.
       --ui                Browser UI with treemap, sunburst, and list views. Starts an
-                          embedded HTTP server (default port 7515).
-      --port <PORT>       Port for the --ui HTTP server. Default: 7515. Falls back to a
-                          free OS-assigned port if busy.
+                          embedded HTTP server and opens your browser. Serves a browser,
+                          so it takes no output format and no display limits.
+
+UI server (requires --ui)
+      --port <PORT>       Port for the --ui server. Default: 7515; falls back to a free
+                          OS-assigned port if busy.
+
+Output formats (mutually exclusive; default = human-readable text)
+      --json              Structured JSON. Shape: `{meta, tree}` — or `{meta, summary}` /
+                          `{meta, largest}` when paired with those views.
+      --toon              Same data as --json, encoded in TOON — an indentation-based,
+                          tabular format that costs fewer LLM tokens.
+      --ndjson            Newline-delimited JSON, one record per line. Designed for jq /
+                          streaming agents.
+
+  Views and formats are independent: every stdout view (tree / --summary / --largest)
+  accepts every format. --ui is the exception — it drives a browser, not stdout.
 
 Filters (AND-combined; affect display only, not totals; rejected with --ui)
       --category <CAT>    Restrict to one or more categories. Repeatable / CSV:
@@ -90,8 +98,9 @@ Diagnostics
       --explain-category <NAME>
                           Explain how a name would be classified, without scanning. Prints
                           both interpretations (as-dir / as-file) and the matched rule.
-                          Combine with --json for structured output. Skips scanning
-                          entirely; PATH is ignored.
+                          Combine with --json for structured output. Never scans, so it
+                          rejects PATH and every scan-shaped flag rather than accepting
+                          and ignoring them.
 
   -h, --help              Show this help.
   -V, --version           Show version.
@@ -100,11 +109,13 @@ Examples
   duvis ~/projects                                        # tree (default)
   duvis ~/projects --max-depth 2 --top 10                 # depth-limited
   duvis ~/projects --summary                              # category summary
+  duvis ~/projects --summary --json                       # ...same rollup, as JSON
   duvis ~/projects --json | jq '.tree.children[]'         # structured for agents
   duvis ~/projects --ndjson | jq -c 'select(.size>1e8)'   # streaming filter
   duvis ~/projects --largest 10                           # 10 largest globally
   duvis ~/projects --category cache --min-size 100M       # cache > 100MB only
-  duvis ~/projects --ui                                   # browser UI
+  duvis ~/projects --ui                                   # browser UI (port 7515)
+  duvis ~/projects --ui --port 8080                       # ...on another port
   duvis --explain-category node_modules                   # which rule fires?
 
 Exit codes
@@ -119,8 +130,9 @@ Usage:
   duvis --explain-category <NAME>
 
 duvis is strictly read-only — it never deletes anything and never recommends what to delete.
-The default output is a colorized terminal tree. Pass --summary, --json, --toon, --ndjson,
-or --largest to get a different view of the same scan.
+The default output is a colorized terminal tree. Pick a different *view* with --summary or
+--largest, and a different *format* with --json, --toon, or --ndjson. The two combine
+freely: `--summary --json` is a category rollup as JSON.
 
 Display options
   -d, --max-depth <N>     Maximum depth to display. Affects display only — sizes always sum
@@ -134,17 +146,20 @@ Display options
                           `du`). count-each inflates totals when many links share an inode
                           (e.g. pnpm stores). Unix only.
 
-Output formats (mutually exclusive; default = colorized terminal tree)
-      --json              Structured JSON tree to stdout. Shape: `{meta, tree}`.
-      --toon              Same `{meta, tree}` data as --json, encoded in TOON — an
-                          indentation-based, tabular format that costs fewer LLM tokens.
-                          Combines with --largest.
-      --ndjson            Newline-delimited JSON, one entry per line, in DFS pre-order.
-                          Designed for jq / streaming agents.
-      --summary           Per-category size summary (cache / build / log / media / vcs /
+Views (mutually exclusive; default = hierarchical tree)
+      --summary           Per-category size rollup (cache / build / log / media / vcs /
                           ide / other).
       --largest <N>       Flat list of the N largest entries globally, ordered by size.
-                          Combines with --json / --toon / --ndjson for structured output.
+
+Output formats (mutually exclusive; default = human-readable text)
+      --json              Structured JSON. Shape: `{meta, tree}` — or `{meta, summary}` /
+                          `{meta, largest}` when paired with those views.
+      --toon              Same data as --json, encoded in TOON — an indentation-based,
+                          tabular format that costs fewer LLM tokens.
+      --ndjson            Newline-delimited JSON, one record per line. Designed for jq /
+                          streaming agents.
+
+  Views and formats are independent: every view accepts every format.
 
 Filters (AND-combined; affect display only, not totals)
       --category <CAT>    Restrict to one or more categories. Repeatable / CSV:
@@ -165,8 +180,9 @@ Diagnostics
       --explain-category <NAME>
                           Explain how a name would be classified, without scanning. Prints
                           both interpretations (as-dir / as-file) and the matched rule.
-                          Combine with --json for structured output. Skips scanning
-                          entirely; PATH is ignored.
+                          Combine with --json for structured output. Never scans, so it
+                          rejects PATH and every scan-shaped flag rather than accepting
+                          and ignoring them.
 
   -h, --help              Show this help.
   -V, --version           Show version.
@@ -175,6 +191,7 @@ Examples
   duvis ~/projects                                        # tree (default)
   duvis ~/projects --max-depth 2 --top 10                 # depth-limited
   duvis ~/projects --summary                              # category summary
+  duvis ~/projects --summary --json                       # ...same rollup, as JSON
   duvis ~/projects --json | jq '.tree.children[]'         # structured for agents
   duvis ~/projects --ndjson | jq -c 'select(.size>1e8)'   # streaming filter
   duvis ~/projects --largest 10                           # 10 largest globally
