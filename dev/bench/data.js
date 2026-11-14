@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1783155938875,
+  "lastUpdate": 1794672967087,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -1530,6 +1530,51 @@ window.BENCHMARK_DATA = {
             "range": "±6.29",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 518.99ms, Q3: 525.28ms\nMin: 514.52ms, Max: 534.15ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "1bf47b88f9f5d44168bc7d95ad15f8e6fb78b32f",
+          "message": "Merge pull request #54 from yamadashy/ci/skip-claude-review-for-bots\n\nci(claude-review): Skip review job for bot-triggered runs",
+          "timestamp": "2026-11-15T01:13:17+09:00",
+          "tree_id": "00241249cad41f87f3ded9bc28df2c9b280ec136",
+          "url": "https://github.com/yamadashy/duvis/commit/1bf47b88f9f5d44168bc7d95ad15f8e6fb78b32f"
+        },
+        "date": 1794672966314,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 77.39,
+            "range": "±13.51",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 72.92ms, Q3: 86.43ms\nMin: 65.16ms, Max: 188.35ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 27.69,
+            "range": "±0.88",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 27.19ms, Q3: 28.07ms\nMin: 26.5ms, Max: 31.75ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 423.03,
+            "range": "±76.12",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 408.72ms, Q3: 484.84ms\nMin: 381.63ms, Max: 593.47ms"
           }
         ]
       }
