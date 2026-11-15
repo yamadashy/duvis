@@ -1,5 +1,5 @@
 window.BENCHMARK_DATA = {
-  "lastUpdate": 1794712038693,
+  "lastUpdate": 1794712176044,
   "repoUrl": "https://github.com/yamadashy/duvis",
   "entries": {
     "duvis Performance": [
@@ -1620,6 +1620,51 @@ window.BENCHMARK_DATA = {
             "range": "±12.59",
             "unit": "ms",
             "extra": "Median of 20 runs\nQ1: 586.11ms, Q3: 598.69ms\nMin: 578.26ms, Max: 630.33ms"
+          }
+        ]
+      },
+      {
+        "commit": {
+          "author": {
+            "email": "koukun0120@gmail.com",
+            "name": "Kazuki Yamada",
+            "username": "yamadashy"
+          },
+          "committer": {
+            "email": "noreply@github.com",
+            "name": "GitHub",
+            "username": "web-flow"
+          },
+          "distinct": true,
+          "id": "dd79b36fbfe4453dbc2db9ef6f6276d584185ac2",
+          "message": "Merge pull request #49 from yamadashy/renovate/github-actions\n\nchore(deps): update dependency node to v24.22.2",
+          "timestamp": "2026-11-15T12:04:37+09:00",
+          "tree_id": "b95f01339a24cbd0de410faa10cfc47388f8f7a3",
+          "url": "https://github.com/yamadashy/duvis/commit/dd79b36fbfe4453dbc2db9ef6f6276d584185ac2"
+        },
+        "date": 1794712175532,
+        "tool": "customSmallerIsBetter",
+        "benches": [
+          {
+            "name": "duvis scan (50k files) [macOS]",
+            "value": 164.82,
+            "range": "±37.19",
+            "unit": "ms",
+            "extra": "Median of 30 runs\nQ1: 149.78ms, Q3: 186.98ms\nMin: 119.86ms, Max: 252.49ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Linux]",
+            "value": 27.7,
+            "range": "±1.11",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 27.3ms, Q3: 28.41ms\nMin: 26.91ms, Max: 35.74ms"
+          },
+          {
+            "name": "duvis scan (50k files) [Windows]",
+            "value": 376.04,
+            "range": "±5.98",
+            "unit": "ms",
+            "extra": "Median of 20 runs\nQ1: 372.55ms, Q3: 378.53ms\nMin: 367.93ms, Max: 410.45ms"
           }
         ]
       }
