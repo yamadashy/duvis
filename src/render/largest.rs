@@ -15,25 +15,14 @@ use std::io::{self, Write};
 use anyhow::Result;
 
 use super::format::format_size;
-use super::{child_relative_path, precompute_subtree_counts, RenderConfig, SubtreeCounts};
+use super::{
+    child_relative_path, precompute_subtree_counts, OutputFormat, RenderConfig, SubtreeCounts,
+};
 use crate::entry::Entry;
 use crate::wire::largest::{
     WireLargestEntry, WireLargestMeta, WireLargestNdjsonEntry, WireLargestNdjsonRecord,
     WireLargestRoot,
 };
-
-/// Output target for `--largest` results. Selected by which format flag
-/// (if any) was passed alongside `--largest`.
-#[derive(Debug, Clone, Copy)]
-pub(crate) enum LargestFormat {
-    Text,
-    Json,
-    /// Same `{meta, largest: [...]}` payload as `Json`, encoded in TOON.
-    /// The flat, uniform `largest` array is the case TOON compresses best
-    /// (one header naming the fields, then one comma-separated row each).
-    Toon,
-    Ndjson,
-}
 
 /// One row in the largest-N list. Holds a borrow into the original tree
 /// so we don't clone Entry data unnecessarily.
@@ -104,7 +93,7 @@ pub(crate) fn write(
     entry: &Entry,
     config: &RenderConfig,
     n: usize,
-    format: LargestFormat,
+    format: OutputFormat,
     out: &mut impl Write,
 ) -> Result<()> {
     let mut rows: Vec<Row<'_>> = Vec::new();
@@ -119,10 +108,10 @@ pub(crate) fn write(
     select_largest(&mut rows, n);
 
     match format {
-        LargestFormat::Text => write_text(&rows, config, n, total_entries, out)?,
-        LargestFormat::Json => write_json(entry, &rows, config, n, total_entries, out)?,
-        LargestFormat::Toon => write_toon(entry, &rows, config, n, total_entries, out)?,
-        LargestFormat::Ndjson => write_ndjson(entry, &rows, config, n, total_entries, out)?,
+        OutputFormat::Text => write_text(&rows, config, n, total_entries, out)?,
+        OutputFormat::Json => write_json(entry, &rows, config, n, total_entries, out)?,
+        OutputFormat::Toon => write_toon(entry, &rows, config, n, total_entries, out)?,
+        OutputFormat::Ndjson => write_ndjson(entry, &rows, config, n, total_entries, out)?,
     }
     Ok(())
 }
@@ -441,7 +430,7 @@ mod tests {
         let filter = crate::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
-        write(&tree, &cfg, 3, LargestFormat::Text, &mut buf).unwrap();
+        write(&tree, &cfg, 3, OutputFormat::Text, &mut buf).unwrap();
         let output = String::from_utf8(buf).unwrap();
         assert!(output.contains("Largest 3 entries"));
         // Dir entries get a trailing slash.
@@ -460,7 +449,7 @@ mod tests {
         let filter = crate::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
-        write(&tree, &cfg, 2, LargestFormat::Json, &mut buf).unwrap();
+        write(&tree, &cfg, 2, OutputFormat::Json, &mut buf).unwrap();
         let v: serde_json::Value = serde_json::from_slice(&buf).unwrap();
         assert_eq!(v["meta"]["wire_version"], 2);
         assert_eq!(v["meta"]["largest_requested"], 2);
@@ -481,7 +470,7 @@ mod tests {
         let filter = crate::filter::Filter::default();
         let cfg = cfg(&scan_root, &counts, &filter);
         let mut buf: Vec<u8> = Vec::new();
-        write(&tree, &cfg, 3, LargestFormat::Ndjson, &mut buf).unwrap();
+        write(&tree, &cfg, 3, OutputFormat::Ndjson, &mut buf).unwrap();
         let lines: Vec<serde_json::Value> = std::str::from_utf8(&buf)
             .unwrap()
             .lines()

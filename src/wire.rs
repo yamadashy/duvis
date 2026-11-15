@@ -19,6 +19,7 @@
 pub(crate) mod category;
 pub(crate) mod explain;
 pub(crate) mod largest;
+pub(crate) mod summary;
 pub(crate) mod tree;
 
 // Only consumed by the `ui` feature today (UI server's /data.json tree
